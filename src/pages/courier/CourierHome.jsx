@@ -9,12 +9,14 @@ function dollars(cents) {
 export default function CourierHome() {
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
+  const [accepting, setAccepting] = useState(null)
 
-  useEffect(() => {
+  const refresh = () => {
     if (!hasSupabaseConfig) {
       setLoading(false)
       return
     }
+    setLoading(true)
     supabase
       .from('delivery_requests')
       .select('*')
@@ -24,10 +26,28 @@ export default function CourierHome() {
         setRequests(data ?? [])
         setLoading(false)
       })
+  }
+
+  useEffect(() => {
+    refresh()
   }, [])
 
-  const handleAccept = () => {
-    alert('Acceptance not yet wired — coming in next phase.')
+  const handleAccept = async (request) => {
+    const ok = window.confirm(
+      `Accept this delivery for $${(request.max_price_cents / 100).toFixed(2)}?`,
+    )
+    if (!ok) return
+    setAccepting(request.id)
+    const { error } = await supabase.functions.invoke(
+      'accept-delivery-request',
+      { body: { delivery_request_id: request.id } },
+    )
+    setAccepting(null)
+    if (error) {
+      alert(error.message)
+      return
+    }
+    refresh()
   }
 
   return (
@@ -64,10 +84,11 @@ export default function CourierHome() {
                   <div className="text-right shrink-0">
                     <div className="font-serif text-xl text-ink">{dollars(r.max_price_cents)}</div>
                     <button
-                      onClick={handleAccept}
-                      className="mt-2 px-3 py-1 rounded-lg bg-forest text-cream text-xs font-medium hover:opacity-90 transition-opacity"
+                      onClick={() => handleAccept(r)}
+                      disabled={accepting === r.id}
+                      className="mt-2 px-3 py-1 rounded-lg bg-forest text-cream text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                     >
-                      Accept
+                      {accepting === r.id ? 'Accepting…' : 'Accept'}
                     </button>
                   </div>
                 </div>
