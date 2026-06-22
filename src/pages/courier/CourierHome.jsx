@@ -6,6 +6,23 @@ function dollars(cents) {
   return `$${(cents / 100).toFixed(2)}`
 }
 
+function timeLabel(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return d.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
+function photoUrl(path) {
+  if (!path) return null
+  const { data } = supabase.storage.from('package-photos').getPublicUrl(path)
+  return data.publicUrl
+}
+
 export default function CourierHome() {
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
@@ -70,30 +87,56 @@ export default function CourierHome() {
           </div>
         ) : (
           <ul className="space-y-3">
-            {requests.map((r) => (
-              <li key={r.id} className="p-5 rounded-xl border border-mist bg-white">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="text-sm text-slate truncate">
-                      <span className="text-ink">{r.pickup_address}</span>
-                      <span className="mx-2">→</span>
-                      <span className="text-ink">{r.dropoff_address}</span>
+            {requests.map((r) => {
+              const url = photoUrl(r.package_photo_path)
+              return (
+                <li key={r.id} className="p-5 rounded-xl border border-mist bg-white">
+                  <div className="flex items-start gap-4">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-slate">
+                        <span>{r.order_number}</span>
+                        <span className="text-slate/50">•</span>
+                        <span>{timeLabel(r.created_at)}</span>
+                      </div>
+                      <div className="space-y-0.5 text-sm">
+                        <div className="text-slate">
+                          <span className="text-slate/70 mr-2">From</span>
+                          <span className="text-ink">{r.pickup_address}</span>
+                        </div>
+                        <div className="text-slate">
+                          <span className="text-slate/70 mr-2">To</span>
+                          <span className="text-ink">{r.dropoff_address}</span>
+                        </div>
+                      </div>
+                      <div className="text-slate text-sm">{r.package_description}</div>
+                      {r.package_weight_lbs != null && (
+                        <div className="text-xs text-slate">
+                          Weight: <span className="text-ink">{r.package_weight_lbs} lbs</span>
+                          {r.package_size && <span className="ml-3">Size: <span className="text-ink">{r.package_size}</span></span>}
+                        </div>
+                      )}
                     </div>
-                    <div className="text-slate text-sm mt-2 truncate">{r.package_description}</div>
+                    {url && (
+                      <img
+                        src={url}
+                        alt="Package"
+                        className="w-20 h-20 object-cover rounded-lg border border-mist shrink-0"
+                      />
+                    )}
+                    <div className="text-right shrink-0">
+                      <div className="font-serif text-xl text-ink">{dollars(r.max_price_cents)}</div>
+                      <button
+                        onClick={() => handleAccept(r)}
+                        disabled={accepting === r.id}
+                        className="mt-2 px-3 py-1 rounded-lg bg-forest text-cream text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                      >
+                        {accepting === r.id ? 'Accepting…' : 'Accept'}
+                      </button>
+                    </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <div className="font-serif text-xl text-ink">{dollars(r.max_price_cents)}</div>
-                    <button
-                      onClick={() => handleAccept(r)}
-                      disabled={accepting === r.id}
-                      className="mt-2 px-3 py-1 rounded-lg bg-forest text-cream text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-                    >
-                      {accepting === r.id ? 'Accepting…' : 'Accept'}
-                    </button>
-                  </div>
-                </div>
-              </li>
-            ))}
+                </li>
+              )
+            })}
           </ul>
         )}
       </div>

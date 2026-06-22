@@ -1,8 +1,12 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
+import PackagePhotoInput from '../../components/PackagePhotoInput.jsx'
+import { MAX_WEIGHT_LBS, priceForWeight, tierOptions, feeFor, totalFor } from '../../lib/pricing.js'
+
+const money = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
 
 export default function NewRequest() {
   const { user } = useAuth()
@@ -10,8 +14,15 @@ export default function NewRequest() {
   const [pickup, setPickup] = useState('')
   const [dropoff, setDropoff] = useState('')
   const [description, setDescription] = useState('')
-  const [priceDollars, setPriceDollars] = useState('')
+  const [weightLbs, setWeightLbs] = useState('')
+  const [size, setSize] = useState('')
+  const [photoPath, setPhotoPath] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+
+  const weightNum = Number(weightLbs)
+  const priceCents = useMemo(() => priceForWeight(weightNum), [weightNum])
+  const feeCents = feeFor(priceCents)
+  const totalCents = totalFor(priceCents)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -19,9 +30,24 @@ export default function NewRequest() {
       toast.error('Supabase not configured.')
       return
     }
-    const cents = Math.round(Number(priceDollars) * 100)
-    if (!Number.isFinite(cents) || cents <= 0) {
-      toast.error('Enter a valid price.')
+    if (!Number.isFinite(weightNum) || weightNum <= 0) {
+      toast.error('Enter a valid weight.')
+      return
+    }
+    if (weightNum > MAX_WEIGHT_LBS) {
+      toast.error(`Max weight is ${MAX_WEIGHT_LBS} lbs.`)
+      return
+    }
+    if (priceCents == null) {
+      toast.error('Weight is out of supported range.')
+      return
+    }
+    if (!size.trim()) {
+      toast.error('Add a size description.')
+      return
+    }
+    if (!photoPath) {
+      toast.error('A photo of the package is required.')
       return
     }
     setSubmitting(true)
@@ -30,7 +56,10 @@ export default function NewRequest() {
       pickup_address: pickup,
       dropoff_address: dropoff,
       package_description: description,
-      max_price_cents: cents,
+      package_weight_lbs: weightNum,
+      package_size: size.trim() || null,
+      package_photo_path: photoPath,
+      max_price_cents: priceCents,
     })
     setSubmitting(false)
     if (error) {
@@ -72,34 +101,68 @@ export default function NewRequest() {
             required
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Small box, under 5 lbs. Fragile."
+            placeholder="Small box. Fragile."
             rows={3}
             className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
           />
         </Field>
-        <Field label="Max price (USD)">
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate">$</span>
-            <input
-              type="number"
+        <div className="grid grid-cols-2 gap-4">
+          <Field label={`Weight (max ${MAX_WEIGHT_LBS} lbs)`}>
+            <select
               required
-              min="0.01"
-              step="0.01"
-              value={priceDollars}
-              onChange={(e) => setPriceDollars(e.target.value)}
-              placeholder="15.00"
-              className="w-full pl-8 pr-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
+              value={weightLbs}
+              onChange={(e) => setWeightLbs(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
+            >
+              <option value="">Pick a range…</option>
+              {tierOptions().map((t) => (
+                <option key={t.upTo} value={t.upTo}>
+                  {t.label} — {t.priceLabel}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Approx. size">
+            <input
+              type="text"
+              required
+              value={size}
+              onChange={(e) => setSize(e.target.value)}
+              placeholder="Shoebox, envelope, etc."
+              className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
             />
-          </div>
+          </Field>
+        </div>
+        <Field label="Photo of the package">
+          <PackagePhotoInput path={photoPath} onChange={setPhotoPath} />
         </Field>
+
+        <div className="rounded-lg bg-mist px-4 py-3 space-y-1.5">
+          <Row label="Delivery" value={money(priceCents)} />
+          <Row label="Service fee (15%)" value={money(feeCents)} />
+          <div className="border-t border-slate/20 pt-1.5 flex justify-between items-baseline">
+            <span className="text-xs uppercase tracking-widest text-ink">Total</span>
+            <span className="font-serif text-xl text-ink">{money(totalCents)}</span>
+          </div>
+        </div>
+
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || priceCents == null}
           className="w-full px-4 py-3 rounded-lg bg-ink text-cream font-medium hover:bg-signal transition-colors disabled:opacity-50"
         >
           {submitting ? 'Posting…' : 'Post request'}
         </button>
       </form>
+    </div>
+  )
+}
+
+function Row({ label, value }) {
+  return (
+    <div className="flex justify-between text-sm text-slate">
+      <span>{label}</span>
+      <span className="text-ink">{value}</span>
     </div>
   )
 }

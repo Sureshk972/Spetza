@@ -7,6 +7,7 @@ import SignIn from './pages/SignIn.jsx'
 import ChooseRole from './pages/ChooseRole.jsx'
 import SenderHome from './pages/sender/SenderHome.jsx'
 import NewRequest from './pages/sender/NewRequest.jsx'
+import EditRequest from './pages/sender/EditRequest.jsx'
 import CourierHome from './pages/courier/CourierHome.jsx'
 import Settings from './pages/Settings.jsx'
 
@@ -26,6 +27,7 @@ export default function App() {
       <Route path="/" element={<RequireAuth><RootRedirect /></RequireAuth>} />
       <Route path="/sender" element={<RequireAuth><RequireRole role="sender"><SenderHome /></RequireRole></RequireAuth>} />
       <Route path="/sender/new" element={<RequireAuth><RequireRole role="sender"><NewRequest /></RequireRole></RequireAuth>} />
+      <Route path="/sender/requests/:id/edit" element={<RequireAuth><RequireRole role="sender"><EditRequest /></RequireRole></RequireAuth>} />
       <Route path="/courier" element={<RequireAuth><RequireRole role="courier"><CourierHome /></RequireRole></RequireAuth>} />
       <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
     </Routes>
