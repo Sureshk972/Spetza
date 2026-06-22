@@ -25,6 +25,13 @@ Set in `profiles.account_type` at onboarding via `ChooseRole`. `RequireRole` enf
 - Never push to remote without explicit ask
 - Never call `supabase db push` without explicit ask
 
+## Wired
+
+- Auth: password + magic-link fallback
+- Sender: tiered weight pricing ($10/$15/$20/$25 by weight, max 20 lbs), required package photo, edit/cancel for open requests, human-readable order numbers (SPZ-00001)
+- Courier: accept flow with manual-capture Stripe Connect PI, Connect onboarding
+- Storage: `package-photos` public bucket with sender-scoped RLS
+
 ## Not yet wired
 
-Accept transaction, payments (Stripe), maps/routing, Capacitor native shell.
+Maps/routing (the differentiator), capture-on-delivery, courier verification, Capacitor native shell.

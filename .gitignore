@@ -8,3 +8,5 @@ dist-ssr
 .DS_Store
 .vite
 coverage
+.claude/
+supabase/.temp/
