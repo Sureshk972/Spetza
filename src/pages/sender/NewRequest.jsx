@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import PackagePhotoInput from '../../components/PackagePhotoInput.jsx'
-import { MAX_WEIGHT_LBS, priceForWeight, tierOptions, feeFor, totalFor } from '../../lib/pricing.js'
+import { MAX_DISTANCE_MILES, priceForDistance, tierOptions, feeFor, totalFor } from '../../lib/pricing.js'
 
 const money = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
 
@@ -14,13 +14,13 @@ export default function NewRequest() {
   const [pickup, setPickup] = useState('')
   const [dropoff, setDropoff] = useState('')
   const [description, setDescription] = useState('')
-  const [weightLbs, setWeightLbs] = useState('')
+  const [distanceMiles, setDistanceMiles] = useState('')
   const [size, setSize] = useState('')
   const [photoPath, setPhotoPath] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const weightNum = Number(weightLbs)
-  const priceCents = useMemo(() => priceForWeight(weightNum), [weightNum])
+  const distanceNum = Number(distanceMiles)
+  const priceCents = useMemo(() => priceForDistance(distanceNum), [distanceNum])
   const feeCents = feeFor(priceCents)
   const totalCents = totalFor(priceCents)
 
@@ -30,16 +30,16 @@ export default function NewRequest() {
       toast.error('Supabase not configured.')
       return
     }
-    if (!Number.isFinite(weightNum) || weightNum <= 0) {
-      toast.error('Enter a valid weight.')
+    if (!Number.isFinite(distanceNum) || distanceNum <= 0) {
+      toast.error('Pick a distance range.')
       return
     }
-    if (weightNum > MAX_WEIGHT_LBS) {
-      toast.error(`Max weight is ${MAX_WEIGHT_LBS} lbs.`)
+    if (distanceNum > MAX_DISTANCE_MILES) {
+      toast.error(`Max distance is ${MAX_DISTANCE_MILES} mi.`)
       return
     }
     if (priceCents == null) {
-      toast.error('Weight is out of supported range.')
+      toast.error('Distance is out of supported range.')
       return
     }
     if (!size.trim()) {
@@ -56,7 +56,7 @@ export default function NewRequest() {
       pickup_address: pickup,
       dropoff_address: dropoff,
       package_description: description,
-      package_weight_lbs: weightNum,
+      distance_miles: distanceNum,
       package_size: size.trim() || null,
       package_photo_path: photoPath,
       max_price_cents: priceCents,
@@ -107,11 +107,11 @@ export default function NewRequest() {
           />
         </Field>
         <div className="grid grid-cols-2 gap-4">
-          <Field label={`Weight (max ${MAX_WEIGHT_LBS} lbs)`}>
+          <Field label={`Distance (max ${MAX_DISTANCE_MILES} mi)`}>
             <select
               required
-              value={weightLbs}
-              onChange={(e) => setWeightLbs(e.target.value)}
+              value={distanceMiles}
+              onChange={(e) => setDistanceMiles(e.target.value)}
               className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
             >
               <option value="">Pick a range…</option>

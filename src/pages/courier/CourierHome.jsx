@@ -109,9 +109,9 @@ export default function CourierHome() {
                         </div>
                       </div>
                       <div className="text-slate text-sm">{r.package_description}</div>
-                      {r.package_weight_lbs != null && (
+                      {r.distance_miles != null && (
                         <div className="text-xs text-slate">
-                          Weight: <span className="text-ink">{r.package_weight_lbs} lbs</span>
+                          Distance: <span className="text-ink">{r.distance_miles} mi</span>
                           {r.package_size && <span className="ml-3">Size: <span className="text-ink">{r.package_size}</span></span>}
                         </div>
                       )}
