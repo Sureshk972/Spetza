@@ -4,6 +4,7 @@ import RequireRole from './components/auth/RequireRole.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 import Welcome from './pages/Welcome.jsx'
 import SignIn from './pages/SignIn.jsx'
+import PhoneVerify from './pages/onboarding/PhoneVerify.jsx'
 import ChooseRole from './pages/ChooseRole.jsx'
 import SenderHome from './pages/sender/SenderHome.jsx'
 import NewRequest from './pages/sender/NewRequest.jsx'
@@ -23,6 +24,7 @@ export default function App() {
     <Routes>
       <Route path="/welcome" element={<Welcome />} />
       <Route path="/signin" element={<SignIn />} />
+      <Route path="/verify-phone" element={<RequireAuth><PhoneVerify /></RequireAuth>} />
       <Route path="/choose-role" element={<RequireAuth><ChooseRole /></RequireAuth>} />
       <Route path="/" element={<RequireAuth><RootRedirect /></RequireAuth>} />
       <Route path="/sender" element={<RequireAuth><RequireRole role="sender"><SenderHome /></RequireRole></RequireAuth>} />
