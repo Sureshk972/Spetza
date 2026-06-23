@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import SenderPaymentSection from '../components/SenderPaymentSection.jsx'
 import CourierConnectSection from '../components/CourierConnectSection.jsx'
+import CourierServiceAreaSection from '../components/CourierServiceAreaSection.jsx'
 
 export default function Settings() {
   const { user, profile, signOut, refreshProfile } = useAuth()
@@ -37,6 +38,16 @@ export default function Settings() {
           <div>
             <div className="text-xs uppercase tracking-widest text-slate mb-2">Payment method</div>
             <SenderPaymentSection
+              profile={profile}
+              onProfileChange={refreshProfile}
+            />
+          </div>
+        )}
+
+        {isCourier && (
+          <div>
+            <div className="text-xs uppercase tracking-widest text-slate mb-2">Service area</div>
+            <CourierServiceAreaSection
               profile={profile}
               onProfileChange={refreshProfile}
             />

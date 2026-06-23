@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
+import { useAuth } from '../../context/AuthContext.jsx'
+import { haversineMiles } from '../../lib/geocode.js'
 
 function dollars(cents) {
   return `$${(cents / 100).toFixed(2)}`
@@ -24,9 +26,21 @@ function photoUrl(path) {
 }
 
 export default function CourierHome() {
+  const { profile } = useAuth()
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
   const [accepting, setAccepting] = useState(null)
+
+  const serviceArea =
+    profile?.home_lat != null &&
+    profile?.home_lng != null &&
+    profile?.service_radius_miles != null
+      ? {
+          lat: Number(profile.home_lat),
+          lng: Number(profile.home_lng),
+          radius: Number(profile.service_radius_miles),
+        }
+      : null
 
   const refresh = () => {
     if (!hasSupabaseConfig) {
@@ -48,6 +62,23 @@ export default function CourierHome() {
   useEffect(() => {
     refresh()
   }, [])
+
+  const visibleRequests = useMemo(() => {
+    if (!serviceArea) return []
+    return requests
+      .map((r) => {
+        if (r.pickup_lat == null || r.pickup_lng == null) return null
+        const miles = haversineMiles(
+          serviceArea.lat,
+          serviceArea.lng,
+          Number(r.pickup_lat),
+          Number(r.pickup_lng),
+        )
+        if (miles == null || miles > serviceArea.radius) return null
+        return { ...r, miles_from_you: miles }
+      })
+      .filter(Boolean)
+  }, [requests, serviceArea])
 
   const handleAccept = async (request) => {
     const ok = window.confirm(
@@ -73,6 +104,11 @@ export default function CourierHome() {
         <div>
           <div className="text-xs uppercase tracking-widest text-forest">Courier</div>
           <h1 className="font-serif text-3xl text-ink mt-1">Open requests</h1>
+          {serviceArea && (
+            <div className="text-xs text-slate mt-1">
+              Within {serviceArea.radius} mi of your home
+            </div>
+          )}
         </div>
         <Link to="/settings" className="text-sm text-slate hover:text-ink">Settings</Link>
       </header>
@@ -80,14 +116,21 @@ export default function CourierHome() {
       <div className="mt-10">
         {loading ? (
           <div className="text-slate">Loading…</div>
-        ) : requests.length === 0 ? (
+        ) : !serviceArea ? (
           <div className="text-center py-16 rounded-2xl border border-dashed border-mist">
-            <p className="text-slate">No open requests right now.</p>
+            <p className="text-slate">Set a service area to see open requests.</p>
+            <Link to="/settings" className="inline-block mt-3 text-signal hover:underline">
+              Open settings
+            </Link>
+          </div>
+        ) : visibleRequests.length === 0 ? (
+          <div className="text-center py-16 rounded-2xl border border-dashed border-mist">
+            <p className="text-slate">No open requests in your area right now.</p>
             <p className="text-slate text-sm mt-2">Check back soon.</p>
           </div>
         ) : (
           <ul className="space-y-3">
-            {requests.map((r) => {
+            {visibleRequests.map((r) => {
               const url = photoUrl(r.package_photo_path)
               return (
                 <li key={r.id} className="p-5 rounded-xl border border-mist bg-white">
@@ -109,12 +152,17 @@ export default function CourierHome() {
                         </div>
                       </div>
                       <div className="text-slate text-sm">{r.package_description}</div>
-                      {r.distance_miles != null && (
-                        <div className="text-xs text-slate">
-                          Distance: <span className="text-ink">{r.distance_miles} mi</span>
-                          {r.package_size && <span className="ml-3">Size: <span className="text-ink">{r.package_size}</span></span>}
-                        </div>
-                      )}
+                      <div className="text-xs text-slate">
+                        {r.distance_miles != null && (
+                          <span>Trip: <span className="text-ink">{r.distance_miles} mi</span></span>
+                        )}
+                        <span className="ml-3">
+                          Pickup is <span className="text-ink">{r.miles_from_you.toFixed(1)} mi</span> from you
+                        </span>
+                        {r.package_size && (
+                          <span className="ml-3">Size: <span className="text-ink">{r.package_size}</span></span>
+                        )}
+                      </div>
                     </div>
                     {url && (
                       <img

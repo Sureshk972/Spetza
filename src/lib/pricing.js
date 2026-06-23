@@ -9,7 +9,7 @@ export const TIERS = [
 ]
 
 export function priceForDistance(miles) {
-  if (!Number.isFinite(miles) || miles <= 0 || miles > MAX_DISTANCE_MILES) return null
+  if (!Number.isFinite(miles) || miles < 0 || miles > MAX_DISTANCE_MILES) return null
   for (const t of TIERS) {
     if (miles <= t.upTo) return t.cents
   }

@@ -4,9 +4,12 @@ import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import PackagePhotoInput from '../../components/PackagePhotoInput.jsx'
-import { MAX_DISTANCE_MILES, priceForDistance, tierOptions, feeFor, totalFor } from '../../lib/pricing.js'
+import { MAX_DISTANCE_MILES, priceForDistance, feeFor, totalFor } from '../../lib/pricing.js'
+import { geocodeAddress, haversineMiles } from '../../lib/geocode.js'
 
 const money = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
+
+const blankGeo = { status: 'idle', lat: null, lng: null, formatted: null, error: null }
 
 export default function EditRequest() {
   const { id } = useParams()
@@ -16,8 +19,9 @@ export default function EditRequest() {
   const [request, setRequest] = useState(null)
   const [pickup, setPickup] = useState('')
   const [dropoff, setDropoff] = useState('')
+  const [pickupGeo, setPickupGeo] = useState(blankGeo)
+  const [dropoffGeo, setDropoffGeo] = useState(blankGeo)
   const [description, setDescription] = useState('')
-  const [distanceMiles, setDistanceMiles] = useState('')
   const [size, setSize] = useState('')
   const [photoPath, setPhotoPath] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -42,9 +46,26 @@ export default function EditRequest() {
           setPickup(data.pickup_address)
           setDropoff(data.dropoff_address)
           setDescription(data.package_description)
-          setDistanceMiles(data.distance_miles != null ? String(data.distance_miles) : '')
           setSize(data.package_size ?? '')
           setPhotoPath(data.package_photo_path ?? null)
+          if (data.pickup_lat != null && data.pickup_lng != null) {
+            setPickupGeo({
+              status: 'ok',
+              lat: Number(data.pickup_lat),
+              lng: Number(data.pickup_lng),
+              formatted: data.pickup_address,
+              error: null,
+            })
+          }
+          if (data.dropoff_lat != null && data.dropoff_lng != null) {
+            setDropoffGeo({
+              status: 'ok',
+              lat: Number(data.dropoff_lat),
+              lng: Number(data.dropoff_lng),
+              formatted: data.dropoff_address,
+              error: null,
+            })
+          }
         }
         setLoading(false)
       })
@@ -53,10 +74,35 @@ export default function EditRequest() {
     }
   }, [id, user])
 
-  const distanceNum = Number(distanceMiles)
-  const priceCents = useMemo(() => priceForDistance(distanceNum), [distanceNum])
+  const distance = useMemo(() => {
+    if (pickupGeo.status !== 'ok' || dropoffGeo.status !== 'ok') return null
+    return haversineMiles(pickupGeo.lat, pickupGeo.lng, dropoffGeo.lat, dropoffGeo.lng)
+  }, [pickupGeo, dropoffGeo])
+
+  const overMax = distance != null && distance > MAX_DISTANCE_MILES
+  const priceCents = overMax ? null : priceForDistance(distance ?? NaN)
   const feeCents = feeFor(priceCents)
   const totalCents = totalFor(priceCents)
+
+  const handleGeocode = async (address, setGeo) => {
+    if (!address.trim()) {
+      setGeo(blankGeo)
+      return
+    }
+    setGeo({ ...blankGeo, status: 'loading' })
+    const result = await geocodeAddress(address)
+    if (result.error) {
+      setGeo({ ...blankGeo, status: 'error', error: result.error })
+      return
+    }
+    setGeo({
+      status: 'ok',
+      lat: result.lat,
+      lng: result.lng,
+      formatted: result.formattedAddress,
+      error: null,
+    })
+  }
 
   const handleSave = async (e) => {
     e.preventDefault()
@@ -65,12 +111,16 @@ export default function EditRequest() {
       toast.error('Only open requests can be edited.')
       return
     }
-    if (!Number.isFinite(distanceNum) || distanceNum <= 0) {
-      toast.error('Pick a distance range.')
+    if (pickupGeo.status !== 'ok' || dropoffGeo.status !== 'ok') {
+      toast.error('Both addresses need to resolve before saving.')
       return
     }
-    if (distanceNum > MAX_DISTANCE_MILES) {
-      toast.error(`Max distance is ${MAX_DISTANCE_MILES} mi.`)
+    if (distance == null) {
+      toast.error('Could not compute distance.')
+      return
+    }
+    if (distance > MAX_DISTANCE_MILES) {
+      toast.error(`That route is ${distance.toFixed(1)} mi — max is ${MAX_DISTANCE_MILES} mi.`)
       return
     }
     if (priceCents == null) {
@@ -89,10 +139,14 @@ export default function EditRequest() {
     const { error } = await supabase
       .from('delivery_requests')
       .update({
-        pickup_address: pickup,
-        dropoff_address: dropoff,
+        pickup_address: pickupGeo.formatted || pickup,
+        pickup_lat: pickupGeo.lat,
+        pickup_lng: pickupGeo.lng,
+        dropoff_address: dropoffGeo.formatted || dropoff,
+        dropoff_lat: dropoffGeo.lat,
+        dropoff_lng: dropoffGeo.lng,
         package_description: description,
-        distance_miles: distanceNum,
+        distance_miles: Number(distance.toFixed(2)),
         package_size: size.trim() || null,
         package_photo_path: photoPath,
         max_price_cents: priceCents,
@@ -167,26 +221,28 @@ export default function EditRequest() {
       )}
 
       <form onSubmit={handleSave} className="mt-8 space-y-5">
-        <Field label="Pickup address">
-          <input
-            type="text"
-            required
-            disabled={locked}
-            value={pickup}
-            onChange={(e) => setPickup(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none disabled:opacity-60"
-          />
-        </Field>
-        <Field label="Dropoff address">
-          <input
-            type="text"
-            required
-            disabled={locked}
-            value={dropoff}
-            onChange={(e) => setDropoff(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none disabled:opacity-60"
-          />
-        </Field>
+        <AddressField
+          label="Pickup address"
+          value={pickup}
+          disabled={locked}
+          onChange={(v) => {
+            setPickup(v)
+            if (pickupGeo.status !== 'idle') setPickupGeo(blankGeo)
+          }}
+          onBlur={() => handleGeocode(pickup, setPickupGeo)}
+          geo={pickupGeo}
+        />
+        <AddressField
+          label="Dropoff address"
+          value={dropoff}
+          disabled={locked}
+          onChange={(v) => {
+            setDropoff(v)
+            if (dropoffGeo.status !== 'idle') setDropoffGeo(blankGeo)
+          }}
+          onBlur={() => handleGeocode(dropoff, setDropoffGeo)}
+          geo={dropoffGeo}
+        />
         <Field label="Package description">
           <textarea
             required
@@ -197,45 +253,37 @@ export default function EditRequest() {
             className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none disabled:opacity-60"
           />
         </Field>
-        <div className="grid grid-cols-2 gap-4">
-          <Field label={`Distance (max ${MAX_DISTANCE_MILES} mi)`}>
-            <select
-              required
-              disabled={locked}
-              value={distanceMiles}
-              onChange={(e) => setDistanceMiles(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none disabled:opacity-60"
-            >
-              <option value="">Pick a range…</option>
-              {tierOptions().map((t) => (
-                <option key={t.upTo} value={t.upTo}>
-                  {t.label} — {t.priceLabel}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Approx. size">
-            <input
-              type="text"
-              required
-              disabled={locked}
-              value={size}
-              onChange={(e) => setSize(e.target.value)}
-              placeholder="Shoebox, envelope, etc."
-              className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none disabled:opacity-60"
-            />
-          </Field>
-        </div>
+        <Field label="Approx. size">
+          <input
+            type="text"
+            required
+            disabled={locked}
+            value={size}
+            onChange={(e) => setSize(e.target.value)}
+            placeholder="Shoebox, envelope, etc."
+            className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none disabled:opacity-60"
+          />
+        </Field>
         <Field label="Photo of the package">
           <PackagePhotoInput path={photoPath} onChange={setPhotoPath} disabled={locked} />
         </Field>
+
         <div className="rounded-lg bg-mist px-4 py-3 space-y-1.5">
+          <Row
+            label="Distance"
+            value={distance == null ? '—' : `${distance.toFixed(1)} mi`}
+          />
           <Row label="Delivery" value={money(priceCents)} />
           <Row label="Service fee (15%)" value={money(feeCents)} />
           <div className="border-t border-slate/20 pt-1.5 flex justify-between items-baseline">
             <span className="text-xs uppercase tracking-widest text-ink">Total</span>
             <span className="font-serif text-xl text-ink">{money(totalCents)}</span>
           </div>
+          {overMax && (
+            <div className="text-xs text-signal pt-1">
+              Over the {MAX_DISTANCE_MILES} mi limit.
+            </div>
+          )}
         </div>
 
         {!locked && (
@@ -258,6 +306,38 @@ export default function EditRequest() {
           </div>
         )}
       </form>
+    </div>
+  )
+}
+
+function AddressField({ label, value, disabled, onChange, onBlur, geo }) {
+  return (
+    <Field label={label}>
+      <input
+        type="text"
+        required
+        disabled={disabled}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
+        className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none disabled:opacity-60"
+      />
+      <GeoCaption geo={geo} />
+    </Field>
+  )
+}
+
+function GeoCaption({ geo }) {
+  if (geo.status === 'idle') return null
+  if (geo.status === 'loading') {
+    return <div className="text-xs text-slate mt-1.5">Looking up address…</div>
+  }
+  if (geo.status === 'error') {
+    return <div className="text-xs text-signal mt-1.5">{geo.error}</div>
+  }
+  return (
+    <div className="text-xs text-slate mt-1.5 truncate">
+      <span className="text-ink">✓</span> {geo.formatted}
     </div>
   )
 }
