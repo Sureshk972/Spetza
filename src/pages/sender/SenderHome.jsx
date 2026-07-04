@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
+import RatingPrompt from '../../components/RatingPrompt.jsx'
+import RatingBadge from '../../components/RatingBadge.jsx'
 
 const statusStyles = {
   open: 'bg-mist text-slate',
@@ -27,25 +29,31 @@ function timeLabel(iso) {
 }
 
 export default function SenderHome() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [requests, setRequests] = useState([])
+  const [ratedIds, setRatedIds] = useState(new Set())
   const [loading, setLoading] = useState(true)
   const [cancelling, setCancelling] = useState(null)
 
-  const refresh = () => {
+  const refresh = async () => {
     if (!user || !hasSupabaseConfig) {
       setLoading(false)
       return
     }
-    supabase
-      .from('delivery_requests')
-      .select('*')
-      .eq('sender_id', user.id)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        setRequests(data ?? [])
-        setLoading(false)
-      })
+    const [{ data: reqs }, { data: rats }] = await Promise.all([
+      supabase
+        .from('delivery_requests')
+        .select('*')
+        .eq('sender_id', user.id)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('ratings')
+        .select('delivery_request_id')
+        .eq('rater_id', user.id),
+    ])
+    setRequests(reqs ?? [])
+    setRatedIds(new Set((rats ?? []).map((r) => r.delivery_request_id)))
+    setLoading(false)
   }
 
   useEffect(() => {
@@ -76,6 +84,9 @@ export default function SenderHome() {
         <div>
           <div className="text-xs uppercase tracking-widest text-signal">Sender</div>
           <h1 className="font-serif text-3xl text-ink mt-1">Your requests</h1>
+          <div className="mt-1">
+            <RatingBadge avg={profile?.rating_avg} count={profile?.rating_count} />
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <Link to="/settings" className="text-sm text-slate hover:text-ink">Settings</Link>
@@ -160,7 +171,18 @@ export default function SenderHome() {
                       {inner}
                     </Link>
                   ) : (
-                    <div className="p-5 rounded-xl border border-mist bg-white">{inner}</div>
+                    <div className="p-5 rounded-xl border border-mist bg-white">
+                      {inner}
+                      {r.status === 'delivered' && r.courier_id && !ratedIds.has(r.id) && (
+                        <RatingPrompt
+                          request={r}
+                          raterId={user.id}
+                          rateeId={r.courier_id}
+                          rateeLabel="courier"
+                          onSubmitted={refresh}
+                        />
+                      )}
+                    </div>
                   )}
                 </li>
               )
