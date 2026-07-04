@@ -7,6 +7,7 @@ import { feeFor, totalFor } from '../../lib/pricing.js'
 import RouteMap from '../../components/RouteMap.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 
 const dollars = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
 
@@ -86,6 +87,13 @@ export default function RequestDetail() {
   }
 
   useEffect(() => { load() }, [id, user?.id])
+
+  useRealtimeRefresh({
+    channelName: id ? `sender-req:${id}` : null,
+    table: 'delivery_requests',
+    filter: id ? `id=eq.${id}` : null,
+    refresh: load,
+  })
 
   const handleCancel = async () => {
     const ok = window.confirm(

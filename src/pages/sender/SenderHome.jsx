@@ -4,6 +4,7 @@ import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 
 const statusStyles = {
   open: 'bg-mist text-slate',
@@ -77,6 +78,14 @@ export default function SenderHome() {
   useEffect(() => {
     refresh()
   }, [user])
+
+  useRealtimeRefresh({
+    channelName: user ? `sender-home:${user.id}` : null,
+    table: 'delivery_requests',
+    filter: user ? `sender_id=eq.${user.id}` : null,
+    refresh,
+    enabled: !!user,
+  })
 
   const handleCancel = async (request) => {
     const ok = window.confirm(
