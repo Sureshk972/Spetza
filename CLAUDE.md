@@ -34,6 +34,7 @@ Set in `profiles.account_type` at onboarding via `ChooseRole`. `RequireRole` enf
 - Verification: `/courier/verify` uploads selfie + ID front + ID back to private `courier-verification` bucket; sets status=pending; accept-delivery is gated on `verification_status=approved`. Admin queue at `/admin` (gated on `profiles.is_admin`) approves/rejects via `review-verification` edge fn
 - Route map: `RouteMap` component (Leaflet + OSM tiles, no API key) shown on new-request preview and on courier active-delivery cards
 - Ratings: mutual 5-star + optional comment after delivery. Trigger enforces rater/ratee were on the delivery and it's delivered; aggregate denormalized to `profiles.rating_avg` + `rating_count`. Prompts inline on delivered cards; badges in role headers
+- Counterparty display: `public_profiles` view (id, first_name, rating_avg, rating_count) — used to show courier chip on sender's assigned requests
 - Storage: `package-photos` public bucket with sender-scoped RLS; `courier-verification` private bucket with owner + admin read
 
 ## Not yet wired
