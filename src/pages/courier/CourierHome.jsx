@@ -144,6 +144,24 @@ export default function CourierHome() {
     refresh()
   }
 
+  const handleAbandon = async (request) => {
+    const ok = window.confirm(
+      "Abandon this delivery? It will go back to the open list for another courier.",
+    )
+    if (!ok) return
+    setProgressing(request.id)
+    const { error } = await supabase.functions.invoke(
+      'cancel-delivery',
+      { body: { delivery_request_id: request.id } },
+    )
+    setProgressing(null)
+    if (error) {
+      alert(error.message)
+      return
+    }
+    refresh()
+  }
+
   return (
     <div className="min-h-full px-6 py-12 max-w-3xl mx-auto">
       <header className="flex items-center justify-between">
@@ -191,13 +209,24 @@ export default function CourierHome() {
                   <div className="text-right shrink-0 space-y-2">
                     <div className="font-serif text-xl text-ink">{dollars(r.max_price_cents)}</div>
                     {r.status === 'accepted' ? (
-                      <button
-                        onClick={() => handlePickedUp(r)}
-                        disabled={progressing === r.id}
-                        className="px-3 py-1 rounded-lg bg-white border border-forest text-forest text-xs font-medium hover:bg-forest hover:text-cream transition-colors disabled:opacity-50"
-                      >
-                        {progressing === r.id ? 'Saving…' : 'Mark picked up'}
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handlePickedUp(r)}
+                          disabled={progressing === r.id}
+                          className="px-3 py-1 rounded-lg bg-white border border-forest text-forest text-xs font-medium hover:bg-forest hover:text-cream transition-colors disabled:opacity-50"
+                        >
+                          {progressing === r.id ? 'Saving…' : 'Mark picked up'}
+                        </button>
+                        <div>
+                          <button
+                            onClick={() => handleAbandon(r)}
+                            disabled={progressing === r.id}
+                            className="px-2 py-0.5 rounded-lg text-xs text-slate hover:text-ink transition-colors disabled:opacity-50"
+                          >
+                            Abandon
+                          </button>
+                        </div>
+                      </>
                     ) : (
                       <button
                         onClick={() => handleDelivered(r)}
