@@ -27,11 +27,12 @@ Set in `profiles.account_type` at onboarding via `ChooseRole`. `RequireRole` enf
 
 ## Wired
 
-- Auth: password + magic-link fallback
-- Sender: tiered weight pricing ($10/$15/$20/$25 by weight, max 20 lbs), required package photo, edit/cancel for open requests, human-readable order numbers (SPZ-00001)
-- Courier: accept flow with manual-capture Stripe Connect PI, Connect onboarding
+- Auth: password + magic-link fallback + Twilio Verify phone OTP at signup (`RequireAuth` blocks unverified users at `/verify-phone`)
+- Sender: distance-based pricing (geocoded addresses, priced per mile), required package photo, edit/cancel for open requests, human-readable order numbers (SPZ-00001), saved payment method via SetupIntent
+- Courier: Connect Express onboarding, service area (home + radius), open-requests list filtered by radius via haversine
+- Payment loop: accept authorizes a manual-capture PI via Stripe Connect with `on_behalf_of` + application fee; mark-delivered captures it (`complete-delivery` edge fn)
 - Storage: `package-photos` public bucket with sender-scoped RLS
 
 ## Not yet wired
 
-Maps/routing (the differentiator), capture-on-delivery, courier verification, Capacitor native shell.
+Map UI (pickup→dropoff visualization), courier verification queue + admin approval, Capacitor native shell, push notifications, transactional email.
