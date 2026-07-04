@@ -30,8 +30,9 @@ export default function SenderHome() {
   const { user } = useAuth()
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
+  const [cancelling, setCancelling] = useState(null)
 
-  useEffect(() => {
+  const refresh = () => {
     if (!user || !hasSupabaseConfig) {
       setLoading(false)
       return
@@ -45,7 +46,29 @@ export default function SenderHome() {
         setRequests(data ?? [])
         setLoading(false)
       })
+  }
+
+  useEffect(() => {
+    refresh()
   }, [user])
+
+  const handleCancel = async (request) => {
+    const ok = window.confirm(
+      `Cancel this delivery? The ${dollars(request.max_price_cents)} hold on your card will be released.`,
+    )
+    if (!ok) return
+    setCancelling(request.id)
+    const { error } = await supabase.functions.invoke(
+      'cancel-delivery',
+      { body: { delivery_request_id: request.id } },
+    )
+    setCancelling(null)
+    if (error) {
+      alert(error.message)
+      return
+    }
+    refresh()
+  }
 
   return (
     <div className="min-h-full px-6 py-12 max-w-3xl mx-auto">
@@ -105,11 +128,25 @@ export default function SenderHome() {
                       </div>
                     )}
                   </div>
-                  <div className="text-right shrink-0">
+                  <div className="text-right shrink-0 space-y-2">
                     <div className="font-serif text-xl text-ink">{dollars(r.max_price_cents)}</div>
-                    <span className={`inline-block mt-2 px-2 py-0.5 text-xs rounded-full ${statusStyles[r.status] ?? 'bg-mist text-slate'}`}>
+                    <span className={`inline-block px-2 py-0.5 text-xs rounded-full ${statusStyles[r.status] ?? 'bg-mist text-slate'}`}>
                       {r.status === 'open' ? 'Edit Request' : r.status}
                     </span>
+                    {r.status === 'accepted' && (
+                      <div>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            handleCancel(r)
+                          }}
+                          disabled={cancelling === r.id}
+                          className="mt-1 px-2 py-0.5 rounded-lg border border-mist text-xs text-slate hover:border-ink hover:text-ink transition-colors disabled:opacity-50"
+                        >
+                          {cancelling === r.id ? 'Cancelling…' : 'Cancel'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )
