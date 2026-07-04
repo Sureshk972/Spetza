@@ -177,6 +177,39 @@ export default function CourierHome() {
         <Link to="/settings" className="text-sm text-slate hover:text-ink">Settings</Link>
       </header>
 
+      {profile?.verification_status !== 'approved' && (
+        <div className="mt-8 p-4 rounded-xl border border-signal/40 bg-signal/5">
+          {profile?.verification_status === 'pending' ? (
+            <>
+              <div className="text-sm text-ink font-medium">Verification pending</div>
+              <div className="text-sm text-slate mt-1">
+                We're reviewing your documents. You can't accept deliveries until we approve.
+              </div>
+            </>
+          ) : profile?.verification_status === 'rejected' ? (
+            <>
+              <div className="text-sm text-ink font-medium">Verification not approved</div>
+              {profile.verification_notes && (
+                <div className="text-sm text-slate mt-1">{profile.verification_notes}</div>
+              )}
+              <Link to="/courier/verify" className="inline-block mt-3 text-signal hover:underline text-sm">
+                Update documents
+              </Link>
+            </>
+          ) : (
+            <>
+              <div className="text-sm text-ink font-medium">Verify your identity to accept deliveries</div>
+              <div className="text-sm text-slate mt-1">
+                We check ID before you can pick up packages for others.
+              </div>
+              <Link to="/courier/verify" className="inline-block mt-3 text-signal hover:underline text-sm">
+                Start verification
+              </Link>
+            </>
+          )}
+        </div>
+      )}
+
       {active.length > 0 && (
         <section className="mt-10">
           <div className="text-xs uppercase tracking-widest text-slate mb-3">
@@ -306,7 +339,10 @@ export default function CourierHome() {
                       <div className="font-serif text-xl text-ink">{dollars(r.max_price_cents)}</div>
                       <button
                         onClick={() => handleAccept(r)}
-                        disabled={accepting === r.id}
+                        disabled={
+                          accepting === r.id ||
+                          profile?.verification_status !== 'approved'
+                        }
                         className="mt-2 px-3 py-1 rounded-lg bg-forest text-cream text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                       >
                         {accepting === r.id ? 'Accepting…' : 'Accept'}

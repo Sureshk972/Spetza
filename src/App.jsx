@@ -10,6 +10,9 @@ import SenderHome from './pages/sender/SenderHome.jsx'
 import NewRequest from './pages/sender/NewRequest.jsx'
 import EditRequest from './pages/sender/EditRequest.jsx'
 import CourierHome from './pages/courier/CourierHome.jsx'
+import CourierVerify from './pages/courier/CourierVerify.jsx'
+import RequireAdmin from './components/auth/RequireAdmin.jsx'
+import AdminVerifications from './pages/admin/AdminVerifications.jsx'
 import Settings from './pages/Settings.jsx'
 
 function RootRedirect() {
@@ -31,6 +34,8 @@ export default function App() {
       <Route path="/sender/new" element={<RequireAuth><RequireRole role="sender"><NewRequest /></RequireRole></RequireAuth>} />
       <Route path="/sender/requests/:id/edit" element={<RequireAuth><RequireRole role="sender"><EditRequest /></RequireRole></RequireAuth>} />
       <Route path="/courier" element={<RequireAuth><RequireRole role="courier"><CourierHome /></RequireRole></RequireAuth>} />
+      <Route path="/courier/verify" element={<RequireAuth><RequireRole role="courier"><CourierVerify /></RequireRole></RequireAuth>} />
+      <Route path="/admin" element={<RequireAuth><RequireAdmin><AdminVerifications /></RequireAdmin></RequireAuth>} />
       <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
     </Routes>
   )
