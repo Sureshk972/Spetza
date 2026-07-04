@@ -188,6 +188,7 @@ export default function SenderHome() {
                   </div>
                 </div>
               )
+              const canRate = r.status === 'delivered' && r.courier_id && !ratedIds.has(r.id)
               return (
                 <li key={r.id}>
                   {editable ? (
@@ -197,19 +198,32 @@ export default function SenderHome() {
                     >
                       {inner}
                     </Link>
-                  ) : (
+                  ) : canRate ? (
                     <div className="p-5 rounded-xl border border-mist bg-white">
                       {inner}
-                      {r.status === 'delivered' && r.courier_id && !ratedIds.has(r.id) && (
-                        <RatingPrompt
-                          request={r}
-                          raterId={user.id}
-                          rateeId={r.courier_id}
-                          rateeLabel="courier"
-                          onSubmitted={refresh}
-                        />
-                      )}
+                      <RatingPrompt
+                        request={r}
+                        raterId={user.id}
+                        rateeId={r.courier_id}
+                        rateeLabel="courier"
+                        onSubmitted={refresh}
+                      />
+                      <div className="mt-3 pt-3 border-t border-mist text-right">
+                        <Link
+                          to={`/sender/requests/${r.id}`}
+                          className="text-xs text-slate hover:text-ink"
+                        >
+                          View details &rarr;
+                        </Link>
+                      </div>
                     </div>
+                  ) : (
+                    <Link
+                      to={`/sender/requests/${r.id}`}
+                      className="block p-5 rounded-xl border border-mist bg-white hover:border-signal transition-colors"
+                    >
+                      {inner}
+                    </Link>
                   )}
                 </li>
               )
