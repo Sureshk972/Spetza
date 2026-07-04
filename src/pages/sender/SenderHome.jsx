@@ -32,6 +32,7 @@ export default function SenderHome() {
   const { user, profile } = useAuth()
   const [requests, setRequests] = useState([])
   const [ratedIds, setRatedIds] = useState(new Set())
+  const [couriers, setCouriers] = useState({})
   const [loading, setLoading] = useState(true)
   const [cancelling, setCancelling] = useState(null)
 
@@ -51,8 +52,25 @@ export default function SenderHome() {
         .select('delivery_request_id')
         .eq('rater_id', user.id),
     ])
-    setRequests(reqs ?? [])
+    const rows = reqs ?? []
+    setRequests(rows)
     setRatedIds(new Set((rats ?? []).map((r) => r.delivery_request_id)))
+
+    const courierIds = Array.from(
+      new Set(rows.map((r) => r.courier_id).filter(Boolean)),
+    )
+    if (courierIds.length > 0) {
+      const { data: profs } = await supabase
+        .from('public_profiles')
+        .select('id, first_name, rating_avg, rating_count')
+        .in('id', courierIds)
+      const map = {}
+      for (const p of profs ?? []) map[p.id] = p
+      setCouriers(map)
+    } else {
+      setCouriers({})
+    }
+
     setLoading(false)
   }
 
@@ -113,6 +131,7 @@ export default function SenderHome() {
           <ul className="space-y-3">
             {requests.map((r) => {
               const editable = r.status === 'open'
+              const courier = r.courier_id ? couriers[r.courier_id] : null
               const inner = (
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 space-y-2">
@@ -132,6 +151,14 @@ export default function SenderHome() {
                       </div>
                     </div>
                     <div className="text-slate text-sm truncate">{r.package_description}</div>
+                    {courier && (
+                      <div className="flex items-center gap-2 text-xs text-slate">
+                        <span className="text-slate/70">Courier</span>
+                        <span className="text-ink">{courier.first_name || 'Assigned'}</span>
+                        <span className="text-slate/40">·</span>
+                        <RatingBadge avg={courier.rating_avg} count={courier.rating_count} />
+                      </div>
+                    )}
                     {r.distance_miles != null && (
                       <div className="text-xs text-slate">
                         Distance: <span className="text-ink">{r.distance_miles} mi</span>
