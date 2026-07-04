@@ -36,6 +36,7 @@ Set in `profiles.account_type` at onboarding via `ChooseRole`. `RequireRole` enf
 - Ratings: mutual 5-star + optional comment after delivery. Trigger enforces rater/ratee were on the delivery and it's delivered; aggregate denormalized to `profiles.rating_avg` + `rating_count`. Prompts inline on delivered cards; badges in role headers
 - Counterparty display: `public_profiles` view (id, first_name, rating_avg, rating_count) — used to show courier chip on sender's assigned requests
 - Sender request detail: `/sender/requests/:id` — status pill, route map, courier chip, lifecycle timeline with timestamps, payment breakdown, inline cancel and rating
+- Courier delivery detail: `/courier/deliveries/:id` — mirror view with sender chip, "Your take" breakdown (delivery - platform fee), inline pickup/deliver/abandon and rating
 - Storage: `package-photos` public bucket with sender-scoped RLS; `courier-verification` private bucket with owner + admin read
 
 ## Not yet wired
