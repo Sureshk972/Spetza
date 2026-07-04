@@ -12,6 +12,7 @@ import EditRequest from './pages/sender/EditRequest.jsx'
 import RequestDetail from './pages/sender/RequestDetail.jsx'
 import CourierHome from './pages/courier/CourierHome.jsx'
 import CourierVerify from './pages/courier/CourierVerify.jsx'
+import CourierDelivery from './pages/courier/CourierDelivery.jsx'
 import RequireAdmin from './components/auth/RequireAdmin.jsx'
 import AdminVerifications from './pages/admin/AdminVerifications.jsx'
 import Settings from './pages/Settings.jsx'
@@ -37,6 +38,7 @@ export default function App() {
       <Route path="/sender/requests/:id" element={<RequireAuth><RequireRole role="sender"><RequestDetail /></RequireRole></RequireAuth>} />
       <Route path="/courier" element={<RequireAuth><RequireRole role="courier"><CourierHome /></RequireRole></RequireAuth>} />
       <Route path="/courier/verify" element={<RequireAuth><RequireRole role="courier"><CourierVerify /></RequireRole></RequireAuth>} />
+      <Route path="/courier/deliveries/:id" element={<RequireAuth><RequireRole role="courier"><CourierDelivery /></RequireRole></RequireAuth>} />
       <Route path="/admin" element={<RequireAuth><RequireAdmin><AdminVerifications /></RequireAdmin></RequireAuth>} />
       <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
     </Routes>

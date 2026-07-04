@@ -305,6 +305,14 @@ export default function CourierHome() {
                     )}
                   </div>
                 </div>
+                <div className="mt-3 pt-3 border-t border-forest/20 text-right">
+                  <Link
+                    to={`/courier/deliveries/${r.id}`}
+                    className="text-xs text-slate hover:text-ink"
+                  >
+                    View details &rarr;
+                  </Link>
+                </div>
               </li>
             ))}
           </ul>
@@ -340,6 +348,14 @@ export default function CourierHome() {
                     rateeLabel="sender"
                     onSubmitted={refresh}
                   />
+                  <div className="mt-3 pt-3 border-t border-mist text-right">
+                    <Link
+                      to={`/courier/deliveries/${r.id}`}
+                      className="text-xs text-slate hover:text-ink"
+                    >
+                      View details &rarr;
+                    </Link>
+                  </div>
                 </li>
               ))}
           </ul>
