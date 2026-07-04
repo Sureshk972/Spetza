@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import RouteMap from '../../components/RouteMap.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 
 const dollars = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
 
@@ -85,6 +86,13 @@ export default function CourierDelivery() {
   }
 
   useEffect(() => { load() }, [id, user?.id])
+
+  useRealtimeRefresh({
+    channelName: id ? `courier-delivery:${id}` : null,
+    table: 'delivery_requests',
+    filter: id ? `id=eq.${id}` : null,
+    refresh: load,
+  })
 
   const handlePickedUp = async () => {
     setActing(true)

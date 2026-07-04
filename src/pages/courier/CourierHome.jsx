@@ -6,6 +6,7 @@ import { haversineMiles } from '../../lib/geocode.js'
 import RouteMap from '../../components/RouteMap.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
+import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 
 function dollars(cents) {
   return `$${(cents / 100).toFixed(2)}`
@@ -96,6 +97,21 @@ export default function CourierHome() {
   useEffect(() => {
     refresh()
   }, [user?.id])
+
+  useRealtimeRefresh({
+    channelName: 'courier-home:open',
+    table: 'delivery_requests',
+    filter: 'status=eq.open',
+    refresh,
+  })
+
+  useRealtimeRefresh({
+    channelName: user ? `courier-home:mine:${user.id}` : null,
+    table: 'delivery_requests',
+    filter: user ? `courier_id=eq.${user.id}` : null,
+    refresh,
+    enabled: !!user,
+  })
 
   const visibleRequests = useMemo(() => {
     if (!serviceArea) return []
