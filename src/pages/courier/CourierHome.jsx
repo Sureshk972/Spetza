@@ -26,10 +26,12 @@ function photoUrl(path) {
 }
 
 export default function CourierHome() {
-  const { profile } = useAuth()
+  const { profile, user } = useAuth()
   const [requests, setRequests] = useState([])
+  const [active, setActive] = useState([])
   const [loading, setLoading] = useState(true)
   const [accepting, setAccepting] = useState(null)
+  const [progressing, setProgressing] = useState(null)
 
   const serviceArea =
     profile?.home_lat != null &&
@@ -48,20 +50,30 @@ export default function CourierHome() {
       return
     }
     setLoading(true)
-    supabase
-      .from('delivery_requests')
-      .select('*')
-      .eq('status', 'open')
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        setRequests(data ?? [])
-        setLoading(false)
-      })
+    Promise.all([
+      supabase
+        .from('delivery_requests')
+        .select('*')
+        .eq('status', 'open')
+        .order('created_at', { ascending: false }),
+      user
+        ? supabase
+            .from('delivery_requests')
+            .select('*')
+            .eq('courier_id', user.id)
+            .in('status', ['accepted', 'picked_up'])
+            .order('accepted_at', { ascending: false })
+        : Promise.resolve({ data: [] }),
+    ]).then(([openRes, activeRes]) => {
+      setRequests(openRes.data ?? [])
+      setActive(activeRes.data ?? [])
+      setLoading(false)
+    })
   }
 
   useEffect(() => {
     refresh()
-  }, [])
+  }, [user?.id])
 
   const visibleRequests = useMemo(() => {
     if (!serviceArea) return []
@@ -98,6 +110,40 @@ export default function CourierHome() {
     refresh()
   }
 
+  const handlePickedUp = async (request) => {
+    setProgressing(request.id)
+    const { error } = await supabase
+      .from('delivery_requests')
+      .update({ status: 'picked_up', picked_up_at: new Date().toISOString() })
+      .eq('id', request.id)
+      .eq('courier_id', user.id)
+      .eq('status', 'accepted')
+    setProgressing(null)
+    if (error) {
+      alert(error.message)
+      return
+    }
+    refresh()
+  }
+
+  const handleDelivered = async (request) => {
+    const ok = window.confirm(
+      `Confirm delivered? The sender will be charged ${dollars(request.max_price_cents)}.`,
+    )
+    if (!ok) return
+    setProgressing(request.id)
+    const { error } = await supabase.functions.invoke(
+      'complete-delivery',
+      { body: { delivery_request_id: request.id } },
+    )
+    setProgressing(null)
+    if (error) {
+      alert(error.message)
+      return
+    }
+    refresh()
+  }
+
   return (
     <div className="min-h-full px-6 py-12 max-w-3xl mx-auto">
       <header className="flex items-center justify-between">
@@ -112,6 +158,62 @@ export default function CourierHome() {
         </div>
         <Link to="/settings" className="text-sm text-slate hover:text-ink">Settings</Link>
       </header>
+
+      {active.length > 0 && (
+        <section className="mt-10">
+          <div className="text-xs uppercase tracking-widest text-slate mb-3">
+            Your active deliveries
+          </div>
+          <ul className="space-y-3">
+            {active.map((r) => (
+              <li key={r.id} className="p-5 rounded-xl border border-forest/20 bg-forest/5">
+                <div className="flex items-start gap-4">
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-slate">
+                      <span>{r.order_number}</span>
+                      <span className="text-slate/50">•</span>
+                      <span className="text-forest">
+                        {r.status === 'accepted' ? 'Awaiting pickup' : 'In transit'}
+                      </span>
+                    </div>
+                    <div className="space-y-0.5 text-sm">
+                      <div className="text-slate">
+                        <span className="text-slate/70 mr-2">From</span>
+                        <span className="text-ink">{r.pickup_address}</span>
+                      </div>
+                      <div className="text-slate">
+                        <span className="text-slate/70 mr-2">To</span>
+                        <span className="text-ink">{r.dropoff_address}</span>
+                      </div>
+                    </div>
+                    <div className="text-slate text-sm">{r.package_description}</div>
+                  </div>
+                  <div className="text-right shrink-0 space-y-2">
+                    <div className="font-serif text-xl text-ink">{dollars(r.max_price_cents)}</div>
+                    {r.status === 'accepted' ? (
+                      <button
+                        onClick={() => handlePickedUp(r)}
+                        disabled={progressing === r.id}
+                        className="px-3 py-1 rounded-lg bg-white border border-forest text-forest text-xs font-medium hover:bg-forest hover:text-cream transition-colors disabled:opacity-50"
+                      >
+                        {progressing === r.id ? 'Saving…' : 'Mark picked up'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleDelivered(r)}
+                        disabled={progressing === r.id}
+                        className="px-3 py-1 rounded-lg bg-forest text-cream text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                      >
+                        {progressing === r.id ? 'Capturing…' : 'Mark delivered'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="mt-10">
         {loading ? (
