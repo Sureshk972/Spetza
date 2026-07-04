@@ -37,6 +37,7 @@ Set in `profiles.account_type` at onboarding via `ChooseRole`. `RequireRole` enf
 - Counterparty display: `public_profiles` view (id, first_name, rating_avg, rating_count) — used to show courier chip on sender's assigned requests
 - Sender request detail: `/sender/requests/:id` — status pill, route map, courier chip, lifecycle timeline with timestamps, payment breakdown, inline cancel and rating
 - Courier delivery detail: `/courier/deliveries/:id` — mirror view with sender chip, "Your take" breakdown (delivery - platform fee), inline pickup/deliver/abandon and rating
+- Realtime: `useRealtimeRefresh` hook subscribes to postgres_changes on delivery_requests and refetches. Wired on SenderHome, RequestDetail, CourierHome (open pool + own deliveries), CourierDelivery
 - Storage: `package-photos` public bucket with sender-scoped RLS; `courier-verification` private bucket with owner + admin read
 
 ## Not yet wired
