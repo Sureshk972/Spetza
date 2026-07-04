@@ -33,13 +33,16 @@ Deno.serve(async (req) => {
   const { delivery_request_id } = await req.json().catch(() => ({}));
   if (!delivery_request_id) return json({ error: "missing delivery_request_id" }, 400);
 
-  // Courier (caller) must be a courier with Connect ready.
+  // Courier (caller) must be a verified courier with Connect ready.
   const { data: courier } = await supabase
     .from("profiles")
-    .select("account_type, stripe_connect_account_id, stripe_connect_charges_enabled, stripe_connect_payouts_enabled")
+    .select("account_type, verification_status, stripe_connect_account_id, stripe_connect_charges_enabled, stripe_connect_payouts_enabled")
     .eq("id", user.id)
     .single();
   if (courier?.account_type !== "courier") return json({ error: "only couriers can accept" }, 403);
+  if (courier.verification_status !== "approved") {
+    return json({ error: "courier not approved" }, 403);
+  }
   if (
     !courier.stripe_connect_account_id ||
     !courier.stripe_connect_charges_enabled ||
