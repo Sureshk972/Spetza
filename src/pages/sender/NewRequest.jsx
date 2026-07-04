@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import PackagePhotoInput from '../../components/PackagePhotoInput.jsx'
+import RouteMap from '../../components/RouteMap.jsx'
 import { MAX_DISTANCE_MILES, priceForDistance, feeFor, totalFor } from '../../lib/pricing.js'
 import { geocodeAddress, haversineMiles } from '../../lib/geocode.js'
 
@@ -143,6 +144,13 @@ export default function NewRequest() {
           onBlur={() => handleGeocode(dropoff, setDropoffGeo)}
           geo={dropoffGeo}
         />
+        {pickupGeo.status === 'ok' && dropoffGeo.status === 'ok' && (
+          <RouteMap
+            pickup={{ lat: pickupGeo.lat, lng: pickupGeo.lng }}
+            dropoff={{ lat: dropoffGeo.lat, lng: dropoffGeo.lng }}
+          />
+        )}
+
         <Field label="Package description">
           <textarea
             required

@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { haversineMiles } from '../../lib/geocode.js'
+import RouteMap from '../../components/RouteMap.jsx'
+import RatingPrompt from '../../components/RatingPrompt.jsx'
+import RatingBadge from '../../components/RatingBadge.jsx'
 
 function dollars(cents) {
   return `$${(cents / 100).toFixed(2)}`
@@ -29,6 +32,8 @@ export default function CourierHome() {
   const { profile, user } = useAuth()
   const [requests, setRequests] = useState([])
   const [active, setActive] = useState([])
+  const [recent, setRecent] = useState([])
+  const [ratedIds, setRatedIds] = useState(new Set())
   const [loading, setLoading] = useState(true)
   const [accepting, setAccepting] = useState(null)
   const [progressing, setProgressing] = useState(null)
@@ -64,9 +69,26 @@ export default function CourierHome() {
             .in('status', ['accepted', 'picked_up'])
             .order('accepted_at', { ascending: false })
         : Promise.resolve({ data: [] }),
-    ]).then(([openRes, activeRes]) => {
+      user
+        ? supabase
+            .from('delivery_requests')
+            .select('*')
+            .eq('courier_id', user.id)
+            .eq('status', 'delivered')
+            .order('delivered_at', { ascending: false })
+            .limit(5)
+        : Promise.resolve({ data: [] }),
+      user
+        ? supabase
+            .from('ratings')
+            .select('delivery_request_id')
+            .eq('rater_id', user.id)
+        : Promise.resolve({ data: [] }),
+    ]).then(([openRes, activeRes, recentRes, ratedRes]) => {
       setRequests(openRes.data ?? [])
       setActive(activeRes.data ?? [])
+      setRecent(recentRes.data ?? [])
+      setRatedIds(new Set((ratedRes.data ?? []).map((r) => r.delivery_request_id)))
       setLoading(false)
     })
   }
@@ -168,6 +190,9 @@ export default function CourierHome() {
         <div>
           <div className="text-xs uppercase tracking-widest text-forest">Courier</div>
           <h1 className="font-serif text-3xl text-ink mt-1">Open requests</h1>
+          <div className="mt-1">
+            <RatingBadge avg={profile?.rating_avg} count={profile?.rating_count} />
+          </div>
           {serviceArea && (
             <div className="text-xs text-slate mt-1">
               Within {serviceArea.radius} mi of your home
@@ -238,6 +263,15 @@ export default function CourierHome() {
                       </div>
                     </div>
                     <div className="text-slate text-sm">{r.package_description}</div>
+                    {r.pickup_lat != null && r.dropoff_lat != null && (
+                      <div className="pt-2">
+                        <RouteMap
+                          pickup={{ lat: r.pickup_lat, lng: r.pickup_lng }}
+                          dropoff={{ lat: r.dropoff_lat, lng: r.dropoff_lng }}
+                          height={180}
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="text-right shrink-0 space-y-2">
                     <div className="font-serif text-xl text-ink">{dollars(r.max_price_cents)}</div>
@@ -273,6 +307,41 @@ export default function CourierHome() {
                 </div>
               </li>
             ))}
+          </ul>
+        </section>
+      )}
+
+      {recent.filter((r) => !ratedIds.has(r.id)).length > 0 && (
+        <section className="mt-10">
+          <div className="text-xs uppercase tracking-widest text-slate mb-3">
+            Rate recent deliveries
+          </div>
+          <ul className="space-y-3">
+            {recent
+              .filter((r) => !ratedIds.has(r.id))
+              .map((r) => (
+                <li key={r.id} className="p-5 rounded-xl border border-mist bg-white">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 space-y-1">
+                      <div className="text-xs uppercase tracking-widest text-slate">
+                        {r.order_number}
+                      </div>
+                      <div className="text-sm text-slate">
+                        <span className="text-slate/70 mr-2">To</span>
+                        <span className="text-ink">{r.dropoff_address}</span>
+                      </div>
+                    </div>
+                    <div className="font-serif text-xl text-ink">{dollars(r.max_price_cents)}</div>
+                  </div>
+                  <RatingPrompt
+                    request={r}
+                    raterId={user.id}
+                    rateeId={r.sender_id}
+                    rateeLabel="sender"
+                    onSubmitted={refresh}
+                  />
+                </li>
+              ))}
           </ul>
         </section>
       )}
