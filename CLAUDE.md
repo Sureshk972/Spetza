@@ -30,7 +30,7 @@ Set in `profiles.account_type` at onboarding via `ChooseRole`. `RequireRole` enf
 - Auth: password + magic-link fallback + Twilio Verify phone OTP at signup (`RequireAuth` blocks unverified users at `/verify-phone`)
 - Sender: distance-based pricing (geocoded addresses, priced per mile), required package photo, edit/cancel for open requests, human-readable order numbers (SPZ-00001), saved payment method via SetupIntent
 - Courier: Connect Express onboarding, service area (home + radius), open-requests list filtered by radius via haversine
-- Payment loop: accept authorizes a manual-capture PI via Stripe Connect with `on_behalf_of` + application fee; mark-delivered captures it (`complete-delivery` edge fn)
+- Payment loop: accept authorizes a manual-capture PI via Stripe Connect with `on_behalf_of` + application fee; mark-delivered captures it (`complete-delivery` edge fn); sender-cancel and courier-abandon both release the hold (`cancel-delivery` edge fn) — only from `accepted`, not after pickup
 - Storage: `package-photos` public bucket with sender-scoped RLS
 
 ## Not yet wired
