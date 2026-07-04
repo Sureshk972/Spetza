@@ -31,8 +31,9 @@ Set in `profiles.account_type` at onboarding via `ChooseRole`. `RequireRole` enf
 - Sender: distance-based pricing (geocoded addresses, priced per mile), required package photo, edit/cancel for open requests, human-readable order numbers (SPZ-00001), saved payment method via SetupIntent
 - Courier: Connect Express onboarding, service area (home + radius), open-requests list filtered by radius via haversine
 - Payment loop: accept authorizes a manual-capture PI via Stripe Connect with `on_behalf_of` + application fee; mark-delivered captures it (`complete-delivery` edge fn); sender-cancel and courier-abandon both release the hold (`cancel-delivery` edge fn) — only from `accepted`, not after pickup
-- Storage: `package-photos` public bucket with sender-scoped RLS
+- Verification: `/courier/verify` uploads selfie + ID front + ID back to private `courier-verification` bucket; sets status=pending; accept-delivery is gated on `verification_status=approved`. Admin queue at `/admin` (gated on `profiles.is_admin`) approves/rejects via `review-verification` edge fn
+- Storage: `package-photos` public bucket with sender-scoped RLS; `courier-verification` private bucket with owner + admin read
 
 ## Not yet wired
 
-Map UI (pickup→dropoff visualization), courier verification queue + admin approval, Capacitor native shell, push notifications, transactional email.
+Map UI (pickup→dropoff visualization), Capacitor native shell, push notifications (email courier when verification decided), transactional email.
