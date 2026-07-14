@@ -116,15 +116,12 @@ export default function SenderHome() {
             <RatingBadge avg={profile?.rating_avg} count={profile?.rating_count} />
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Link to="/settings" className="text-sm text-slate hover:text-ink">Settings</Link>
-          <Link
-            to="/sender/new"
-            className="px-4 py-2 rounded-lg bg-ink text-cream text-sm font-medium hover:bg-signal transition-colors"
-          >
-            New request
-          </Link>
-        </div>
+        <Link
+          to="/sender/new"
+          className="px-4 py-2 rounded-lg bg-ink text-cream text-sm font-medium hover:bg-signal transition-colors"
+        >
+          New request
+        </Link>
       </header>
 
       <div className="mt-10">

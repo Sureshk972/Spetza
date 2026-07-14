@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import RequireAuth from './components/auth/RequireAuth.jsx'
 import RequireRole from './components/auth/RequireRole.jsx'
+import SenderLayout from './components/SenderLayout.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 import Welcome from './pages/Welcome.jsx'
 import SignIn from './pages/SignIn.jsx'
@@ -8,6 +9,8 @@ import ResetPassword from './pages/ResetPassword.jsx'
 import PhoneVerify from './pages/onboarding/PhoneVerify.jsx'
 import ChooseRole from './pages/ChooseRole.jsx'
 import SenderHome from './pages/sender/SenderHome.jsx'
+import SenderInbox from './pages/sender/SenderInbox.jsx'
+import SenderProfile from './pages/sender/SenderProfile.jsx'
 import NewRequest from './pages/sender/NewRequest.jsx'
 import EditRequest from './pages/sender/EditRequest.jsx'
 import RequestDetail from './pages/sender/RequestDetail.jsx'
@@ -25,6 +28,16 @@ function RootRedirect() {
   return <Navigate to="/choose-role" replace />
 }
 
+function SenderRoute({ children }) {
+  return (
+    <RequireAuth>
+      <RequireRole role="sender">
+        <SenderLayout>{children}</SenderLayout>
+      </RequireRole>
+    </RequireAuth>
+  )
+}
+
 export default function App() {
   return (
     <Routes>
@@ -34,10 +47,12 @@ export default function App() {
       <Route path="/verify-phone" element={<RequireAuth><PhoneVerify /></RequireAuth>} />
       <Route path="/choose-role" element={<RequireAuth><ChooseRole /></RequireAuth>} />
       <Route path="/" element={<RequireAuth><RootRedirect /></RequireAuth>} />
-      <Route path="/sender" element={<RequireAuth><RequireRole role="sender"><SenderHome /></RequireRole></RequireAuth>} />
-      <Route path="/sender/new" element={<RequireAuth><RequireRole role="sender"><NewRequest /></RequireRole></RequireAuth>} />
-      <Route path="/sender/requests/:id/edit" element={<RequireAuth><RequireRole role="sender"><EditRequest /></RequireRole></RequireAuth>} />
-      <Route path="/sender/requests/:id" element={<RequireAuth><RequireRole role="sender"><RequestDetail /></RequireRole></RequireAuth>} />
+      <Route path="/sender" element={<SenderRoute><SenderHome /></SenderRoute>} />
+      <Route path="/sender/inbox" element={<SenderRoute><SenderInbox /></SenderRoute>} />
+      <Route path="/sender/profile" element={<SenderRoute><SenderProfile /></SenderRoute>} />
+      <Route path="/sender/new" element={<SenderRoute><NewRequest /></SenderRoute>} />
+      <Route path="/sender/requests/:id/edit" element={<SenderRoute><EditRequest /></SenderRoute>} />
+      <Route path="/sender/requests/:id" element={<SenderRoute><RequestDetail /></SenderRoute>} />
       <Route path="/courier" element={<RequireAuth><RequireRole role="courier"><CourierHome /></RequireRole></RequireAuth>} />
       <Route path="/courier/verify" element={<RequireAuth><RequireRole role="courier"><CourierVerify /></RequireRole></RequireAuth>} />
       <Route path="/courier/deliveries/:id" element={<RequireAuth><RequireRole role="courier"><CourierDelivery /></RequireRole></RequireAuth>} />
