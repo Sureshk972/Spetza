@@ -141,60 +141,63 @@ export default function SenderHome() {
             {requests.map((r) => {
               const editable = r.status === 'open'
               const courier = r.courier_id ? couriers[r.courier_id] : null
+              const metaParts = [
+                r.package_description,
+                r.package_size,
+                r.distance_miles != null ? `${r.distance_miles} mi` : null,
+              ].filter(Boolean)
               const inner = (
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 space-y-2">
-                    <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-slate">
-                      <span>{r.order_number}</span>
-                      <span className="text-slate/50">•</span>
-                      <span>{timeLabel(r.created_at)}</span>
+                <div className="space-y-3">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap overflow-hidden text-ellipsis">
+                      {r.order_number} · {timeLabel(r.created_at)}
                     </div>
-                    <div className="space-y-0.5 text-sm">
-                      <div className="text-slate">
-                        <span className="text-slate/70 mr-2">From</span>
-                        <span className="text-ink">{r.pickup_address}</span>
-                      </div>
-                      <div className="text-slate">
-                        <span className="text-slate/70 mr-2">To</span>
-                        <span className="text-ink">{r.dropoff_address}</span>
-                      </div>
+                    <div className="font-serif text-xl text-ink shrink-0">
+                      {dollars(r.max_price_cents)}
                     </div>
-                    <div className="text-slate text-sm truncate">{r.package_description}</div>
-                    {courier && (
-                      <div className="flex items-center gap-2 text-xs text-slate">
-                        <span className="text-slate/70">Courier</span>
-                        <span className="text-ink">{courier.first_name || 'Assigned'}</span>
-                        <span className="text-slate/40">·</span>
-                        <RatingBadge avg={courier.rating_avg} count={courier.rating_count} />
-                      </div>
-                    )}
-                    {r.distance_miles != null && (
-                      <div className="text-xs text-slate">
-                        Distance: <span className="text-ink">{r.distance_miles} mi</span>
-                        {r.package_size && <span className="ml-3">Size: <span className="text-ink">{r.package_size}</span></span>}
-                      </div>
-                    )}
                   </div>
-                  <div className="text-right shrink-0 space-y-2">
-                    <div className="font-serif text-xl text-ink">{dollars(r.max_price_cents)}</div>
-                    <span className={`inline-block px-2 py-0.5 text-xs rounded-full ${statusStyles[r.status] ?? 'bg-mist text-slate'}`}>
-                      {r.status === 'open' ? 'Edit Request' : r.status}
-                    </span>
-                    {r.status === 'accepted' && (
-                      <div>
+                  <div className="text-sm text-ink space-y-1">
+                    <div>{r.pickup_address}</div>
+                    <div className="text-slate/40 text-xs leading-none pl-0.5">↓</div>
+                    <div>{r.dropoff_address}</div>
+                  </div>
+                  {metaParts.length > 0 && (
+                    <div className="text-xs text-slate flex flex-wrap gap-x-2 gap-y-1">
+                      {metaParts.map((part, i) => (
+                        <span key={i} className="flex items-center gap-2">
+                          {i > 0 && <span className="text-slate/40">·</span>}
+                          <span>{part}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {courier && (
+                    <div className="flex items-center gap-2 text-xs text-slate pt-2 border-t border-mist">
+                      <span className="text-slate/70">Courier</span>
+                      <span className="text-ink">{courier.first_name || 'Assigned'}</span>
+                      <span className="text-slate/40">·</span>
+                      <RatingBadge avg={courier.rating_avg} count={courier.rating_count} />
+                    </div>
+                  )}
+                  {r.status !== 'open' && (
+                    <div className="flex items-center justify-between gap-3 pt-2 border-t border-mist">
+                      <span className={`inline-block px-2 py-0.5 text-xs rounded-full capitalize ${statusStyles[r.status] ?? 'bg-mist text-slate'}`}>
+                        {r.status.replace('_', ' ')}
+                      </span>
+                      {r.status === 'accepted' && (
                         <button
                           onClick={(e) => {
                             e.preventDefault()
                             handleCancel(r)
                           }}
                           disabled={cancelling === r.id}
-                          className="mt-1 px-2 py-0.5 rounded-lg border border-mist text-xs text-slate hover:border-ink hover:text-ink transition-colors disabled:opacity-50"
+                          className="text-xs text-slate hover:text-ink transition-colors disabled:opacity-50"
                         >
                           {cancelling === r.id ? 'Cancelling…' : 'Cancel'}
                         </button>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )
               const canRate = r.status === 'delivered' && r.courier_id && !ratedIds.has(r.id)
