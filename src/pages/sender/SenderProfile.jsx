@@ -24,7 +24,11 @@ function CardBrandLabel({ brand }) {
 }
 
 export default function SenderProfile() {
-  const { user, profile } = useAuth()
+  const { user, profile, refreshProfile } = useAuth()
+  const [editingName, setEditingName] = useState(false)
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [savingName, setSavingName] = useState(false)
   const [pmLoading, setPmLoading] = useState(true)
   const [paymentMethods, setPaymentMethods] = useState([])
   const [defaultPmId, setDefaultPmId] = useState(null)
@@ -71,6 +75,36 @@ export default function SenderProfile() {
     loadTransactions()
   }, [user])
 
+  const startEditName = () => {
+    setFirstName(profile?.first_name || '')
+    setLastName(profile?.last_name || '')
+    setEditingName(true)
+  }
+
+  const saveName = async () => {
+    const cleaned = firstName.trim()
+    if (!cleaned) {
+      toast.error('First name is required.')
+      return
+    }
+    setSavingName(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        first_name: cleaned,
+        last_name: lastName.trim() || null,
+      })
+      .eq('id', user.id)
+    setSavingName(false)
+    if (error) {
+      toast.error(error.message)
+      return
+    }
+    await refreshProfile()
+    setEditingName(false)
+    toast.success('Name updated')
+  }
+
   const detach = async (pmId) => {
     if (!confirm('Remove this card from your saved payment methods?')) return
     setDetaching(pmId)
@@ -98,11 +132,61 @@ export default function SenderProfile() {
         <section className="space-y-3">
           <h2 className="text-xs uppercase tracking-widest text-slate">Basics</h2>
           <div className="rounded-xl border border-mist bg-white divide-y divide-mist">
-            <div className="p-4 flex items-center justify-between gap-3">
-              <span className="text-xs uppercase tracking-wide text-slate/70">Name</span>
-              <span className="text-sm text-ink">
-                {[profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || '—'}
-              </span>
+            <div className="p-4">
+              {editingName ? (
+                <div className="space-y-3">
+                  <div className="text-xs uppercase tracking-wide text-slate/70">Name</div>
+                  <input
+                    type="text"
+                    autoFocus
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="First name"
+                    className="w-full px-3 py-2 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Last name (optional)"
+                    className="w-full px-3 py-2 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none text-sm"
+                  />
+                  <div className="flex items-center gap-2 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setEditingName(false)}
+                      disabled={savingName}
+                      className="px-3 py-1 rounded-lg text-xs text-slate hover:text-ink transition-colors disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={saveName}
+                      disabled={savingName}
+                      className="px-3 py-1 rounded-lg bg-ink text-cream text-xs font-medium hover:bg-signal transition-colors disabled:opacity-50"
+                    >
+                      {savingName ? 'Saving…' : 'Save'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs uppercase tracking-wide text-slate/70">Name</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-ink">
+                      {[profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || '—'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={startEditName}
+                      className="text-xs text-signal hover:underline"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="p-4 flex items-center justify-between gap-3">
               <span className="text-xs uppercase tracking-wide text-slate/70">Email</span>

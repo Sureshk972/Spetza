@@ -7,6 +7,7 @@ import Welcome from './pages/Welcome.jsx'
 import SignIn from './pages/SignIn.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
 import PhoneVerify from './pages/onboarding/PhoneVerify.jsx'
+import NameCapture from './pages/onboarding/NameCapture.jsx'
 import ChooseRole from './pages/ChooseRole.jsx'
 import SenderHome from './pages/sender/SenderHome.jsx'
 import SenderInbox from './pages/sender/SenderInbox.jsx'
@@ -45,6 +46,7 @@ export default function App() {
       <Route path="/signin" element={<SignIn />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/verify-phone" element={<RequireAuth><PhoneVerify /></RequireAuth>} />
+      <Route path="/name" element={<RequireAuth><NameCapture /></RequireAuth>} />
       <Route path="/choose-role" element={<RequireAuth><ChooseRole /></RequireAuth>} />
       <Route path="/" element={<RequireAuth><RootRedirect /></RequireAuth>} />
       <Route path="/sender" element={<SenderRoute><SenderHome /></SenderRoute>} />
