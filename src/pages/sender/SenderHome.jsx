@@ -206,40 +206,37 @@ export default function SenderHome() {
                     </div>
                   )}
                   <div className="flex items-center justify-between gap-3 pt-3 border-t border-mist">
-                      {r.status !== 'open' ? (
-                        <span className={`inline-block px-2 py-0.5 text-xs rounded-full capitalize ${statusStyles[r.status] ?? 'bg-mist text-slate'}`}>
-                          {r.status.replace('_', ' ')}
-                        </span>
-                      ) : (
-                        <span />
-                      )}
-                      <div className="flex items-center gap-2">
-                        {r.status === 'open' && (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              navigate(`/sender/requests/${r.id}/edit`)
-                            }}
-                            className="px-3 py-1 rounded-lg border border-mist text-xs text-slate hover:border-ink hover:text-ink transition-colors"
-                          >
-                            Edit
-                          </button>
-                        )}
-                        {(r.status === 'open' || r.status === 'accepted') && (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              handleCancel(r)
-                            }}
-                            disabled={cancelling === r.id}
-                            className="px-3 py-1 rounded-lg border border-mist text-xs text-slate hover:border-ink hover:text-ink transition-colors disabled:opacity-50"
-                          >
-                            {cancelling === r.id ? 'Cancelling…' : 'Cancel'}
-                          </button>
-                        )}
-                      </div>
+                    {r.status === 'open' ? (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          navigate(`/sender/requests/${r.id}/edit`)
+                        }}
+                        className="px-3 py-1 rounded-lg border border-mist text-xs text-slate hover:border-ink hover:text-ink transition-colors"
+                      >
+                        Edit
+                      </button>
+                    ) : (
+                      <span className={`inline-block px-2 py-0.5 text-xs rounded-full capitalize ${statusStyles[r.status] ?? 'bg-mist text-slate'}`}>
+                        {r.status.replace('_', ' ')}
+                      </span>
+                    )}
+                    {(r.status === 'open' || r.status === 'accepted') ? (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handleCancel(r)
+                        }}
+                        disabled={cancelling === r.id}
+                        className="px-3 py-1 rounded-lg border border-mist text-xs text-slate hover:border-ink hover:text-ink transition-colors disabled:opacity-50"
+                      >
+                        {cancelling === r.id ? 'Cancelling…' : 'Cancel'}
+                      </button>
+                    ) : (
+                      <span />
+                    )}
                   </div>
                 </div>
               )
