@@ -161,23 +161,23 @@ export default function SenderHome() {
                   <div className="font-serif text-2xl text-ink">
                     {dollars(r.max_price_cents)}
                   </div>
-                  <div className="space-y-3">
-                    <div>
+                  <div className="divide-y divide-mist">
+                    <div className="pb-3">
                       <div className="text-xs uppercase tracking-wide text-slate/70">From</div>
                       <div className="text-sm text-ink mt-1">{r.pickup_address}</div>
                     </div>
-                    <div>
+                    <div className="py-3">
                       <div className="text-xs uppercase tracking-wide text-slate/70">To</div>
                       <div className="text-sm text-ink mt-1">{r.dropoff_address}</div>
                     </div>
                     {r.package_description && (
-                      <div>
+                      <div className="py-3">
                         <div className="text-xs uppercase tracking-wide text-slate/70">Description</div>
                         <div className="text-sm text-ink mt-1">{r.package_description}</div>
                       </div>
                     )}
                     {photoUrl && (
-                      <div>
+                      <div className="pt-3">
                         <div className="text-xs uppercase tracking-wide text-slate/70">Photo</div>
                         <img
                           src={photoUrl}
