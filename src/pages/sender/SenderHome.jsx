@@ -142,10 +142,12 @@ export default function SenderHome() {
               const editable = r.status === 'open'
               const courier = r.courier_id ? couriers[r.courier_id] : null
               const metaParts = [
-                r.package_description,
                 r.package_size,
                 r.distance_miles != null ? `${r.distance_miles} mi` : null,
               ].filter(Boolean)
+              const photoUrl = r.package_photo_path
+                ? supabase.storage.from('package-photos').getPublicUrl(r.package_photo_path).data.publicUrl
+                : null
               const inner = (
                 <div className="space-y-3">
                   <div className="flex items-baseline justify-between gap-3">
@@ -168,6 +170,22 @@ export default function SenderHome() {
                       <div className="text-xs uppercase tracking-wide text-slate/70">To</div>
                       <div className="text-sm text-ink mt-1">{r.dropoff_address}</div>
                     </div>
+                    {r.package_description && (
+                      <div>
+                        <div className="text-xs uppercase tracking-wide text-slate/70">Description</div>
+                        <div className="text-sm text-ink mt-1">{r.package_description}</div>
+                      </div>
+                    )}
+                    {photoUrl && (
+                      <div>
+                        <div className="text-xs uppercase tracking-wide text-slate/70">Photo</div>
+                        <img
+                          src={photoUrl}
+                          alt={r.package_description || 'Package photo'}
+                          className="mt-2 w-full max-h-64 object-cover rounded-lg border border-mist"
+                        />
+                      </div>
+                    )}
                   </div>
                   {metaParts.length > 0 && (
                     <div className="text-xs text-slate flex flex-wrap gap-x-2 gap-y-1">
