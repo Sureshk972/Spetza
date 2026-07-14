@@ -159,10 +159,15 @@ export default function SenderHome() {
                   <div className="font-serif text-2xl text-ink">
                     {dollars(r.max_price_cents)}
                   </div>
-                  <div className="text-sm text-ink space-y-1">
-                    <div>{r.pickup_address}</div>
-                    <div className="text-slate/40 text-xs leading-none pl-0.5">↓</div>
-                    <div>{r.dropoff_address}</div>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate/70">From</div>
+                      <div className="text-sm text-ink mt-1">{r.pickup_address}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate/70">To</div>
+                      <div className="text-sm text-ink mt-1">{r.dropoff_address}</div>
+                    </div>
                   </div>
                   {metaParts.length > 0 && (
                     <div className="text-xs text-slate flex flex-wrap gap-x-2 gap-y-1">
