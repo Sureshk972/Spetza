@@ -10,7 +10,7 @@ export default function SignIn() {
   useEffect(() => {
     if (user) navigate('/', { replace: true })
   }, [user, navigate])
-  const [step, setStep] = useState('email') // 'email' | 'password' | 'magic-sent'
+  const [step, setStep] = useState('email') // 'email' | 'password' | 'reset-sent'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -35,9 +35,7 @@ export default function SignIn() {
     setSubmitting(false)
     if (error) {
       if (/invalid login credentials/i.test(error.message)) {
-        toast.error(
-          'Wrong password. If you signed up via magic link previously, this account may not have a password — use "Email me a sign-in link" below.'
-        )
+        toast.error('Wrong password. Use "Forgot password?" below to reset it.')
       } else {
         toast.error(error.message)
       }
@@ -60,7 +58,7 @@ export default function SignIn() {
     setSubmitting(false)
     if (error) {
       if (/already registered/i.test(error.message)) {
-        toast.error('This email already has an account. Try "Sign in" or use the magic link below.')
+        toast.error('This email already has an account. Sign in, or use "Forgot password?" if needed.')
       } else {
         toast.error(error.message)
       }
@@ -68,19 +66,18 @@ export default function SignIn() {
     }
   }
 
-  const sendMagicLink = async () => {
+  const sendPasswordReset = async () => {
     if (!email || !requireConfig()) return
     setSubmitting(true)
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.origin },
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
     })
     setSubmitting(false)
     if (error) {
       toast.error(error.message)
       return
     }
-    setStep('magic-sent')
+    setStep('reset-sent')
   }
 
   return (
@@ -91,17 +88,17 @@ export default function SignIn() {
         </Link>
         <h1 className="font-serif text-3xl text-ink mt-6">Sign in</h1>
 
-        {step === 'magic-sent' ? (
+        {step === 'reset-sent' ? (
           <div className="mt-6 space-y-4">
             <p className="text-slate">
-              Check your inbox at <span className="text-ink">{email}</span> for a sign-in link.
+              Check your inbox at <span className="text-ink">{email}</span> for a password reset link.
             </p>
             <button
               type="button"
               onClick={() => setStep('password')}
               className="text-sm text-slate hover:text-ink"
             >
-              &larr; back to password
+              &larr; back to sign in
             </button>
           </div>
         ) : step === 'email' ? (
@@ -163,11 +160,11 @@ export default function SignIn() {
             </button>
             <button
               type="button"
-              onClick={sendMagicLink}
+              onClick={sendPasswordReset}
               disabled={submitting}
               className="block w-full text-center text-sm text-signal hover:underline"
             >
-              Email me a sign-in link instead
+              Forgot password?
             </button>
           </form>
         )}
