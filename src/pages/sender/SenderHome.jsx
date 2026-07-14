@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
@@ -31,6 +31,7 @@ function timeLabel(iso) {
 
 export default function SenderHome() {
   const { user, profile } = useAuth()
+  const navigate = useNavigate()
   const [requests, setRequests] = useState([])
   const [ratedIds, setRatedIds] = useState(new Set())
   const [couriers, setCouriers] = useState({})
@@ -139,7 +140,6 @@ export default function SenderHome() {
         ) : (
           <ul className="space-y-3">
             {requests.map((r) => {
-              const editable = r.status === 'open'
               const courier = r.courier_id ? couriers[r.courier_id] : null
               const metaParts = [
                 r.package_size,
@@ -205,38 +205,48 @@ export default function SenderHome() {
                       <RatingBadge avg={courier.rating_avg} count={courier.rating_count} />
                     </div>
                   )}
-                  {r.status !== 'open' && (
-                    <div className="flex items-center justify-between gap-3 pt-2 border-t border-mist">
-                      <span className={`inline-block px-2 py-0.5 text-xs rounded-full capitalize ${statusStyles[r.status] ?? 'bg-mist text-slate'}`}>
-                        {r.status.replace('_', ' ')}
-                      </span>
-                      {r.status === 'accepted' && (
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault()
-                            handleCancel(r)
-                          }}
-                          disabled={cancelling === r.id}
-                          className="text-xs text-slate hover:text-ink transition-colors disabled:opacity-50"
-                        >
-                          {cancelling === r.id ? 'Cancelling…' : 'Cancel'}
-                        </button>
+                  <div className="flex items-center justify-between gap-3 pt-3 border-t border-mist">
+                      {r.status !== 'open' ? (
+                        <span className={`inline-block px-2 py-0.5 text-xs rounded-full capitalize ${statusStyles[r.status] ?? 'bg-mist text-slate'}`}>
+                          {r.status.replace('_', ' ')}
+                        </span>
+                      ) : (
+                        <span />
                       )}
-                    </div>
-                  )}
+                      <div className="flex items-center gap-2">
+                        {r.status === 'open' && (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              navigate(`/sender/requests/${r.id}/edit`)
+                            }}
+                            className="px-3 py-1 rounded-lg border border-mist text-xs text-slate hover:border-ink hover:text-ink transition-colors"
+                          >
+                            Edit
+                          </button>
+                        )}
+                        {(r.status === 'open' || r.status === 'accepted') && (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              handleCancel(r)
+                            }}
+                            disabled={cancelling === r.id}
+                            className="px-3 py-1 rounded-lg border border-mist text-xs text-slate hover:border-ink hover:text-ink transition-colors disabled:opacity-50"
+                          >
+                            {cancelling === r.id ? 'Cancelling…' : 'Cancel'}
+                          </button>
+                        )}
+                      </div>
+                  </div>
                 </div>
               )
               const canRate = r.status === 'delivered' && r.courier_id && !ratedIds.has(r.id)
               return (
                 <li key={r.id}>
-                  {editable ? (
-                    <Link
-                      to={`/sender/requests/${r.id}/edit`}
-                      className="block p-5 rounded-xl border border-mist bg-white hover:border-signal transition-colors"
-                    >
-                      {inner}
-                    </Link>
-                  ) : canRate ? (
+                  {canRate ? (
                     <div className="p-5 rounded-xl border border-mist bg-white">
                       {inner}
                       <RatingPrompt
