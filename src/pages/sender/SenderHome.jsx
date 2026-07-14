@@ -149,12 +149,15 @@ export default function SenderHome() {
               const inner = (
                 <div className="space-y-3">
                   <div className="flex items-baseline justify-between gap-3">
-                    <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap overflow-hidden text-ellipsis">
-                      {r.order_number} · {timeLabel(r.created_at)}
+                    <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
+                      {r.order_number}
                     </div>
-                    <div className="font-serif text-xl text-ink shrink-0">
-                      {dollars(r.max_price_cents)}
+                    <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
+                      {timeLabel(r.created_at)}
                     </div>
+                  </div>
+                  <div className="font-serif text-2xl text-ink">
+                    {dollars(r.max_price_cents)}
                   </div>
                   <div className="text-sm text-ink space-y-1">
                     <div>{r.pickup_address}</div>
