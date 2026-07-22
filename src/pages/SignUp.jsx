@@ -45,13 +45,13 @@ export default function SignUp() {
       return
     }
     setSubmitting(true)
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { emailRedirectTo: window.location.origin },
     })
-    setSubmitting(false)
     if (error) {
+      setSubmitting(false)
       if (/already registered/i.test(error.message)) {
         toast.error('This email already has an account. Sign in instead, or use "Forgot password?" if needed.')
       } else {
@@ -59,6 +59,21 @@ export default function SignUp() {
       }
       return
     }
+
+    // Write a profile row right away (before any navigation). RequireAuth
+    // only gates on phone-verified / name-captured when `profile` is
+    // non-null — with no row yet, a fresh signup falls straight through
+    // to /choose-role, skipping phone verification entirely. Baking the
+    // stashed role in here also lets ChooseRole be skipped later.
+    if (data?.user?.id && data?.session) {
+      const patch = { id: data.user.id, updated_at: new Date().toISOString() }
+      if (role) patch.account_type = role
+      const { error: profileErr } = await supabase.from('profiles').upsert(patch)
+      if (profileErr) {
+        console.error('Failed to create profile row after signup', profileErr)
+      }
+    }
+    setSubmitting(false)
   }
 
   return (
