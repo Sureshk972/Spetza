@@ -30,17 +30,30 @@ export default function NameCapture() {
       return
     }
     setSaving(true)
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        first_name: cleaned,
-        last_name: lastName.trim() || null,
-      })
-      .eq('id', user.id)
+    let intendedRole = null
+    try {
+      const stashed = sessionStorage.getItem('spetza:intended_role')
+      if (stashed === 'sender' || stashed === 'courier') intendedRole = stashed
+    } catch {
+      // private tabs can throw; fall through to ChooseRole
+    }
+    const patch = {
+      id: user.id,
+      first_name: cleaned,
+      last_name: lastName.trim() || null,
+      updated_at: new Date().toISOString(),
+    }
+    if (intendedRole) patch.account_type = intendedRole
+    const { error } = await supabase.from('profiles').upsert(patch)
     if (error) {
       setSaving(false)
       toast.error(error.message)
       return
+    }
+    if (intendedRole) {
+      try {
+        sessionStorage.removeItem('spetza:intended_role')
+      } catch {}
     }
     await refreshProfile()
     setSaving(false)
