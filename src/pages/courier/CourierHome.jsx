@@ -201,260 +201,291 @@ export default function CourierHome() {
   }
 
   return (
-    <div className="min-h-full px-6 py-12 max-w-3xl mx-auto">
-      <header className="flex items-center justify-between">
-        <div>
-          <div className="text-xs uppercase tracking-widest text-forest">Courier</div>
-          <h1 className="font-serif text-3xl text-ink mt-1">Open requests</h1>
-          <div className="mt-1">
+    <div className="min-h-full">
+      <div className="max-w-3xl mx-auto px-6 py-10">
+        <header>
+          <div className="flex items-center gap-3">
+            <p className="text-xs uppercase tracking-widest text-forest">Courier</p>
+            <span className="text-slate/40">·</span>
+            <h1 className="font-serif text-4xl text-ink">Discover</h1>
+          </div>
+          <div className="mt-2 flex items-center gap-3 text-xs text-slate">
             <RatingBadge avg={profile?.rating_avg} count={profile?.rating_count} />
+            {serviceArea && (
+              <>
+                <span className="text-slate/40">·</span>
+                <span>Within {serviceArea.radius} mi of your home</span>
+              </>
+            )}
           </div>
-          {serviceArea && (
-            <div className="text-xs text-slate mt-1">
-              Within {serviceArea.radius} mi of your home
+        </header>
+
+        {profile?.verification_status !== 'approved' && (
+          <div className="mt-8 p-4 rounded-xl border border-signal/40 bg-signal/5">
+            {profile?.verification_status === 'pending' ? (
+              <>
+                <div className="text-sm text-ink font-medium">Verification pending</div>
+                <div className="text-sm text-slate mt-1">
+                  We're reviewing your documents. You can't accept deliveries until we approve.
+                </div>
+              </>
+            ) : profile?.verification_status === 'rejected' ? (
+              <>
+                <div className="text-sm text-ink font-medium">Verification not approved</div>
+                {profile.verification_notes && (
+                  <div className="text-sm text-slate mt-1">{profile.verification_notes}</div>
+                )}
+                <Link to="/courier/verify" className="inline-block mt-3 text-signal hover:underline text-sm">
+                  Update documents
+                </Link>
+              </>
+            ) : (
+              <>
+                <div className="text-sm text-ink font-medium">Verify your identity to accept deliveries</div>
+                <div className="text-sm text-slate mt-1">
+                  We check ID before you can pick up packages for others.
+                </div>
+                <Link to="/courier/verify" className="inline-block mt-3 text-signal hover:underline text-sm">
+                  Start verification
+                </Link>
+              </>
+            )}
+          </div>
+        )}
+
+        {active.length > 0 && (
+          <section className="mt-10">
+            <div className="text-xs uppercase tracking-widest text-slate mb-3">
+              Your active deliveries
             </div>
-          )}
-        </div>
-        <Link to="/settings" className="text-sm text-slate hover:text-ink">Settings</Link>
-      </header>
-
-      {profile?.verification_status !== 'approved' && (
-        <div className="mt-8 p-4 rounded-xl border border-signal/40 bg-signal/5">
-          {profile?.verification_status === 'pending' ? (
-            <>
-              <div className="text-sm text-ink font-medium">Verification pending</div>
-              <div className="text-sm text-slate mt-1">
-                We're reviewing your documents. You can't accept deliveries until we approve.
-              </div>
-            </>
-          ) : profile?.verification_status === 'rejected' ? (
-            <>
-              <div className="text-sm text-ink font-medium">Verification not approved</div>
-              {profile.verification_notes && (
-                <div className="text-sm text-slate mt-1">{profile.verification_notes}</div>
-              )}
-              <Link to="/courier/verify" className="inline-block mt-3 text-signal hover:underline text-sm">
-                Update documents
-              </Link>
-            </>
-          ) : (
-            <>
-              <div className="text-sm text-ink font-medium">Verify your identity to accept deliveries</div>
-              <div className="text-sm text-slate mt-1">
-                We check ID before you can pick up packages for others.
-              </div>
-              <Link to="/courier/verify" className="inline-block mt-3 text-signal hover:underline text-sm">
-                Start verification
-              </Link>
-            </>
-          )}
-        </div>
-      )}
-
-      {active.length > 0 && (
-        <section className="mt-10">
-          <div className="text-xs uppercase tracking-widest text-slate mb-3">
-            Your active deliveries
-          </div>
-          <ul className="space-y-3">
-            {active.map((r) => (
-              <li key={r.id} className="p-5 rounded-xl border border-forest/20 bg-forest/5">
-                <div className="flex items-start gap-4">
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-slate">
-                      <span>{r.order_number}</span>
-                      <span className="text-slate/50">•</span>
-                      <span className="text-forest">
-                        {r.status === 'accepted' ? 'Awaiting pickup' : 'In transit'}
-                      </span>
-                    </div>
-                    <div className="space-y-0.5 text-sm">
-                      <div className="text-slate">
-                        <span className="text-slate/70 mr-2">From</span>
-                        <span className="text-ink">{r.pickup_address}</span>
+            <ul className="space-y-3">
+              {active.map((r) => (
+                <li key={r.id}>
+                  <Link
+                    to={`/courier/deliveries/${r.id}`}
+                    className="block p-5 rounded-xl border border-forest/30 bg-forest/5 hover:border-forest transition-colors"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
+                          {r.order_number}
+                        </div>
+                        <div className="text-xs uppercase tracking-wide text-forest whitespace-nowrap">
+                          {r.status === 'accepted' ? 'Awaiting pickup' : 'In transit'}
+                        </div>
                       </div>
-                      <div className="text-slate">
-                        <span className="text-slate/70 mr-2">To</span>
-                        <span className="text-ink">{r.dropoff_address}</span>
+                      <div className="font-serif text-2xl text-ink">{dollars(r.max_price_cents)}</div>
+                      <div className="divide-y divide-forest/20">
+                        <div className="pb-3">
+                          <div className="text-xs uppercase tracking-wide text-slate/70">From</div>
+                          <div className="text-sm text-ink mt-1">{r.pickup_address}</div>
+                        </div>
+                        <div className="py-3">
+                          <div className="text-xs uppercase tracking-wide text-slate/70">To</div>
+                          <div className="text-sm text-ink mt-1">{r.dropoff_address}</div>
+                        </div>
+                        {r.package_description && (
+                          <div className="py-3">
+                            <div className="text-xs uppercase tracking-wide text-slate/70">Description</div>
+                            <div className="text-sm text-ink mt-1">{r.package_description}</div>
+                          </div>
+                        )}
+                        {r.pickup_lat != null && r.dropoff_lat != null && (
+                          <div className="pt-3">
+                            <div className="text-xs uppercase tracking-wide text-slate/70 mb-2">Route</div>
+                            <RouteMap
+                              pickup={{ lat: r.pickup_lat, lng: r.pickup_lng }}
+                              dropoff={{ lat: r.dropoff_lat, lng: r.dropoff_lng }}
+                              height={180}
+                            />
+                          </div>
+                        )}
                       </div>
-                    </div>
-                    <div className="text-slate text-sm">{r.package_description}</div>
-                    {r.pickup_lat != null && r.dropoff_lat != null && (
-                      <div className="pt-2">
-                        <RouteMap
-                          pickup={{ lat: r.pickup_lat, lng: r.pickup_lng }}
-                          dropoff={{ lat: r.dropoff_lat, lng: r.dropoff_lng }}
-                          height={180}
-                        />
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-right shrink-0 space-y-2">
-                    <div className="font-serif text-xl text-ink">{dollars(r.max_price_cents)}</div>
-                    {r.status === 'accepted' ? (
-                      <>
-                        <button
-                          onClick={() => handlePickedUp(r)}
-                          disabled={progressing === r.id}
-                          className="px-3 py-1 rounded-lg bg-white border border-forest text-forest text-xs font-medium hover:bg-forest hover:text-cream transition-colors disabled:opacity-50"
-                        >
-                          {progressing === r.id ? 'Saving…' : 'Mark picked up'}
-                        </button>
-                        <div>
+                      <div className="flex items-center justify-between gap-3 pt-3 border-t border-forest/20">
+                        {r.status === 'accepted' ? (
                           <button
-                            onClick={() => handleAbandon(r)}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              handleAbandon(r)
+                            }}
                             disabled={progressing === r.id}
-                            className="px-2 py-0.5 rounded-lg text-xs text-slate hover:text-ink transition-colors disabled:opacity-50"
+                            className="px-3 py-1 rounded-lg border border-mist text-xs text-slate hover:border-ink hover:text-ink transition-colors disabled:opacity-50"
                           >
                             Abandon
                           </button>
-                        </div>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => handleDelivered(r)}
-                        disabled={progressing === r.id}
-                        className="px-3 py-1 rounded-lg bg-forest text-cream text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-                      >
-                        {progressing === r.id ? 'Capturing…' : 'Mark delivered'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-3 pt-3 border-t border-forest/20 text-right">
-                  <Link
-                    to={`/courier/deliveries/${r.id}`}
-                    className="text-xs text-slate hover:text-ink"
-                  >
-                    View details &rarr;
-                  </Link>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {recent.filter((r) => !ratedIds.has(r.id)).length > 0 && (
-        <section className="mt-10">
-          <div className="text-xs uppercase tracking-widest text-slate mb-3">
-            Rate recent deliveries
-          </div>
-          <ul className="space-y-3">
-            {recent
-              .filter((r) => !ratedIds.has(r.id))
-              .map((r) => (
-                <li key={r.id} className="p-5 rounded-xl border border-mist bg-white">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 space-y-1">
-                      <div className="text-xs uppercase tracking-widest text-slate">
-                        {r.order_number}
-                      </div>
-                      <div className="text-sm text-slate">
-                        <span className="text-slate/70 mr-2">To</span>
-                        <span className="text-ink">{r.dropoff_address}</span>
+                        ) : (
+                          <span />
+                        )}
+                        {r.status === 'accepted' ? (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              handlePickedUp(r)
+                            }}
+                            disabled={progressing === r.id}
+                            className="px-3 py-1 rounded-lg bg-white border border-forest text-forest text-xs font-medium hover:bg-forest hover:text-cream transition-colors disabled:opacity-50"
+                          >
+                            {progressing === r.id ? 'Saving…' : 'Mark picked up'}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              handleDelivered(r)
+                            }}
+                            disabled={progressing === r.id}
+                            className="px-3 py-1 rounded-lg bg-forest text-cream text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                          >
+                            {progressing === r.id ? 'Capturing…' : 'Mark delivered'}
+                          </button>
+                        )}
                       </div>
                     </div>
-                    <div className="font-serif text-xl text-ink">{dollars(r.max_price_cents)}</div>
-                  </div>
-                  <RatingPrompt
-                    request={r}
-                    raterId={user.id}
-                    rateeId={r.sender_id}
-                    rateeLabel="sender"
-                    onSubmitted={refresh}
-                  />
-                  <div className="mt-3 pt-3 border-t border-mist text-right">
-                    <Link
-                      to={`/courier/deliveries/${r.id}`}
-                      className="text-xs text-slate hover:text-ink"
-                    >
-                      View details &rarr;
-                    </Link>
-                  </div>
+                  </Link>
                 </li>
               ))}
-          </ul>
-        </section>
-      )}
+            </ul>
+          </section>
+        )}
 
-      <div className="mt-10">
-        {loading ? (
-          <div className="text-slate">Loading…</div>
-        ) : !serviceArea ? (
-          <div className="text-center py-16 rounded-2xl border border-dashed border-mist">
-            <p className="text-slate">Set a service area to see open requests.</p>
-            <Link to="/settings" className="inline-block mt-3 text-signal hover:underline">
-              Open settings
-            </Link>
-          </div>
-        ) : visibleRequests.length === 0 ? (
-          <div className="text-center py-16 rounded-2xl border border-dashed border-mist">
-            <p className="text-slate">No open requests in your area right now.</p>
-            <p className="text-slate text-sm mt-2">Check back soon.</p>
-          </div>
-        ) : (
-          <ul className="space-y-3">
-            {visibleRequests.map((r) => {
-              const url = photoUrl(r.package_photo_path)
-              return (
-                <li key={r.id} className="p-5 rounded-xl border border-mist bg-white">
-                  <div className="flex items-start gap-4">
-                    <div className="min-w-0 flex-1 space-y-2">
-                      <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-slate">
-                        <span>{r.order_number}</span>
-                        <span className="text-slate/50">•</span>
-                        <span>{timeLabel(r.created_at)}</span>
+        {recent.filter((r) => !ratedIds.has(r.id)).length > 0 && (
+          <section className="mt-10">
+            <div className="text-xs uppercase tracking-widest text-slate mb-3">
+              Rate recent deliveries
+            </div>
+            <ul className="space-y-3">
+              {recent
+                .filter((r) => !ratedIds.has(r.id))
+                .map((r) => (
+                  <li key={r.id} className="p-5 rounded-xl border border-mist bg-white space-y-3">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
+                        {r.order_number}
                       </div>
-                      <div className="space-y-0.5 text-sm">
-                        <div className="text-slate">
-                          <span className="text-slate/70 mr-2">From</span>
-                          <span className="text-ink">{r.pickup_address}</span>
-                        </div>
-                        <div className="text-slate">
-                          <span className="text-slate/70 mr-2">To</span>
-                          <span className="text-ink">{r.dropoff_address}</span>
-                        </div>
-                      </div>
-                      <div className="text-slate text-sm">{r.package_description}</div>
-                      <div className="text-xs text-slate">
-                        {r.distance_miles != null && (
-                          <span>Trip: <span className="text-ink">{r.distance_miles} mi</span></span>
-                        )}
-                        <span className="ml-3">
-                          Pickup is <span className="text-ink">{r.miles_from_you.toFixed(1)} mi</span> from you
-                        </span>
-                        {r.package_size && (
-                          <span className="ml-3">Size: <span className="text-ink">{r.package_size}</span></span>
-                        )}
+                      <div className="text-xs uppercase tracking-wide text-forest whitespace-nowrap">
+                        Delivered
                       </div>
                     </div>
-                    {url && (
-                      <img
-                        src={url}
-                        alt="Package"
-                        className="w-20 h-20 object-cover rounded-lg border border-mist shrink-0"
-                      />
+                    <div className="font-serif text-2xl text-ink">{dollars(r.max_price_cents)}</div>
+                    <div className="text-sm text-slate">
+                      <span className="text-slate/70 mr-2">To</span>
+                      <span className="text-ink">{r.dropoff_address}</span>
+                    </div>
+                    <RatingPrompt
+                      request={r}
+                      raterId={user.id}
+                      rateeId={r.sender_id}
+                      rateeLabel="sender"
+                      onSubmitted={refresh}
+                    />
+                    <div className="pt-3 border-t border-mist text-right">
+                      <Link
+                        to={`/courier/deliveries/${r.id}`}
+                        className="text-xs text-slate hover:text-ink"
+                      >
+                        View details &rarr;
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+            </ul>
+          </section>
+        )}
+
+        <div className="mt-10">
+          <div className="text-xs uppercase tracking-widest text-slate mb-3">
+            Open in your area
+          </div>
+          {loading ? (
+            <div className="text-slate">Loading…</div>
+          ) : !serviceArea ? (
+            <div className="text-center py-16 rounded-2xl border border-dashed border-mist">
+              <p className="text-slate">Set a service area to see open requests.</p>
+              <Link to="/courier/profile" className="inline-block mt-3 text-signal hover:underline">
+                Open profile
+              </Link>
+            </div>
+          ) : visibleRequests.length === 0 ? (
+            <div className="text-center py-16 rounded-2xl border border-dashed border-mist">
+              <p className="text-slate">No open requests in your area right now.</p>
+              <p className="text-slate text-sm mt-2">Check back soon.</p>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {visibleRequests.map((r) => {
+                const url = photoUrl(r.package_photo_path)
+                const canAccept = profile?.verification_status === 'approved'
+                const metaParts = [
+                  r.distance_miles != null ? `Trip ${r.distance_miles} mi` : null,
+                  `${r.miles_from_you.toFixed(1)} mi from you`,
+                  r.package_size ? `Size ${r.package_size}` : null,
+                ].filter(Boolean)
+                return (
+                  <li key={r.id} className="p-5 rounded-xl border border-mist bg-white space-y-3">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
+                        {r.order_number}
+                      </div>
+                      <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
+                        {timeLabel(r.created_at)}
+                      </div>
+                    </div>
+                    <div className="font-serif text-2xl text-ink">{dollars(r.max_price_cents)}</div>
+                    <div className="divide-y divide-mist">
+                      <div className="pb-3">
+                        <div className="text-xs uppercase tracking-wide text-slate/70">From</div>
+                        <div className="text-sm text-ink mt-1">{r.pickup_address}</div>
+                      </div>
+                      <div className="py-3">
+                        <div className="text-xs uppercase tracking-wide text-slate/70">To</div>
+                        <div className="text-sm text-ink mt-1">{r.dropoff_address}</div>
+                      </div>
+                      {r.package_description && (
+                        <div className="py-3">
+                          <div className="text-xs uppercase tracking-wide text-slate/70">Description</div>
+                          <div className="text-sm text-ink mt-1">{r.package_description}</div>
+                        </div>
+                      )}
+                      {url && (
+                        <div className="pt-3">
+                          <div className="text-xs uppercase tracking-wide text-slate/70">Photo</div>
+                          <img
+                            src={url}
+                            alt={r.package_description || 'Package photo'}
+                            className="mt-2 w-full max-h-64 object-cover rounded-lg border border-mist"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    {metaParts.length > 0 && (
+                      <div className="text-xs text-slate flex flex-wrap gap-x-2 gap-y-1">
+                        {metaParts.map((part, i) => (
+                          <span key={i} className="flex items-center gap-2">
+                            {i > 0 && <span className="text-slate/40">·</span>}
+                            <span>{part}</span>
+                          </span>
+                        ))}
+                      </div>
                     )}
-                    <div className="text-right shrink-0">
-                      <div className="font-serif text-xl text-ink">{dollars(r.max_price_cents)}</div>
+                    <div className="flex items-center justify-end gap-3 pt-3 border-t border-mist">
                       <button
                         onClick={() => handleAccept(r)}
-                        disabled={
-                          accepting === r.id ||
-                          profile?.verification_status !== 'approved'
-                        }
-                        className="mt-2 px-3 py-1 rounded-lg bg-forest text-cream text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                        disabled={accepting === r.id || !canAccept}
+                        title={canAccept ? undefined : 'Complete verification to accept'}
+                        className="px-3 py-1 rounded-lg bg-forest text-cream text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                       >
                         {accepting === r.id ? 'Accepting…' : 'Accept'}
                       </button>
                     </div>
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        )}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   )

@@ -14,7 +14,7 @@ export default function CourierConnectSection({ profile }) {
     setError(null)
     const { data, error: fnErr } = await supabase.functions.invoke(
       'connect-courier',
-      { body: { return_url: window.location.origin + '/settings' } },
+      { body: { return_url: window.location.origin + '/courier/profile' } },
     )
     if (fnErr) {
       setOpening(false)

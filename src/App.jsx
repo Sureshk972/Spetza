@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import RequireAuth from './components/auth/RequireAuth.jsx'
 import RequireRole from './components/auth/RequireRole.jsx'
 import SenderLayout from './components/SenderLayout.jsx'
+import CourierLayout from './components/CourierLayout.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 import Welcome from './pages/Welcome.jsx'
 import SignIn from './pages/SignIn.jsx'
@@ -16,11 +17,12 @@ import NewRequest from './pages/sender/NewRequest.jsx'
 import EditRequest from './pages/sender/EditRequest.jsx'
 import RequestDetail from './pages/sender/RequestDetail.jsx'
 import CourierHome from './pages/courier/CourierHome.jsx'
+import CourierInbox from './pages/courier/CourierInbox.jsx'
+import CourierProfile from './pages/courier/CourierProfile.jsx'
 import CourierVerify from './pages/courier/CourierVerify.jsx'
 import CourierDelivery from './pages/courier/CourierDelivery.jsx'
 import RequireAdmin from './components/auth/RequireAdmin.jsx'
 import AdminVerifications from './pages/admin/AdminVerifications.jsx'
-import Settings from './pages/Settings.jsx'
 
 function RootRedirect() {
   const { profile } = useAuth()
@@ -29,14 +31,23 @@ function RootRedirect() {
   return <Navigate to="/choose-role" replace />
 }
 
-function SenderRoute({ children }) {
+function RoleRoute({ role, children }) {
+  const Layout = role === 'courier' ? CourierLayout : SenderLayout
   return (
     <RequireAuth>
-      <RequireRole role="sender">
-        <SenderLayout>{children}</SenderLayout>
+      <RequireRole role={role}>
+        <Layout>{children}</Layout>
       </RequireRole>
     </RequireAuth>
   )
+}
+
+function SenderRoute({ children }) {
+  return <RoleRoute role="sender">{children}</RoleRoute>
+}
+
+function CourierRoute({ children }) {
+  return <RoleRoute role="courier">{children}</RoleRoute>
 }
 
 export default function App() {
@@ -55,11 +66,12 @@ export default function App() {
       <Route path="/sender/new" element={<SenderRoute><NewRequest /></SenderRoute>} />
       <Route path="/sender/requests/:id/edit" element={<SenderRoute><EditRequest /></SenderRoute>} />
       <Route path="/sender/requests/:id" element={<SenderRoute><RequestDetail /></SenderRoute>} />
-      <Route path="/courier" element={<RequireAuth><RequireRole role="courier"><CourierHome /></RequireRole></RequireAuth>} />
-      <Route path="/courier/verify" element={<RequireAuth><RequireRole role="courier"><CourierVerify /></RequireRole></RequireAuth>} />
-      <Route path="/courier/deliveries/:id" element={<RequireAuth><RequireRole role="courier"><CourierDelivery /></RequireRole></RequireAuth>} />
+      <Route path="/courier" element={<CourierRoute><CourierHome /></CourierRoute>} />
+      <Route path="/courier/inbox" element={<CourierRoute><CourierInbox /></CourierRoute>} />
+      <Route path="/courier/profile" element={<CourierRoute><CourierProfile /></CourierRoute>} />
+      <Route path="/courier/verify" element={<CourierRoute><CourierVerify /></CourierRoute>} />
+      <Route path="/courier/deliveries/:id" element={<CourierRoute><CourierDelivery /></CourierRoute>} />
       <Route path="/admin" element={<RequireAuth><RequireAdmin><AdminVerifications /></RequireAdmin></RequireAuth>} />
-      <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
     </Routes>
   )
 }
