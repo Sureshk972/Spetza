@@ -43,7 +43,9 @@ export function AuthProvider({ children }) {
       .select('*')
       .eq('id', uid)
       .maybeSingle()
-    setProfile(data ?? null)
+    const next = data ?? null
+    setProfile(next)
+    return next
   }, [])
 
   useEffect(() => {
@@ -55,8 +57,8 @@ export function AuthProvider({ children }) {
   }, [user, fetchProfile])
 
   const refreshProfile = useCallback(async () => {
-    if (!user || !hasSupabaseConfig) return
-    await fetchProfile(user.id)
+    if (!user || !hasSupabaseConfig) return null
+    return await fetchProfile(user.id)
   }, [user, fetchProfile])
 
   const signOut = async () => {

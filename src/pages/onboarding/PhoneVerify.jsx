@@ -47,12 +47,13 @@ export default function PhoneVerify() {
     if (err) return
 
     // Refresh so RequireAuth picks up is_phone_verified before we
-    // navigate; otherwise the next route bounces us back here.
-    await refreshProfile()
+    // navigate. Route off the FRESHLY-fetched profile — reading the
+    // closure's `profile` here is a stale render-time snapshot.
+    const fresh = await refreshProfile()
 
-    if (!profile?.account_type) {
+    if (!fresh?.account_type) {
       navigate('/choose-role', { replace: true })
-    } else if (profile.account_type === 'courier') {
+    } else if (fresh.account_type === 'courier') {
       navigate('/courier', { replace: true })
     } else {
       navigate('/sender', { replace: true })

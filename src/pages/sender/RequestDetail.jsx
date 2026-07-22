@@ -7,6 +7,7 @@ import { feeFor, totalFor } from '../../lib/pricing.js'
 import RouteMap from '../../components/RouteMap.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
+import PackagePhoto from '../../components/PackagePhoto.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 
 const dollars = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
@@ -32,12 +33,6 @@ const statusLabel = {
   picked_up: 'In transit',
   delivered: 'Delivered',
   cancelled: 'Cancelled',
-}
-
-function photoUrl(path) {
-  if (!path) return null
-  const { data } = supabase.storage.from('package-photos').getPublicUrl(path)
-  return data.publicUrl
 }
 
 export default function RequestDetail() {
@@ -140,8 +135,6 @@ export default function RequestDetail() {
     timeline.push({ key: 'cancelled', label: 'Cancelled', iso: request.cancelled_at, done: true, error: true })
   }
 
-  const photo = photoUrl(request.package_photo_path)
-
   return (
     <div className="min-h-full px-6 py-12 max-w-2xl mx-auto">
       <Link to="/sender" className="text-sm text-slate hover:text-ink">&larr; back</Link>
@@ -192,13 +185,7 @@ export default function RequestDetail() {
         <div className="p-4 rounded-xl border border-mist bg-white">
           <div className="text-xs uppercase tracking-widest text-slate">Package</div>
           <div className="mt-2 flex items-start gap-3">
-            {photo && (
-              <img
-                src={photo}
-                alt="Package"
-                className="w-20 h-20 object-cover rounded-lg border border-mist shrink-0"
-              />
-            )}
+            <PackagePhoto path={request.package_photo_path} variant="thumbnail" />
             <div className="text-sm text-slate">{request.package_description}</div>
           </div>
         </div>

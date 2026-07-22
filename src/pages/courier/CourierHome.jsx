@@ -7,6 +7,7 @@ import { haversineMiles } from '../../lib/geocode.js'
 import RouteMap from '../../components/RouteMap.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
+import PackagePhoto from '../../components/PackagePhoto.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 
 function dollars(cents) {
@@ -22,12 +23,6 @@ function timeLabel(iso) {
     hour: 'numeric',
     minute: '2-digit',
   })
-}
-
-function photoUrl(path) {
-  if (!path) return null
-  const { data } = supabase.storage.from('package-photos').getPublicUrl(path)
-  return data.publicUrl
 }
 
 const ACCEPT_ERROR_COPY = {
@@ -447,7 +442,6 @@ export default function CourierHome() {
           ) : (
             <ul className="space-y-3">
               {visibleRequests.map((r) => {
-                const url = photoUrl(r.package_photo_path)
                 const payoutsReady =
                   profile?.stripe_connect_charges_enabled && profile?.stripe_connect_payouts_enabled
                 const canAccept = profile?.verification_status === 'approved' && payoutsReady
@@ -488,16 +482,7 @@ export default function CourierHome() {
                           <div className="text-sm text-ink mt-1">{r.package_description}</div>
                         </div>
                       )}
-                      {url && (
-                        <div className="pt-3">
-                          <div className="text-xs uppercase tracking-wide text-slate/70">Photo</div>
-                          <img
-                            src={url}
-                            alt={r.package_description || 'Package photo'}
-                            className="mt-2 w-full max-h-64 object-cover rounded-lg border border-mist"
-                          />
-                        </div>
-                      )}
+                      <PackagePhoto path={r.package_photo_path} alt={r.package_description || 'Package photo'} />
                     </div>
                     {metaParts.length > 0 && (
                       <div className="text-xs text-slate flex flex-wrap gap-x-2 gap-y-1">
