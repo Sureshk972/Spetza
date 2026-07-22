@@ -17,7 +17,7 @@ export default function Welcome() {
           Peer-to-peer delivery
         </div>
         <h1 className="font-serif text-6xl text-ink mt-6 tracking-tight">Spetza</h1>
-        <p className="text-slate mt-4 text-lg">Get it there.</p>
+        <p className="text-signal mt-4 text-lg">Get it there.</p>
         <p className="text-slate mt-6 leading-relaxed">
           Post a package. A nearby courier picks it up and delivers it.
           No schedules. No depots. Just neighbors moving things for neighbors.
@@ -26,18 +26,18 @@ export default function Welcome() {
           <Link
             to="/signup"
             onClick={() => stashRole('sender')}
-            className="block px-6 py-4 rounded-xl bg-ink text-cream text-left hover:bg-signal transition-colors"
+            className="block px-6 py-4 rounded-xl border border-mist text-ink text-left hover:border-signal transition-colors"
           >
-            <div className="text-xs uppercase tracking-widest text-signal">Sender</div>
-            <div className="font-serif text-xl mt-1">Send a package</div>
+            <div className="text-xs uppercase tracking-widest text-signal font-bold">Sender</div>
+            <div className="font-serif text-xl mt-1">I want to send packages</div>
           </Link>
           <Link
             to="/signup"
             onClick={() => stashRole('courier')}
             className="block px-6 py-4 rounded-xl border border-mist text-ink text-left hover:border-signal transition-colors"
           >
-            <div className="text-xs uppercase tracking-widest text-signal">Courier</div>
-            <div className="font-serif text-xl mt-1">Deliver packages nearby</div>
+            <div className="text-xs uppercase tracking-widest text-signal font-bold">Courier</div>
+            <div className="font-serif text-xl mt-1">I want to deliver packages</div>
           </Link>
         </div>
         <p className="text-slate text-xs mt-6">

@@ -4,6 +4,15 @@ import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 
+function readRole() {
+  try {
+    const r = sessionStorage.getItem('spetza:intended_role')
+    return r === 'sender' || r === 'courier' ? r : null
+  } catch {
+    return null
+  }
+}
+
 export default function SignUp() {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -14,6 +23,7 @@ export default function SignUp() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const role = readRole()
 
   const requireConfig = () => {
     if (hasSupabaseConfig) return true
@@ -58,6 +68,16 @@ export default function SignUp() {
           &larr; back
         </Link>
         <h1 className="font-serif text-3xl text-ink mt-6">Create an account</h1>
+        {role && (
+          <p className="text-sm text-slate mt-2">
+            Signing up as{' '}
+            <span className="text-signal uppercase tracking-widest text-xs font-medium">
+              {role}
+            </span>
+            {' · '}
+            <Link to="/welcome" className="text-signal hover:underline">Change</Link>
+          </p>
+        )}
 
         {step === 'email' ? (
           <>
