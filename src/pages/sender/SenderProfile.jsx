@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
+import SenderPaymentSection from '../../components/SenderPaymentSection.jsx'
 
 function dollars(cents) {
   return `$${(cents / 100).toFixed(2)}`
@@ -35,6 +36,7 @@ export default function SenderProfile() {
   const [detaching, setDetaching] = useState(null)
   const [transactions, setTransactions] = useState([])
   const [txLoading, setTxLoading] = useState(true)
+  const [addingCard, setAddingCard] = useState(false)
 
   const loadPaymentMethods = async () => {
     if (!hasSupabaseConfig || !user) {
@@ -200,15 +202,48 @@ export default function SenderProfile() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xs uppercase tracking-widest text-slate">Payment methods</h2>
-          {pmLoading ? (
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs uppercase tracking-widest text-slate">Payment methods</h2>
+            {!addingCard && !pmLoading && paymentMethods.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setAddingCard(true)}
+                className="text-xs text-signal hover:underline"
+              >
+                Add card
+              </button>
+            )}
+          </div>
+          {addingCard ? (
+            <div className="rounded-xl border border-mist bg-white p-4 space-y-3">
+              <SenderPaymentSection
+                profile={profile}
+                onProfileChange={async () => {
+                  setAddingCard(false)
+                  await refreshProfile()
+                  loadPaymentMethods()
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setAddingCard(false)}
+                className="text-xs text-slate hover:text-ink"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : pmLoading ? (
             <div className="text-slate text-sm">Loading…</div>
           ) : paymentMethods.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-mist p-6 text-center">
+            <div className="rounded-xl border border-dashed border-mist p-6 text-center space-y-3">
               <p className="text-slate text-sm">No saved cards yet.</p>
-              <Link to="/sender/new" className="inline-block mt-3 text-signal hover:underline text-sm">
-                Add one when you post a delivery
-              </Link>
+              <button
+                type="button"
+                onClick={() => setAddingCard(true)}
+                className="text-signal hover:underline text-sm"
+              >
+                Add a card
+              </button>
             </div>
           ) : (
             <div className="rounded-xl border border-mist bg-white divide-y divide-mist">
