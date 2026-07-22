@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { haversineMiles } from '../../lib/geocode.js'
@@ -27,6 +28,25 @@ function photoUrl(path) {
   if (!path) return null
   const { data } = supabase.storage.from('package-photos').getPublicUrl(path)
   return data.publicUrl
+}
+
+const ACCEPT_ERROR_COPY = {
+  'courier not approved': "You can't accept until your ID verification is approved.",
+  'courier payouts not set up':
+    "You cannot accept this order because you haven't set up your payouts yet. Open Profile → Payouts to connect a bank account.",
+  'request not available': 'This request was just taken by another courier.',
+  'cannot accept your own request': "You can't accept your own request.",
+  'sender has no payment method on file':
+    "The sender hasn't saved a payment method yet.",
+}
+
+async function readInvokeErrorCode(error) {
+  try {
+    const body = await error?.context?.json?.()
+    return body?.error ?? null
+  } catch {
+    return null
+  }
 }
 
 export default function CourierHome() {
@@ -142,7 +162,8 @@ export default function CourierHome() {
     )
     setAccepting(null)
     if (error) {
-      alert(error.message)
+      const code = await readInvokeErrorCode(error)
+      toast.error(ACCEPT_ERROR_COPY[code] || 'Something went wrong. Try again.')
       return
     }
     refresh()
@@ -247,6 +268,19 @@ export default function CourierHome() {
                 </Link>
               </>
             )}
+          </div>
+        )}
+
+        {profile?.verification_status === 'approved' &&
+          !(profile?.stripe_connect_charges_enabled && profile?.stripe_connect_payouts_enabled) && (
+          <div className="mt-8 p-4 rounded-xl border border-signal/40 bg-signal/5">
+            <div className="text-sm text-ink font-medium">Set up payouts to accept deliveries</div>
+            <div className="text-sm text-slate mt-1">
+              We need a bank account to send your earnings to.
+            </div>
+            <Link to="/courier/profile" className="inline-block mt-3 text-signal hover:underline text-sm">
+              Connect bank account
+            </Link>
           </div>
         )}
 
@@ -414,7 +448,15 @@ export default function CourierHome() {
             <ul className="space-y-3">
               {visibleRequests.map((r) => {
                 const url = photoUrl(r.package_photo_path)
-                const canAccept = profile?.verification_status === 'approved'
+                const payoutsReady =
+                  profile?.stripe_connect_charges_enabled && profile?.stripe_connect_payouts_enabled
+                const canAccept = profile?.verification_status === 'approved' && payoutsReady
+                const disabledReason =
+                  profile?.verification_status !== 'approved'
+                    ? 'Complete ID verification to accept'
+                    : !payoutsReady
+                    ? 'Connect a bank account to accept'
+                    : undefined
                 const metaParts = [
                   r.distance_miles != null ? `Trip ${r.distance_miles} mi` : null,
                   `${r.miles_from_you.toFixed(1)} mi from you`,
@@ -471,7 +513,7 @@ export default function CourierHome() {
                       <button
                         onClick={() => handleAccept(r)}
                         disabled={accepting === r.id || !canAccept}
-                        title={canAccept ? undefined : 'Complete verification to accept'}
+                        title={disabledReason}
                         className="px-3 py-1 rounded-lg bg-forest text-cream text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                       >
                         {accepting === r.id ? 'Accepting…' : 'Accept'}
