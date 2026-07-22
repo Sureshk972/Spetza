@@ -24,7 +24,7 @@ export default function Welcome() {
         </p>
         <div className="mt-10 grid gap-3">
           <Link
-            to="/signin"
+            to="/signup"
             onClick={() => stashRole('sender')}
             className="block px-6 py-4 rounded-xl bg-ink text-cream text-left hover:bg-signal transition-colors"
           >
@@ -32,7 +32,7 @@ export default function Welcome() {
             <div className="font-serif text-xl mt-1">Send a package</div>
           </Link>
           <Link
-            to="/signin"
+            to="/signup"
             onClick={() => stashRole('courier')}
             className="block px-6 py-4 rounded-xl border border-mist text-ink text-left hover:border-signal transition-colors"
           >
