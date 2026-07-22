@@ -107,7 +107,7 @@ export default function CourierVerify() {
 
   return (
     <div className="min-h-full px-6 py-12 max-w-xl mx-auto">
-      <div className="text-xs uppercase tracking-widest text-forest">Courier</div>
+      <div className="text-xs uppercase tracking-widest text-signal">Courier</div>
       <h1 className="font-serif text-3xl text-ink mt-1">Verify your identity</h1>
       <p className="text-slate mt-3">
         Upload three photos. A team member reviews within a business day.

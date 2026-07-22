@@ -204,11 +204,8 @@ export default function CourierHome() {
     <div className="min-h-full">
       <div className="max-w-3xl mx-auto px-6 py-10">
         <header>
-          <div className="flex items-center gap-3">
-            <p className="text-xs uppercase tracking-widest text-forest">Courier</p>
-            <span className="text-slate/40">·</span>
-            <h1 className="font-serif text-4xl text-ink">Discover</h1>
-          </div>
+          <div className="text-xs uppercase tracking-widest text-signal">Courier</div>
+          <h1 className="font-serif text-3xl text-ink mt-1">Discover</h1>
           <div className="mt-2 flex items-center gap-3 text-xs text-slate">
             <RatingBadge avg={profile?.rating_avg} count={profile?.rating_count} />
             {serviceArea && (

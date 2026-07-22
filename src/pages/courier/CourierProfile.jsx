@@ -22,7 +22,7 @@ function timeLabel(iso) {
 }
 
 const VERIFICATION_COPY = {
-  approved: { label: 'Approved', tone: 'text-forest' },
+  approved: { label: 'ID Verification Completed', tone: 'text-forest' },
   pending: { label: 'Under review', tone: 'text-signal' },
   rejected: { label: 'Not approved', tone: 'text-red-600' },
 }
@@ -102,7 +102,7 @@ export default function CourierProfile() {
     <div className="min-h-full">
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-10">
         <div className="flex items-center gap-3">
-          <p className="text-xs uppercase tracking-widest text-forest">Courier</p>
+          <p className="text-xs uppercase tracking-widest text-signal">Courier</p>
           <span className="text-slate/40">·</span>
           <h1 className="font-serif text-4xl text-ink">Profile</h1>
         </div>
