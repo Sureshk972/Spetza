@@ -1,5 +1,3 @@
-let mixpanelLoaded = false
-
 export function initAnalytics(token) {
   if (!token) {
     console.warn('Mixpanel token not provided; analytics disabled')
@@ -12,7 +10,6 @@ export function initAnalytics(token) {
   script.onload = () => {
     if (window.mixpanel) {
       window.mixpanel.init(token, { batch_requests: true })
-      mixpanelLoaded = true
     }
   }
   script.onerror = () => {
@@ -46,7 +43,7 @@ export function identifyUser(userId, properties = {}) {
 
   try {
     window.mixpanel.identify(userId)
-    window.mixpanel.set_config(properties)
+    window.mixpanel.people.set(properties)
   } catch (error) {
     console.error(`Failed to identify user: ${userId} - ${error.message}`)
   }

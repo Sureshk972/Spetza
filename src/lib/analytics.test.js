@@ -8,7 +8,7 @@ describe('analytics wrapper', () => {
     mixpanelMock = {
       track: vi.fn(),
       identify: vi.fn(),
-      set_config: vi.fn(),
+      people: { set: vi.fn() },
     }
     window.mixpanel = mixpanelMock
   })
@@ -39,7 +39,7 @@ describe('analytics wrapper', () => {
   it('should identify a user', () => {
     identifyUser('user-123', { email: 'test@example.com' })
     expect(mixpanelMock.identify).toHaveBeenCalledWith('user-123')
-    expect(mixpanelMock.set_config).toHaveBeenCalled()
+    expect(mixpanelMock.people.set).toHaveBeenCalledWith({ email: 'test@example.com' })
   })
 
   it('should handle missing Mixpanel gracefully', () => {
