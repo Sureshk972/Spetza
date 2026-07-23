@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14?target=denonext";
+import { safeTrackEvent } from "../_shared/analytics.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, { apiVersion: "2024-06-20" });
 const PLATFORM_FEE_BPS = parseInt(Deno.env.get("PLATFORM_FEE_BPS") ?? "1500");
@@ -132,6 +133,17 @@ Deno.serve(async (req) => {
     await stripe.paymentIntents.cancel(pi.id).catch(() => {});
     return json({ error: "request was claimed by someone else" }, 409);
   }
+
+  await safeTrackEvent(supabase, user.id, "delivery_accepted", {
+    delivery_request_id,
+    accepted_price_cents: request.max_price_cents,
+    platform_fee_cents: fee,
+  });
+  await safeTrackEvent(supabase, user.id, "payment_authorized", {
+    delivery_request_id,
+    amount_cents: pi.amount,
+    status: pi.status,
+  });
 
   return json({ delivery_request_id });
 });

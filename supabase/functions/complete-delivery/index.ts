@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14?target=denonext";
+import { safeTrackEvent } from "../_shared/analytics.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, { apiVersion: "2024-06-20" });
 
@@ -74,6 +75,15 @@ Deno.serve(async (req) => {
     // PI already captured; surface a clear error but funds are collected.
     return json({ error: "payment captured but request update failed", detail: updateErr.message }, 500);
   }
+
+  await safeTrackEvent(supabase, user.id, "delivery_completed", {
+    delivery_request_id,
+  });
+  await safeTrackEvent(supabase, user.id, "payment_captured", {
+    delivery_request_id,
+    amount_cents: pi.amount,
+    status: "succeeded",
+  });
 
   return json({ delivery_request_id, payment_intent_id: pi.id });
 });
