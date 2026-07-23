@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom'
+import { trackEvent } from '../lib/analytics.js'
 
-const stashRole = (role) => {
+const chooseRole = (role) => {
   try {
     sessionStorage.setItem('spetza:intended_role', role)
   } catch {
     // sessionStorage can throw in private tabs; fall through — the
     // ChooseRole fallback will still catch these users after signup.
   }
+  trackEvent('role_selected', { role })
 }
 
 export default function Welcome() {
@@ -25,7 +27,7 @@ export default function Welcome() {
         <div className="mt-10 grid gap-3">
           <Link
             to="/signup"
-            onClick={() => stashRole('sender')}
+            onClick={() => chooseRole('sender')}
             className="block px-6 py-4 rounded-xl border border-mist text-ink text-left hover:border-signal transition-colors"
           >
             <div className="text-xs uppercase tracking-widest text-signal font-bold">Sender</div>
@@ -33,7 +35,7 @@ export default function Welcome() {
           </Link>
           <Link
             to="/signup"
-            onClick={() => stashRole('courier')}
+            onClick={() => chooseRole('courier')}
             className="block px-6 py-4 rounded-xl border border-mist text-ink text-left hover:border-signal transition-colors"
           >
             <div className="text-xs uppercase tracking-widest text-signal font-bold">Courier</div>
