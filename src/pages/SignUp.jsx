@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import { trackEvent, identifyUser } from '../lib/analytics.js'
 
 function readRole() {
   try {
@@ -72,6 +73,10 @@ export default function SignUp() {
       if (profileErr) {
         console.error('Failed to create profile row after signup', profileErr)
       }
+
+      // Tie all subsequent events to this user and seed the profile.
+      identifyUser(data.user.id, { email, role: role || 'unknown' })
+      trackEvent('signup_completed', { role: role || 'unknown' })
     }
     setSubmitting(false)
   }

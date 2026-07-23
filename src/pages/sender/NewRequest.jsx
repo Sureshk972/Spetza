@@ -7,8 +7,16 @@ import PackagePhotoInput from '../../components/PackagePhotoInput.jsx'
 import RouteMap from '../../components/RouteMap.jsx'
 import { MAX_DISTANCE_MILES, priceForDistance, feeFor, totalFor } from '../../lib/pricing.js'
 import { geocodeAddress, haversineMiles } from '../../lib/geocode.js'
+import { trackEvent } from '../../lib/analytics.js'
 
 const money = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
+
+// Pull a 5-digit US zip out of a geocoder-formatted address string
+// (e.g. "123 W Foster Ave, Chicago, IL 60640, USA" → "60640").
+const zipFrom = (address) => {
+  const m = (address || '').match(/\b(\d{5})(?:-\d{4})?\b/)
+  return m ? m[1] : 'unknown'
+}
 
 const blankGeo = { status: 'idle', lat: null, lng: null, formatted: null, error: null }
 
@@ -85,25 +93,38 @@ export default function NewRequest() {
       return
     }
     setSubmitting(true)
-    const { error } = await supabase.from('delivery_requests').insert({
-      sender_id: user.id,
-      pickup_address: pickupGeo.formatted || pickup,
-      pickup_lat: pickupGeo.lat,
-      pickup_lng: pickupGeo.lng,
-      dropoff_address: dropoffGeo.formatted || dropoff,
-      dropoff_lat: dropoffGeo.lat,
-      dropoff_lng: dropoffGeo.lng,
-      package_description: description,
-      distance_miles: Number(distance.toFixed(2)),
-      package_size: size.trim() || null,
-      package_photo_path: photoPath,
-      max_price_cents: priceCents,
-    })
+    const pickupAddress = pickupGeo.formatted || pickup
+    const dropoffAddress = dropoffGeo.formatted || dropoff
+    const { data: inserted, error } = await supabase
+      .from('delivery_requests')
+      .insert({
+        sender_id: user.id,
+        pickup_address: pickupAddress,
+        pickup_lat: pickupGeo.lat,
+        pickup_lng: pickupGeo.lng,
+        dropoff_address: dropoffAddress,
+        dropoff_lat: dropoffGeo.lat,
+        dropoff_lng: dropoffGeo.lng,
+        package_description: description,
+        distance_miles: Number(distance.toFixed(2)),
+        package_size: size.trim() || null,
+        package_photo_path: photoPath,
+        max_price_cents: priceCents,
+      })
+      .select('id')
+      .single()
     setSubmitting(false)
     if (error) {
       toast.error(error.message)
       return
     }
+    trackEvent('delivery_posted', {
+      delivery_id: inserted?.id,
+      pickup_zip: zipFrom(pickupAddress),
+      dropoff_zip: zipFrom(dropoffAddress),
+      distance_miles: Number(distance.toFixed(2)),
+      price_cents: priceCents,
+    })
     toast.success('Request posted.')
     navigate('/sender')
   }

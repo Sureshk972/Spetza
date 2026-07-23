@@ -11,6 +11,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { usePhoneVerification } from '../../hooks/usePhoneVerification.js'
 import { normalizePhone } from '../../lib/phone.js'
+import { trackEvent } from '../../lib/analytics.js'
 
 const SEND_ERROR_COPY = {
   invalid_phone: "That doesn't look like a valid phone number. Check it and try again.",
@@ -45,6 +46,8 @@ export default function PhoneVerify() {
     e.preventDefault()
     const { error: err } = await verifyCode(normalizePhone(phone), code)
     if (err) return
+
+    trackEvent('phone_verification_completed', { phone_provider: 'twilio' })
 
     // Refresh so RequireAuth picks up is_phone_verified before we
     // navigate. Route off the FRESHLY-fetched profile — reading the

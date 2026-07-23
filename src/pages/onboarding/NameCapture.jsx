@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
+import { trackEvent, identifyUser } from '../../lib/analytics.js'
 
 export default function NameCapture() {
   const navigate = useNavigate()
@@ -55,6 +56,11 @@ export default function NameCapture() {
         sessionStorage.removeItem('spetza:intended_role')
       } catch {}
     }
+    identifyUser(user.id, { first_name: cleaned })
+    trackEvent('name_capture_completed', {
+      first_name: cleaned,
+      has_last_name: !!lastName.trim(),
+    })
     await refreshProfile()
     setSaving(false)
     navigate('/', { replace: true })
