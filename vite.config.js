@@ -7,5 +7,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    // Edge-function tests are Deno (https: imports, Deno.test) and only
+    // run under `deno test` — exclude them from the Node/vitest run.
+    exclude: ['**/node_modules/**', '**/dist/**', 'supabase/functions/**'],
   },
 })

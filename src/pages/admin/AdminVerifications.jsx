@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 
-const DOC_LABEL = { selfie: 'Selfie', id_front: 'ID front', id_back: 'ID back' }
-
 function fmtDate(iso) {
   if (!iso) return ''
   return new Date(iso).toLocaleString(undefined, {
@@ -12,80 +10,41 @@ function fmtDate(iso) {
   })
 }
 
+const CHECKR_DASH = 'https://dashboard.checkr.com/candidates/'
+
 export default function AdminVerifications() {
   const [couriers, setCouriers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [signed, setSigned] = useState({})
   const [acting, setActing] = useState(null)
 
   const refresh = useCallback(async () => {
-    if (!hasSupabaseConfig) {
-      setLoading(false)
-      return
-    }
+    if (!hasSupabaseConfig) { setLoading(false); return }
     setLoading(true)
-    const { data: profs } = await supabase
+    const { data } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name, verification_submitted_at, verification_notes')
+      .select('id, first_name, last_name, checkr_candidate_id, checkr_report_id, background_check_updated_at')
       .eq('account_type', 'courier')
-      .eq('verification_status', 'pending')
-      .order('verification_submitted_at', { ascending: true })
-
-    if (!profs || profs.length === 0) {
-      setCouriers([])
-      setLoading(false)
-      return
-    }
-    const ids = profs.map((p) => p.id)
-    const { data: docs } = await supabase
-      .from('verification_documents')
-      .select('courier_id, doc_type, storage_path')
-      .in('courier_id', ids)
-
-    const byCourier = new Map()
-    for (const p of profs) byCourier.set(p.id, { ...p, docs: [] })
-    for (const d of docs ?? []) {
-      byCourier.get(d.courier_id)?.docs.push(d)
-    }
-    setCouriers(Array.from(byCourier.values()))
+      .eq('background_check_status', 'consider')
+      .order('background_check_updated_at', { ascending: true })
+    setCouriers(data ?? [])
     setLoading(false)
   }, [])
 
   useEffect(() => { refresh() }, [refresh])
 
-  const viewDoc = async (courier, doc) => {
-    const key = `${courier.id}:${doc.doc_type}`
-    if (signed[key]) {
-      window.open(signed[key], '_blank')
-      return
-    }
-    const { data, error } = await supabase.storage
-      .from('courier-verification')
-      .createSignedUrl(doc.storage_path, 60)
-    if (error) {
-      toast.error(error.message)
-      return
-    }
-    setSigned((s) => ({ ...s, [key]: data.signedUrl }))
-    window.open(data.signedUrl, '_blank')
-  }
-
   const decide = async (courier, decision) => {
     let notes = null
     if (decision === 'rejected') {
-      notes = window.prompt('Reason (shown to courier):')
+      notes = window.prompt('Reason (kept internal; Checkr sends the courier the FCRA notices):')
       if (notes == null) return
     }
     setActing(courier.id)
-    const { error } = await supabase.functions.invoke('review-verification', {
+    const { error } = await supabase.functions.invoke('adjudicate-background-check', {
       body: { courier_id: courier.id, decision, notes },
     })
     setActing(null)
-    if (error) {
-      toast.error(error.message)
-      return
-    }
-    toast.success(decision === 'approved' ? 'Approved' : 'Rejected')
+    if (error) { toast.error(error.message); return }
+    toast.success(decision === 'approved' ? 'Cleared' : 'Rejected (adverse action started)')
     refresh()
   }
 
@@ -94,7 +53,7 @@ export default function AdminVerifications() {
       <header className="flex items-center justify-between">
         <div>
           <div className="text-xs uppercase tracking-widest text-signal">Admin</div>
-          <h1 className="font-serif text-3xl text-ink mt-1">Verification queue</h1>
+          <h1 className="font-serif text-3xl text-ink mt-1">Background checks — review</h1>
         </div>
         <Link to="/" className="text-sm text-slate hover:text-ink">Back</Link>
       </header>
@@ -104,7 +63,7 @@ export default function AdminVerifications() {
           <div className="text-slate">Loading…</div>
         ) : couriers.length === 0 ? (
           <div className="text-center py-16 rounded-2xl border border-dashed border-mist">
-            <p className="text-slate">Nothing pending.</p>
+            <p className="text-slate">Nothing to review.</p>
           </div>
         ) : (
           <ul className="space-y-4">
@@ -118,34 +77,26 @@ export default function AdminVerifications() {
                         : 'Unnamed courier'}
                     </div>
                     <div className="text-xs text-slate mt-0.5">
-                      Submitted {fmtDate(c.verification_submitted_at)}
+                      Flagged {fmtDate(c.background_check_updated_at)}
                     </div>
                   </div>
-                  <div className="text-xs text-slate">{c.id.slice(0, 8)}</div>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {c.docs.map((d) => (
-                    <button
-                      key={d.doc_type}
-                      onClick={() => viewDoc(c, d)}
-                      className="px-3 py-1 rounded-lg border border-mist text-sm text-slate hover:border-signal hover:text-ink"
+                  {c.checkr_candidate_id && (
+                    <a
+                      href={`${CHECKR_DASH}${c.checkr_candidate_id}`}
+                      target="_blank" rel="noreferrer"
+                      className="text-xs text-signal hover:underline"
                     >
-                      {DOC_LABEL[d.doc_type] ?? d.doc_type} ↗
-                    </button>
-                  ))}
-                  {c.docs.length === 0 && (
-                    <span className="text-xs text-slate">No documents on record.</span>
+                      View report in Checkr ↗
+                    </a>
                   )}
                 </div>
-
                 <div className="mt-5 flex gap-2 justify-end">
                   <button
                     onClick={() => decide(c, 'rejected')}
                     disabled={acting === c.id}
                     className="px-3 py-1.5 rounded-lg border border-mist text-sm text-slate hover:border-red-500 hover:text-red-600 disabled:opacity-50"
                   >
-                    Reject
+                    Deny
                   </button>
                   <button
                     onClick={() => decide(c, 'approved')}
