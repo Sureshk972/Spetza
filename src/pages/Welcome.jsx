@@ -46,6 +46,9 @@ export default function Welcome() {
           Already have an account?{' '}
           <Link to="/signin" className="text-signal hover:underline">Sign in</Link>
         </p>
+        <p className="text-slate text-xs mt-3">
+          <Link to="/trust" className="hover:text-ink underline">How we vet every courier</Link>
+        </p>
       </div>
     </div>
   )

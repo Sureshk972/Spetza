@@ -7,6 +7,7 @@ import { useAuth } from './context/AuthContext.jsx'
 import Welcome from './pages/Welcome.jsx'
 import SignIn from './pages/SignIn.jsx'
 import SignUp from './pages/SignUp.jsx'
+import Trust from './pages/Trust.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
 import PhoneVerify from './pages/onboarding/PhoneVerify.jsx'
 import NameCapture from './pages/onboarding/NameCapture.jsx'
@@ -57,6 +58,7 @@ export default function App() {
       <Route path="/welcome" element={<Welcome />} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
+      <Route path="/trust" element={<Trust />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/verify-phone" element={<RequireAuth><PhoneVerify /></RequireAuth>} />
       <Route path="/name" element={<RequireAuth><NameCapture /></RequireAuth>} />
