@@ -21,9 +21,11 @@ function timeLabel(iso) {
   })
 }
 
-const VERIFICATION_COPY = {
-  approved: { label: 'ID Verification Completed', tone: 'text-forest' },
-  pending: { label: 'Under review', tone: 'text-signal' },
+const BG_LABEL = {
+  not_started: { label: 'Not started', tone: 'text-slate' },
+  pending: { label: 'In progress', tone: 'text-signal' },
+  consider: { label: 'Under review', tone: 'text-signal' },
+  clear: { label: 'Verified ✓', tone: 'text-forest' },
   rejected: { label: 'Not approved', tone: 'text-red-600' },
 }
 
@@ -86,9 +88,8 @@ export default function CourierProfile() {
     toast.success('Name updated')
   }
 
-  const verificationStatus = profile?.verification_status
-  const verificationCopy =
-    VERIFICATION_COPY[verificationStatus] ?? { label: 'Not started', tone: 'text-slate' }
+  const bgStatus = profile?.background_check_status ?? 'not_started'
+  const bgCopy = BG_LABEL[bgStatus] ?? BG_LABEL.not_started
 
   const totalEarnedCents = earnings
     .filter((e) => e.status === 'delivered')
@@ -186,29 +187,36 @@ export default function CourierProfile() {
           <div className="rounded-xl border border-mist bg-white p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className={`text-sm font-medium ${verificationCopy.tone}`}>
-                  {verificationCopy.label}
+                <div className={`text-sm font-medium ${bgCopy.tone}`}>
+                  {bgCopy.label}
                 </div>
-                {verificationStatus === 'rejected' && profile?.verification_notes && (
-                  <div className="text-xs text-slate mt-1">{profile.verification_notes}</div>
-                )}
-                {verificationStatus === 'pending' && (
+                {bgStatus === 'pending' && (
                   <div className="text-xs text-slate mt-1">
-                    We're reviewing your documents.
+                    Your background check is in progress.
                   </div>
                 )}
-                {!verificationStatus && (
+                {bgStatus === 'consider' && (
                   <div className="text-xs text-slate mt-1">
-                    Verify your identity to accept deliveries.
+                    Your background check is under review.
+                  </div>
+                )}
+                {bgStatus === 'rejected' && (
+                  <div className="text-xs text-slate mt-1">
+                    Check your email from Checkr for details.
+                  </div>
+                )}
+                {bgStatus === 'not_started' && (
+                  <div className="text-xs text-slate mt-1">
+                    Get verified to accept deliveries.
                   </div>
                 )}
               </div>
-              {(verificationStatus !== 'approved' && verificationStatus !== 'pending') && (
+              {bgStatus !== 'clear' && bgStatus !== 'pending' && bgStatus !== 'consider' && (
                 <Link
                   to="/courier/verify"
                   className="text-xs text-signal hover:underline whitespace-nowrap"
                 >
-                  {verificationStatus === 'rejected' ? 'Update' : 'Start'}
+                  {bgStatus === 'rejected' ? 'Details' : 'Start'}
                 </Link>
               )}
             </div>

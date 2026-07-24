@@ -9,6 +9,7 @@ import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
 import PackagePhoto from '../../components/PackagePhoto.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
+import { canAcceptDeliveries, courierStep } from '../../lib/courierGate.js'
 
 function dollars(cents) {
   return `$${(cents / 100).toFixed(2)}`
@@ -26,7 +27,8 @@ function timeLabel(iso) {
 }
 
 const ACCEPT_ERROR_COPY = {
-  'courier not approved': "You can't accept until your ID verification is approved.",
+  'add a selfie first': 'Add a selfie before you can accept.',
+  'background check not clear': "Your background check isn't clear yet.",
   'courier payouts not set up':
     "You cannot accept this order because you haven't set up your payouts yet. Open Profile → Payouts to connect a bank account.",
   'request not available': 'This request was just taken by another courier.',
@@ -233,48 +235,23 @@ export default function CourierHome() {
           </div>
         </header>
 
-        {profile?.verification_status !== 'approved' && (
+        {courierStep(profile) !== 'done' && (
           <div className="mt-8 p-4 rounded-xl border border-signal/40 bg-signal/5">
-            {profile?.verification_status === 'pending' ? (
-              <>
-                <div className="text-sm text-ink font-medium">Verification pending</div>
-                <div className="text-sm text-slate mt-1">
-                  We're reviewing your documents. You can't accept deliveries until we approve.
-                </div>
-              </>
-            ) : profile?.verification_status === 'rejected' ? (
-              <>
-                <div className="text-sm text-ink font-medium">Verification not approved</div>
-                {profile.verification_notes && (
-                  <div className="text-sm text-slate mt-1">{profile.verification_notes}</div>
-                )}
-                <Link to="/courier/verify" className="inline-block mt-3 text-signal hover:underline text-sm">
-                  Update documents
-                </Link>
-              </>
-            ) : (
-              <>
-                <div className="text-sm text-ink font-medium">Verify your identity to accept deliveries</div>
-                <div className="text-sm text-slate mt-1">
-                  We check ID before you can pick up packages for others.
-                </div>
-                <Link to="/courier/verify" className="inline-block mt-3 text-signal hover:underline text-sm">
-                  Start verification
-                </Link>
-              </>
-            )}
-          </div>
-        )}
-
-        {profile?.verification_status === 'approved' &&
-          !(profile?.stripe_connect_charges_enabled && profile?.stripe_connect_payouts_enabled) && (
-          <div className="mt-8 p-4 rounded-xl border border-signal/40 bg-signal/5">
-            <div className="text-sm text-ink font-medium">Set up payouts to accept deliveries</div>
+            <div className="text-sm text-ink font-medium">Finish getting verified to accept deliveries</div>
             <div className="text-sm text-slate mt-1">
-              We need a bank account to send your earnings to.
+              {courierStep(profile) === 'selfie' && 'Upload a selfie to continue.'}
+              {courierStep(profile) === 'payouts' && 'Set up your payout account to get paid.'}
+              {courierStep(profile) === 'background' &&
+                (profile?.background_check_status === 'pending'
+                  ? "Your background check is in progress. We'll update this when it's done."
+                  : profile?.background_check_status === 'consider'
+                  ? 'Your background check is under review.'
+                  : profile?.background_check_status === 'rejected'
+                  ? 'Your background check was not approved.'
+                  : 'Start your background check.')}
             </div>
-            <Link to="/courier/profile" className="inline-block mt-3 text-signal hover:underline text-sm">
-              Connect bank account
+            <Link to="/courier/verify" className="inline-block mt-3 text-signal hover:underline text-sm">
+              Continue verification
             </Link>
           </div>
         )}
@@ -442,15 +419,14 @@ export default function CourierHome() {
           ) : (
             <ul className="space-y-3">
               {visibleRequests.map((r) => {
-                const payoutsReady =
-                  profile?.stripe_connect_charges_enabled && profile?.stripe_connect_payouts_enabled
-                const canAccept = profile?.verification_status === 'approved' && payoutsReady
-                const disabledReason =
-                  profile?.verification_status !== 'approved'
-                    ? 'Complete ID verification to accept'
-                    : !payoutsReady
-                    ? 'Connect a bank account to accept'
-                    : undefined
+                const canAccept = canAcceptDeliveries(profile)
+                const disabledReason = canAccept
+                  ? undefined
+                  : courierStep(profile) === 'selfie'
+                  ? 'Add a selfie to accept'
+                  : courierStep(profile) === 'payouts'
+                  ? 'Connect a bank account to accept'
+                  : 'Finish your background check to accept'
                 const metaParts = [
                   r.distance_miles != null ? `Trip ${r.distance_miles} mi` : null,
                   `${r.miles_from_you.toFixed(1)} mi from you`,
