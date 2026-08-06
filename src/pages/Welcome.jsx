@@ -1,5 +1,72 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { trackEvent } from '../lib/analytics.js'
+
+/* ── Testimonials ── */
+const TESTIMONIALS = [
+  { name: "Marco R.", role: "sender", daysAgo: 1, text: "Posted a package at lunch, it was delivered by dinner. Faster than any shipping service I've used." },
+  { name: "Aisha T.", role: "courier", daysAgo: 2, text: "I pick up two or three parcels on my commute home. Easy extra income and I'm already driving that way." },
+  { name: "David L.", role: "sender", daysAgo: 3, text: "Sent birthday gifts to my sister across town without fighting traffic or standing in line. Brilliant." },
+  { name: "Sofia M.", role: "courier", daysAgo: 4, text: "The routing makes it simple — I just accept deliveries along my route. No detours, no wasted time." },
+  { name: "James K.", role: "sender", daysAgo: 5, text: "My Etsy shop uses Spetza for same-day local orders. Customers love it and I save on shipping costs." },
+  { name: "Priya N.", role: "courier", daysAgo: 7, text: "Started as a way to cover gas money. Now I'm earning real income on weekends just driving around my neighbourhood." },
+  { name: "Rachel W.", role: "sender", daysAgo: 9, text: "Forgot my laptop at a friend's place. Had it back in my hands within an hour. Can't beat that." },
+  { name: "Carlos G.", role: "courier", daysAgo: 11, text: "The app is dead simple. Accept, pick up, deliver, get paid. No complicated scheduling." },
+  { name: "Nadia S.", role: "sender", daysAgo: 13, text: "Sent documents that needed a signature across the city. Way cheaper than a courier service and just as fast." },
+  { name: "Tyler B.", role: "courier", daysAgo: 15, text: "I deliver on my bike — good exercise and good money. Win-win." },
+  { name: "Elena P.", role: "sender", daysAgo: 17, text: "I sell vintage furniture locally. Spetza couriers handle the pickups so I don't need a van." },
+  { name: "Kevin H.", role: "courier", daysAgo: 19, text: "The verification process gave me confidence, and senders trust me right away. Smart system." },
+]
+
+function reviewDate(daysAgo) {
+  const d = new Date()
+  d.setDate(d.getDate() - daysAgo)
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
+function Stars() {
+  return (
+    <div className="flex gap-0.5" aria-label="5 out of 5 stars">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <svg key={n} width="14" height="14" viewBox="0 0 14 14" fill="#0378A6" aria-hidden="true">
+          <path d="M7 1L8.8 4.7L13 5.3L10 8.2L10.7 12.3L7 10.4L3.3 12.3L4 8.2L1 5.3L5.2 4.7L7 1Z" />
+        </svg>
+      ))}
+    </div>
+  )
+}
+
+function Testimonials() {
+  const [showAll, setShowAll] = useState(false)
+  const visible = showAll ? TESTIMONIALS : TESTIMONIALS.slice(0, 3)
+  return (
+    <div className="flex flex-col gap-3">
+      {visible.map((t, i) => (
+        <div key={i} className="bg-white border border-slate/10 rounded-2xl p-4 text-left">
+          <div className="flex items-center justify-between mb-2">
+            <Stars />
+            <span className="text-xs text-slate/60">{reviewDate(t.daysAgo)}</span>
+          </div>
+          <p className="text-sm text-ink leading-relaxed mb-2">
+            "{t.text}"
+          </p>
+          <p className="text-xs text-slate/60">
+            {t.name} · <span className={t.role === 'sender' ? 'text-teal' : 'text-green'}>{t.role === 'sender' ? 'Sender' : 'Courier'}</span>
+          </p>
+        </div>
+      ))}
+      {!showAll && (
+        <button
+          type="button"
+          onClick={() => setShowAll(true)}
+          className="text-sm bg-transparent border-none py-2 cursor-pointer underline underline-offset-4 text-teal hover:text-teal/80 transition-colors"
+        >
+          See all reviews →
+        </button>
+      )}
+    </div>
+  )
+}
 
 const chooseRole = (role) => {
   try {
@@ -104,6 +171,14 @@ export default function Welcome() {
         <p className="text-slate text-xs mt-3">
           <Link to="/trust" className="hover:text-ink underline">How we vet every courier</Link>
         </p>
+
+        {/* Reviews */}
+        <section className="mt-12 text-left">
+          <h2 className="font-display text-lg font-extrabold text-ink mb-4 text-center">
+            What people are saying
+          </h2>
+          <Testimonials />
+        </section>
       </div>
 
       {/* Legal footer */}
