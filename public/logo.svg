@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1126.98 657.73">
+  <defs>
+    <style>
+      .cls-1 {
+        font-family: Nunito-Black, Nunito;
+        font-size: 280px;
+        font-weight: 800;
+      }
+
+      .cls-2 {
+        stroke: #0071bc;
+      }
+
+      .cls-2, .cls-3 {
+        fill: none;
+        stroke-miterlimit: 10;
+        stroke-width: 45px;
+      }
+
+      .cls-4 {
+        letter-spacing: 0em;
+      }
+
+      .cls-5 {
+        letter-spacing: 0em;
+      }
+
+      .cls-3 {
+        stroke: #76bf6b;
+      }
+
+      .cls-6 {
+        letter-spacing: 0em;
+      }
+    </style>
+  </defs>
+  <g>
+    <line class="cls-2" x1="43.57" y1="322.76" x2="934.28" y2="322.76"/>
+    <line class="cls-3" x1="43.57" y1="279" x2="934.28" y2="279"/>
+  </g>
+  <text class="cls-1" transform="translate(26.65 238.7)"><tspan x="0" y="0">Sp</tspan><tspan class="cls-5" x="355.87" y="0">e</tspan><tspan class="cls-6" x="510.15" y="0">t</tspan><tspan class="cls-4" x="630.55" y="0">z</tspan><tspan x="765.51" y="0">a</tspan></text>
+</svg>
