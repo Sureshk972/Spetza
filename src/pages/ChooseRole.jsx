@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../lib/supabase.js'
@@ -8,6 +8,7 @@ export default function ChooseRole() {
   const { user, profile, refreshProfile } = useAuth()
   const navigate = useNavigate()
   const [busy, setBusy] = useState(null)
+  const autoSelected = useRef(false)
 
   if (profile?.account_type === 'sender') {
     navigate('/sender', { replace: true })
@@ -35,6 +36,21 @@ export default function ChooseRole() {
     await refreshProfile()
     navigate(role === 'sender' ? '/sender' : '/courier', { replace: true })
   }
+
+  // Auto-select if user already chose a role on the Welcome page
+  useEffect(() => {
+    if (autoSelected.current) return
+    try {
+      const intended = sessionStorage.getItem('spetza:intended_role')
+      if (intended === 'sender' || intended === 'courier') {
+        autoSelected.current = true
+        sessionStorage.removeItem('spetza:intended_role')
+        choose(intended)
+      }
+    } catch {
+      // sessionStorage unavailable — show the picker
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-full flex items-center justify-center px-6 py-16">
