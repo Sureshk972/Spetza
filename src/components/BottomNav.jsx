@@ -8,7 +8,7 @@ function TabLink({ to, label, children }) {
       end
       className={({ isActive }) =>
         `flex flex-col items-center justify-center flex-1 py-2 gap-1 text-xs transition-colors ${
-          isActive ? 'text-ink' : 'text-slate/70 hover:text-ink'
+          isActive ? 'text-teal' : 'text-slate/70 hover:text-teal'
         }`
       }
     >
@@ -16,7 +16,7 @@ function TabLink({ to, label, children }) {
         <>
           <span
             className={`inline-flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
-              isActive ? 'bg-mist' : ''
+              isActive ? 'bg-teal/10' : ''
             }`}
           >
             {children}
@@ -33,7 +33,7 @@ function TabButton({ onClick, label, children }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-col items-center justify-center flex-1 py-2 gap-1 text-xs text-slate/70 hover:text-ink transition-colors"
+      className="flex flex-col items-center justify-center flex-1 py-2 gap-1 text-xs text-slate/70 hover:text-teal transition-colors"
     >
       <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg">
         {children}
