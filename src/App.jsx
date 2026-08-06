@@ -3,6 +3,7 @@ import RequireAuth from './components/auth/RequireAuth.jsx'
 import RequireRole from './components/auth/RequireRole.jsx'
 import SenderLayout from './components/SenderLayout.jsx'
 import CourierLayout from './components/CourierLayout.jsx'
+import AdminLayout from './layouts/AdminLayout.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 import Welcome from './pages/Welcome.jsx'
 import SignIn from './pages/SignIn.jsx'
@@ -24,10 +25,18 @@ import CourierProfile from './pages/courier/CourierProfile.jsx'
 import CourierVerify from './pages/courier/CourierVerify.jsx'
 import CourierDelivery from './pages/courier/CourierDelivery.jsx'
 import RequireAdmin from './components/auth/RequireAdmin.jsx'
+import AdminDashboard from './pages/admin/AdminDashboard.jsx'
+import AdminUsers from './pages/admin/AdminUsers.jsx'
+import AdminUserDetail from './pages/admin/AdminUserDetail.jsx'
+import AdminDeliveries from './pages/admin/AdminDeliveries.jsx'
+import AdminDeliveryDetail from './pages/admin/AdminDeliveryDetail.jsx'
+import AdminPayments from './pages/admin/AdminPayments.jsx'
 import AdminVerifications from './pages/admin/AdminVerifications.jsx'
+import AdminRatings from './pages/admin/AdminRatings.jsx'
 
 function RootRedirect() {
   const { profile } = useAuth()
+  if (profile?.is_admin) return <Navigate to="/admin" replace />
   if (profile?.account_type === 'sender') return <Navigate to="/sender" replace />
   if (profile?.account_type === 'courier') return <Navigate to="/courier" replace />
   return <Navigate to="/choose-role" replace />
@@ -75,7 +84,18 @@ export default function App() {
       <Route path="/courier/profile" element={<CourierRoute><CourierProfile /></CourierRoute>} />
       <Route path="/courier/verify" element={<CourierRoute><CourierVerify /></CourierRoute>} />
       <Route path="/courier/deliveries/:id" element={<CourierRoute><CourierDelivery /></CourierRoute>} />
-      <Route path="/admin" element={<RequireAuth><RequireAdmin><AdminVerifications /></RequireAdmin></RequireAuth>} />
+
+      {/* Admin */}
+      <Route path="/admin" element={<RequireAuth><RequireAdmin><AdminLayout /></RequireAdmin></RequireAuth>}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="users/:id" element={<AdminUserDetail />} />
+        <Route path="deliveries" element={<AdminDeliveries />} />
+        <Route path="deliveries/:id" element={<AdminDeliveryDetail />} />
+        <Route path="payments" element={<AdminPayments />} />
+        <Route path="verifications" element={<AdminVerifications />} />
+        <Route path="ratings" element={<AdminRatings />} />
+      </Route>
     </Routes>
   )
 }
