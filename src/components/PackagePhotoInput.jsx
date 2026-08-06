@@ -59,7 +59,7 @@ export default function PackagePhotoInput({ path, onChange, disabled }) {
           {!disabled && (
             <div className="space-y-2 text-sm">
               <label className="block">
-                <span className="text-signal cursor-pointer hover:underline">
+                <span className="text-teal cursor-pointer hover:underline">
                   Replace photo
                 </span>
                 <input
@@ -86,7 +86,7 @@ export default function PackagePhotoInput({ path, onChange, disabled }) {
             'block px-4 py-6 rounded-lg border-2 border-dashed text-center text-sm ' +
             (disabled
               ? 'border-mist text-slate opacity-60'
-              : 'border-mist text-slate hover:border-signal hover:text-ink cursor-pointer')
+              : 'border-mist text-slate hover:border-teal hover:text-ink cursor-pointer')
           }
         >
           {uploading ? 'Uploading…' : 'Tap to add a photo (up to 5 MB)'}

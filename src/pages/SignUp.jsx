@@ -87,15 +87,15 @@ export default function SignUp() {
         <Link to="/welcome" className="text-sm text-slate hover:text-ink">
           &larr; back
         </Link>
-        <h1 className="font-serif text-3xl text-ink mt-6">Create an account</h1>
+        <h1 className="font-display text-3xl text-ink mt-6">Create an account</h1>
         {role && (
           <p className="text-sm text-slate mt-2">
             Signing up as{' '}
-            <span className="text-signal uppercase tracking-widest text-xs font-medium">
+            <span className="text-teal uppercase tracking-widest text-xs font-medium">
               {role}
             </span>
             {' · '}
-            <Link to="/welcome" className="text-signal hover:underline">Change</Link>
+            <Link to="/welcome" className="text-teal hover:underline">Change</Link>
           </p>
         )}
 
@@ -109,18 +109,18 @@ export default function SignUp() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
+                className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
               />
               <button
                 type="submit"
-                className="w-full px-4 py-3 rounded-lg bg-ink text-cream font-medium hover:bg-signal transition-colors"
+                className="w-full px-4 py-3 rounded-lg bg-ink text-white font-medium hover:bg-teal-light transition-colors"
               >
                 Continue
               </button>
             </form>
             <p className="text-slate text-sm text-center mt-6">
               Already have an account?{' '}
-              <Link to="/signin" className="text-signal hover:underline">Sign in</Link>
+              <Link to="/signin" className="text-teal hover:underline">Sign in</Link>
             </p>
           </>
         ) : (
@@ -134,7 +134,7 @@ export default function SignUp() {
                     setStep('email')
                     setPassword('')
                   }}
-                  className="text-xs text-signal hover:underline"
+                  className="text-xs text-teal hover:underline"
                 >
                   change
                 </button>
@@ -146,19 +146,19 @@ export default function SignUp() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password (at least 6 characters)"
-                className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
+                className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full px-4 py-3 rounded-lg bg-ink text-cream font-medium hover:bg-signal transition-colors disabled:opacity-50"
+                className="w-full px-4 py-3 rounded-lg bg-ink text-white font-medium hover:bg-teal-light transition-colors disabled:opacity-50"
               >
                 {submitting ? 'Creating…' : 'Create account'}
               </button>
             </form>
             <p className="text-slate text-sm text-center mt-6">
               Already have an account?{' '}
-              <Link to="/signin" className="text-signal hover:underline">Sign in</Link>
+              <Link to="/signin" className="text-teal hover:underline">Sign in</Link>
             </p>
           </>
         )}

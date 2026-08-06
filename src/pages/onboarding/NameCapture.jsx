@@ -69,7 +69,7 @@ export default function NameCapture() {
   return (
     <div className="min-h-full flex items-center justify-center px-6 py-16">
       <div className="w-full max-w-sm">
-        <h1 className="font-serif text-3xl text-ink">What should we call you?</h1>
+        <h1 className="font-display text-3xl text-ink">What should we call you?</h1>
         <p className="text-slate mt-2 text-sm">
           This is how couriers and senders will see you on delivery cards and ratings.
         </p>
@@ -83,7 +83,7 @@ export default function NameCapture() {
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="Jane"
-              className="w-full mt-1 px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
+              className="w-full mt-1 px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
             />
           </div>
           <div>
@@ -93,13 +93,13 @@ export default function NameCapture() {
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Doe"
-              className="w-full mt-1 px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
+              className="w-full mt-1 px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
             />
           </div>
           <button
             type="submit"
             disabled={saving}
-            className="w-full px-4 py-3 rounded-lg bg-ink text-cream font-medium hover:bg-signal transition-colors disabled:opacity-50"
+            className="w-full px-4 py-3 rounded-lg bg-ink text-white font-medium hover:bg-teal-light transition-colors disabled:opacity-50"
           >
             {saving ? 'Saving…' : 'Continue'}
           </button>

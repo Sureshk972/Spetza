@@ -9,9 +9,9 @@ import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 
 const statusStyles = {
   open: 'bg-mist text-slate',
-  accepted: 'bg-signal/10 text-signal',
-  picked_up: 'bg-signal/10 text-signal',
-  delivered: 'bg-forest/10 text-forest',
+  accepted: 'bg-teal/10 text-teal',
+  picked_up: 'bg-teal/10 text-teal',
+  delivered: 'bg-green/10 text-green',
   cancelled: 'bg-mist text-slate line-through',
 }
 
@@ -111,15 +111,15 @@ export default function SenderHome() {
     <div className="min-h-full px-6 py-12 max-w-3xl mx-auto">
       <header className="flex items-center justify-between">
         <div>
-          <div className="text-xs uppercase tracking-widest text-signal">Sender</div>
-          <h1 className="font-serif text-3xl text-ink mt-1">Your requests</h1>
+          <div className="text-xs uppercase tracking-widest text-teal">Sender</div>
+          <h1 className="font-display text-3xl text-ink mt-1">Your requests</h1>
           <div className="mt-1">
             <RatingBadge avg={profile?.rating_avg} count={profile?.rating_count} />
           </div>
         </div>
         <Link
           to="/sender/new"
-          className="px-4 py-2 rounded-lg bg-ink text-cream text-sm font-medium hover:bg-signal transition-colors"
+          className="px-4 py-2 rounded-lg bg-ink text-white text-sm font-medium hover:bg-teal-light transition-colors"
         >
           New request
         </Link>
@@ -131,7 +131,7 @@ export default function SenderHome() {
         ) : requests.length === 0 ? (
           <div className="text-center py-16 rounded-2xl border border-dashed border-mist">
             <p className="text-slate">No requests yet.</p>
-            <Link to="/sender/new" className="inline-block mt-4 text-signal hover:underline">
+            <Link to="/sender/new" className="inline-block mt-4 text-teal hover:underline">
               Post your first delivery
             </Link>
           </div>
@@ -153,7 +153,7 @@ export default function SenderHome() {
                       {timeLabel(r.created_at)}
                     </div>
                   </div>
-                  <div className="font-serif text-2xl text-ink">
+                  <div className="font-display text-2xl text-ink">
                     {dollars(r.max_price_cents)}
                   </div>
                   <div className="divide-y divide-mist">
@@ -251,7 +251,7 @@ export default function SenderHome() {
                   ) : (
                     <Link
                       to={`/sender/requests/${r.id}`}
-                      className="block p-5 rounded-xl border border-mist bg-white hover:border-signal transition-colors"
+                      className="block p-5 rounded-xl border border-mist bg-white hover:border-teal transition-colors"
                     >
                       {inner}
                     </Link>

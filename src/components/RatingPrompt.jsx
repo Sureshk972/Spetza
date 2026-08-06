@@ -12,7 +12,7 @@ function Star({ filled, onClick, onHover, onLeave }) {
       className="text-2xl leading-none px-0.5"
       aria-label="star"
     >
-      <span className={filled ? 'text-signal' : 'text-slate/40'}>★</span>
+      <span className={filled ? 'text-teal' : 'text-slate/40'}>★</span>
     </button>
   )
 }
@@ -72,7 +72,7 @@ export default function RatingPrompt({ request, raterId, rateeId, rateeLabel, on
         <button
           onClick={submit}
           disabled={submitting || stars === 0}
-          className="px-3 py-1.5 rounded-lg bg-forest text-cream text-xs font-medium hover:opacity-90 disabled:opacity-50"
+          className="px-3 py-1.5 rounded-lg bg-green text-white text-xs font-medium hover:opacity-90 disabled:opacity-50"
         >
           {submitting ? 'Submitting…' : 'Submit rating'}
         </button>

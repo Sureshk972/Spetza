@@ -222,8 +222,8 @@ export default function CourierHome() {
     <div className="min-h-full">
       <div className="max-w-3xl mx-auto px-6 py-10">
         <header>
-          <div className="text-xs uppercase tracking-widest text-signal">Courier</div>
-          <h1 className="font-serif text-3xl text-ink mt-1">Discover</h1>
+          <div className="text-xs uppercase tracking-widest text-teal">Courier</div>
+          <h1 className="font-display text-3xl text-ink mt-1">Discover</h1>
           <div className="mt-2 flex items-center gap-3 text-xs text-slate">
             <RatingBadge avg={profile?.rating_avg} count={profile?.rating_count} />
             {serviceArea && (
@@ -236,7 +236,7 @@ export default function CourierHome() {
         </header>
 
         {courierStep(profile) !== 'done' && (
-          <div className="mt-8 p-4 rounded-xl border border-signal/40 bg-signal/5">
+          <div className="mt-8 p-4 rounded-xl border border-teal/40 bg-teal/5">
             <div className="text-sm text-ink font-medium">Finish getting verified to accept deliveries</div>
             <div className="text-sm text-slate mt-1">
               {courierStep(profile) === 'selfie' && 'Upload a selfie to continue.'}
@@ -250,7 +250,7 @@ export default function CourierHome() {
                   ? 'Your background check was not approved.'
                   : 'Start your background check.')}
             </div>
-            <Link to="/courier/verify" className="inline-block mt-3 text-signal hover:underline text-sm">
+            <Link to="/courier/verify" className="inline-block mt-3 text-teal hover:underline text-sm">
               Continue verification
             </Link>
           </div>
@@ -266,18 +266,18 @@ export default function CourierHome() {
                 <li key={r.id}>
                   <Link
                     to={`/courier/deliveries/${r.id}`}
-                    className="block p-5 rounded-xl border border-forest/30 bg-forest/5 hover:border-forest transition-colors"
+                    className="block p-5 rounded-xl border border-green/30 bg-green/5 hover:border-green transition-colors"
                   >
                     <div className="space-y-3">
                       <div className="flex items-baseline justify-between gap-3">
                         <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
                           {r.order_number}
                         </div>
-                        <div className="text-xs uppercase tracking-wide text-forest whitespace-nowrap">
+                        <div className="text-xs uppercase tracking-wide text-green whitespace-nowrap">
                           {r.status === 'accepted' ? 'Awaiting pickup' : 'In transit'}
                         </div>
                       </div>
-                      <div className="font-serif text-2xl text-ink">{dollars(r.max_price_cents)}</div>
+                      <div className="font-display text-2xl text-ink">{dollars(r.max_price_cents)}</div>
                       <div className="divide-y divide-forest/20">
                         <div className="pb-3">
                           <div className="text-xs uppercase tracking-wide text-slate/70">From</div>
@@ -304,7 +304,7 @@ export default function CourierHome() {
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center justify-between gap-3 pt-3 border-t border-forest/20">
+                      <div className="flex items-center justify-between gap-3 pt-3 border-t border-green/20">
                         {r.status === 'accepted' ? (
                           <button
                             onClick={(e) => {
@@ -328,7 +328,7 @@ export default function CourierHome() {
                               handlePickedUp(r)
                             }}
                             disabled={progressing === r.id}
-                            className="px-3 py-1 rounded-lg bg-white border border-forest text-forest text-xs font-medium hover:bg-forest hover:text-cream transition-colors disabled:opacity-50"
+                            className="px-3 py-1 rounded-lg bg-white border border-green text-green text-xs font-medium hover:bg-green hover:text-white transition-colors disabled:opacity-50"
                           >
                             {progressing === r.id ? 'Saving…' : 'Mark picked up'}
                           </button>
@@ -340,7 +340,7 @@ export default function CourierHome() {
                               handleDelivered(r)
                             }}
                             disabled={progressing === r.id}
-                            className="px-3 py-1 rounded-lg bg-forest text-cream text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                            className="px-3 py-1 rounded-lg bg-green text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                           >
                             {progressing === r.id ? 'Capturing…' : 'Mark delivered'}
                           </button>
@@ -368,11 +368,11 @@ export default function CourierHome() {
                       <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
                         {r.order_number}
                       </div>
-                      <div className="text-xs uppercase tracking-wide text-forest whitespace-nowrap">
+                      <div className="text-xs uppercase tracking-wide text-green whitespace-nowrap">
                         Delivered
                       </div>
                     </div>
-                    <div className="font-serif text-2xl text-ink">{dollars(r.max_price_cents)}</div>
+                    <div className="font-display text-2xl text-ink">{dollars(r.max_price_cents)}</div>
                     <div className="text-sm text-slate">
                       <span className="text-slate/70 mr-2">To</span>
                       <span className="text-ink">{r.dropoff_address}</span>
@@ -407,7 +407,7 @@ export default function CourierHome() {
           ) : !serviceArea ? (
             <div className="text-center py-16 rounded-2xl border border-dashed border-mist">
               <p className="text-slate">Set a service area to see open requests.</p>
-              <Link to="/courier/profile" className="inline-block mt-3 text-signal hover:underline">
+              <Link to="/courier/profile" className="inline-block mt-3 text-teal hover:underline">
                 Open profile
               </Link>
             </div>
@@ -442,7 +442,7 @@ export default function CourierHome() {
                         {timeLabel(r.created_at)}
                       </div>
                     </div>
-                    <div className="font-serif text-2xl text-ink">{dollars(r.max_price_cents)}</div>
+                    <div className="font-display text-2xl text-ink">{dollars(r.max_price_cents)}</div>
                     <div className="divide-y divide-mist">
                       <div className="pb-3">
                         <div className="text-xs uppercase tracking-wide text-slate/70">From</div>
@@ -475,7 +475,7 @@ export default function CourierHome() {
                         onClick={() => handleAccept(r)}
                         disabled={accepting === r.id || !canAccept}
                         title={disabledReason}
-                        className="px-3 py-1 rounded-lg bg-forest text-cream text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                        className="px-3 py-1 rounded-lg bg-green text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                       >
                         {accepting === r.id ? 'Accepting…' : 'Accept'}
                       </button>

@@ -18,15 +18,15 @@ function timeLabel(iso) {
 const EVENT_COPY = {
   accepted: {
     title: 'You accepted a delivery',
-    tone: 'text-signal',
+    tone: 'text-teal',
   },
   picked_up: {
     title: 'Picked up',
-    tone: 'text-signal',
+    tone: 'text-teal',
   },
   delivered: {
     title: 'Delivered',
-    tone: 'text-forest',
+    tone: 'text-green',
   },
   cancelled: {
     title: 'Cancelled',
@@ -82,9 +82,9 @@ export default function CourierInbox() {
     <div className="min-h-full">
       <div className="max-w-3xl mx-auto px-6 py-10">
         <div className="flex items-center gap-3 mb-8">
-          <p className="text-xs uppercase tracking-widest text-signal">Courier</p>
+          <p className="text-xs uppercase tracking-widest text-teal">Courier</p>
           <span className="text-slate/40">·</span>
-          <h1 className="font-serif text-4xl text-ink">Inbox</h1>
+          <h1 className="font-display text-4xl text-ink">Inbox</h1>
         </div>
 
         {loading ? (
@@ -92,7 +92,7 @@ export default function CourierInbox() {
         ) : events.length === 0 ? (
           <div className="text-center py-16 rounded-2xl border border-dashed border-mist">
             <p className="text-slate">Nothing here yet.</p>
-            <Link to="/courier" className="inline-block mt-4 text-signal hover:underline">
+            <Link to="/courier" className="inline-block mt-4 text-teal hover:underline">
               Browse open requests
             </Link>
           </div>
@@ -104,7 +104,7 @@ export default function CourierInbox() {
                 <li key={ev.id}>
                   <Link
                     to={`/courier/deliveries/${ev.request.id}`}
-                    className="block p-4 rounded-xl border border-mist bg-white hover:border-signal transition-colors"
+                    className="block p-4 rounded-xl border border-mist bg-white hover:border-teal transition-colors"
                   >
                     <div className="flex items-baseline justify-between gap-3">
                       <div className={`text-sm font-medium ${copy.tone}`}>{copy.title}</div>

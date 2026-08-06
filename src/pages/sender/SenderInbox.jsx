@@ -18,15 +18,15 @@ function timeLabel(iso) {
 const EVENT_COPY = {
   accepted: {
     title: 'Courier accepted your request',
-    tone: 'text-signal',
+    tone: 'text-teal',
   },
   picked_up: {
     title: 'Your package is on the way',
-    tone: 'text-signal',
+    tone: 'text-teal',
   },
   delivered: {
     title: 'Delivered',
-    tone: 'text-forest',
+    tone: 'text-green',
   },
   cancelled: {
     title: 'Cancelled',
@@ -87,9 +87,9 @@ export default function SenderInbox() {
     <div className="min-h-full">
       <div className="max-w-3xl mx-auto px-6 py-10">
         <div className="flex items-center gap-3 mb-8">
-          <p className="text-xs uppercase tracking-widest text-signal">Sender</p>
+          <p className="text-xs uppercase tracking-widest text-teal">Sender</p>
           <span className="text-slate/40">·</span>
-          <h1 className="font-serif text-4xl text-ink">Inbox</h1>
+          <h1 className="font-display text-4xl text-ink">Inbox</h1>
         </div>
 
         {loading ? (
@@ -97,7 +97,7 @@ export default function SenderInbox() {
         ) : events.length === 0 ? (
           <div className="text-center py-16 rounded-2xl border border-dashed border-mist">
             <p className="text-slate">Nothing here yet.</p>
-            <Link to="/sender/new" className="inline-block mt-4 text-signal hover:underline">
+            <Link to="/sender/new" className="inline-block mt-4 text-teal hover:underline">
               Post a delivery
             </Link>
           </div>
@@ -109,7 +109,7 @@ export default function SenderInbox() {
                 <li key={ev.id}>
                   <Link
                     to={`/sender/requests/${ev.request.id}`}
-                    className="block p-4 rounded-xl border border-mist bg-white hover:border-signal transition-colors"
+                    className="block p-4 rounded-xl border border-mist bg-white hover:border-teal transition-colors"
                   >
                     <div className="flex items-baseline justify-between gap-3">
                       <div className={`text-sm font-medium ${copy.tone}`}>{copy.title}</div>

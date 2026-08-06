@@ -126,9 +126,9 @@ export default function SenderProfile() {
     <div className="min-h-full">
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-10">
         <div className="flex items-center gap-3">
-          <p className="text-xs uppercase tracking-widest text-signal">Sender</p>
+          <p className="text-xs uppercase tracking-widest text-teal">Sender</p>
           <span className="text-slate/40">·</span>
-          <h1 className="font-serif text-4xl text-ink">Profile</h1>
+          <h1 className="font-display text-4xl text-ink">Profile</h1>
         </div>
 
         <section className="space-y-3">
@@ -144,14 +144,14 @@ export default function SenderProfile() {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="First name"
-                    className="w-full px-3 py-2 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none text-sm"
+                    className="w-full px-3 py-2 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none text-sm"
                   />
                   <input
                     type="text"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Last name (optional)"
-                    className="w-full px-3 py-2 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none text-sm"
+                    className="w-full px-3 py-2 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none text-sm"
                   />
                   <div className="flex items-center gap-2 justify-end">
                     <button
@@ -166,7 +166,7 @@ export default function SenderProfile() {
                       type="button"
                       onClick={saveName}
                       disabled={savingName}
-                      className="px-3 py-1 rounded-lg bg-ink text-cream text-xs font-medium hover:bg-signal transition-colors disabled:opacity-50"
+                      className="px-3 py-1 rounded-lg bg-ink text-white text-xs font-medium hover:bg-teal-light transition-colors disabled:opacity-50"
                     >
                       {savingName ? 'Saving…' : 'Save'}
                     </button>
@@ -182,7 +182,7 @@ export default function SenderProfile() {
                     <button
                       type="button"
                       onClick={startEditName}
-                      className="text-xs text-signal hover:underline"
+                      className="text-xs text-teal hover:underline"
                     >
                       Edit
                     </button>
@@ -208,7 +208,7 @@ export default function SenderProfile() {
               <button
                 type="button"
                 onClick={() => setAddingCard(true)}
-                className="text-xs text-signal hover:underline"
+                className="text-xs text-teal hover:underline"
               >
                 Add card
               </button>
@@ -240,7 +240,7 @@ export default function SenderProfile() {
               <button
                 type="button"
                 onClick={() => setAddingCard(true)}
-                className="text-signal hover:underline text-sm"
+                className="text-teal hover:underline text-sm"
               >
                 Add a card
               </button>
@@ -258,7 +258,7 @@ export default function SenderProfile() {
                       </span>
                     )}
                     {defaultPmId === pm.id && (
-                      <span className="text-xs uppercase tracking-wide text-signal ml-1">Default</span>
+                      <span className="text-xs uppercase tracking-wide text-teal ml-1">Default</span>
                     )}
                   </div>
                   <button
@@ -305,7 +305,7 @@ export default function SenderProfile() {
                           <span className="text-sm text-ink">{dollars(t.max_price_cents)}</span>
                           <span
                             className={`text-xs uppercase tracking-wide ${
-                              t.status === 'delivered' ? 'text-forest' : 'text-slate/70 line-through'
+                              t.status === 'delivered' ? 'text-green' : 'text-slate/70 line-through'
                             }`}
                           >
                             {t.status}

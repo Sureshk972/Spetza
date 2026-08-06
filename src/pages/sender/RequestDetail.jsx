@@ -21,9 +21,9 @@ function fmt(iso) {
 
 const statusStyles = {
   open: 'bg-mist text-slate',
-  accepted: 'bg-signal/10 text-signal',
-  picked_up: 'bg-signal/10 text-signal',
-  delivered: 'bg-forest/10 text-forest',
+  accepted: 'bg-teal/10 text-teal',
+  picked_up: 'bg-teal/10 text-teal',
+  delivered: 'bg-green/10 text-green',
   cancelled: 'bg-mist text-slate',
 }
 
@@ -142,7 +142,7 @@ export default function RequestDetail() {
       <div className="mt-6 flex items-start justify-between gap-4">
         <div>
           <div className="text-xs uppercase tracking-widest text-slate">{request.order_number}</div>
-          <h1 className="font-serif text-3xl text-ink mt-1">Delivery details</h1>
+          <h1 className="font-display text-3xl text-ink mt-1">Delivery details</h1>
         </div>
         <span className={`px-2 py-0.5 text-xs rounded-full ${statusStyles[request.status] ?? 'bg-mist text-slate'}`}>
           {statusLabel[request.status] ?? request.status}
@@ -212,7 +212,7 @@ export default function RequestDetail() {
                     t.error
                       ? 'bg-red-500'
                       : t.done
-                      ? 'bg-forest'
+                      ? 'bg-green'
                       : 'bg-mist border border-slate/30'
                   }`}
                 />
@@ -229,7 +229,7 @@ export default function RequestDetail() {
           <Row label="Service fee (15%)" value={dollars(feeCents)} />
           <div className="border-t border-slate/20 pt-1.5 flex justify-between items-baseline">
             <span className="text-xs uppercase tracking-widest text-ink">Total</span>
-            <span className="font-serif text-xl text-ink">{dollars(totalCents)}</span>
+            <span className="font-display text-xl text-ink">{dollars(totalCents)}</span>
           </div>
           <div className="text-xs text-slate pt-1">
             {request.status === 'delivered'

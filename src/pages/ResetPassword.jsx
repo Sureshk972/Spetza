@@ -54,7 +54,7 @@ export default function ResetPassword() {
   return (
     <div className="min-h-full flex items-center justify-center px-6 py-16">
       <div className="w-full max-w-sm">
-        <h1 className="font-serif text-3xl text-ink">Set a new password</h1>
+        <h1 className="font-display text-3xl text-ink">Set a new password</h1>
         <p className="text-slate mt-2 text-sm">
           Signed in as <span className="text-ink">{user.email}</span>. Choose a new password to finish.
         </p>
@@ -66,7 +66,7 @@ export default function ResetPassword() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="New password"
-            className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
+            className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
           />
           <input
             type="password"
@@ -74,12 +74,12 @@ export default function ResetPassword() {
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             placeholder="Confirm new password"
-            className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
+            className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
           />
           <button
             type="submit"
             disabled={submitting}
-            className="w-full px-4 py-3 rounded-lg bg-ink text-cream font-medium hover:bg-signal transition-colors disabled:opacity-50"
+            className="w-full px-4 py-3 rounded-lg bg-ink text-white font-medium hover:bg-teal-light transition-colors disabled:opacity-50"
           >
             {submitting ? 'Updating…' : 'Update password'}
           </button>

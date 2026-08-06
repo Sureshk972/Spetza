@@ -140,7 +140,7 @@ export default function NewRequest() {
   return (
     <div className="min-h-full px-6 py-12 max-w-xl mx-auto">
       <Link to="/sender" className="text-sm text-slate hover:text-ink">&larr; back</Link>
-      <h1 className="font-serif text-3xl text-ink mt-6">New delivery request</h1>
+      <h1 className="font-display text-3xl text-ink mt-6">New delivery request</h1>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5">
         <AddressField
@@ -179,7 +179,7 @@ export default function NewRequest() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Small box. Fragile."
             rows={3}
-            className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
+            className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
           />
         </Field>
         <Field label="Approx. size">
@@ -189,7 +189,7 @@ export default function NewRequest() {
             value={size}
             onChange={(e) => setSize(e.target.value)}
             placeholder="Shoebox, envelope, etc."
-            className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
+            className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
           />
         </Field>
         <Field label="Photo of the package">
@@ -205,10 +205,10 @@ export default function NewRequest() {
           <Row label="Service fee (15%)" value={money(feeCents)} />
           <div className="border-t border-slate/20 pt-1.5 flex justify-between items-baseline">
             <span className="text-xs uppercase tracking-widest text-ink">Total</span>
-            <span className="font-serif text-xl text-ink">{money(totalCents)}</span>
+            <span className="font-display text-xl text-ink">{money(totalCents)}</span>
           </div>
           {overMax && (
-            <div className="text-xs text-signal pt-1">
+            <div className="text-xs text-teal pt-1">
               Over the {MAX_DISTANCE_MILES} mi limit.
             </div>
           )}
@@ -217,7 +217,7 @@ export default function NewRequest() {
         <button
           type="submit"
           disabled={!canSubmit}
-          className="w-full px-4 py-3 rounded-lg bg-ink text-cream font-medium hover:bg-signal transition-colors disabled:opacity-50"
+          className="w-full px-4 py-3 rounded-lg bg-ink text-white font-medium hover:bg-teal-light transition-colors disabled:opacity-50"
         >
           {submitting ? 'Posting…' : 'Post request'}
         </button>
@@ -236,7 +236,7 @@ function AddressField({ label, placeholder, value, onChange, onBlur, geo }) {
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
         placeholder={placeholder}
-        className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
+        className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
       />
       <GeoCaption geo={geo} />
     </Field>
@@ -249,7 +249,7 @@ function GeoCaption({ geo }) {
     return <div className="text-xs text-slate mt-1.5">Looking up address…</div>
   }
   if (geo.status === 'error') {
-    return <div className="text-xs text-signal mt-1.5">{geo.error}</div>
+    return <div className="text-xs text-teal mt-1.5">{geo.error}</div>
   }
   return (
     <div className="text-xs text-slate mt-1.5 truncate">

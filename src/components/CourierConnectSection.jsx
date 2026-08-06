@@ -59,11 +59,11 @@ export default function CourierConnectSection({ profile }) {
       {syncing && (
         <p className="text-sm text-slate">Checking your bank connection…</p>
       )}
-      {error && <p className="text-sm text-signal">{error}</p>}
+      {error && <p className="text-sm text-teal">{error}</p>}
       <button
         onClick={connect}
         disabled={opening || syncing}
-        className="bg-ink text-cream px-4 py-2 rounded-lg disabled:opacity-50"
+        className="bg-ink text-white px-4 py-2 rounded-lg disabled:opacity-50"
       >
         {opening ? 'Opening Stripe…' : profile?.stripe_connect_account_id ? 'Resume onboarding' : 'Connect bank account'}
       </button>

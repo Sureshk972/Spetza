@@ -52,8 +52,8 @@ export default function AdminVerifications() {
     <div className="min-h-full px-6 py-12 max-w-3xl mx-auto">
       <header className="flex items-center justify-between">
         <div>
-          <div className="text-xs uppercase tracking-widest text-signal">Admin</div>
-          <h1 className="font-serif text-3xl text-ink mt-1">Background checks — review</h1>
+          <div className="text-xs uppercase tracking-widest text-teal">Admin</div>
+          <h1 className="font-display text-3xl text-ink mt-1">Background checks — review</h1>
         </div>
         <Link to="/" className="text-sm text-slate hover:text-ink">Back</Link>
       </header>
@@ -84,7 +84,7 @@ export default function AdminVerifications() {
                     <a
                       href={`${CHECKR_DASH}${c.checkr_candidate_id}`}
                       target="_blank" rel="noreferrer"
-                      className="text-xs text-signal hover:underline"
+                      className="text-xs text-teal hover:underline"
                     >
                       View report in Checkr ↗
                     </a>
@@ -101,7 +101,7 @@ export default function AdminVerifications() {
                   <button
                     onClick={() => decide(c, 'approved')}
                     disabled={acting === c.id}
-                    className="px-3 py-1.5 rounded-lg bg-forest text-cream text-sm font-medium hover:opacity-90 disabled:opacity-50"
+                    className="px-3 py-1.5 rounded-lg bg-green text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
                   >
                     Approve
                   </button>

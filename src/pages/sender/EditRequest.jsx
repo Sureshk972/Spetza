@@ -210,7 +210,7 @@ export default function EditRequest() {
     <div className="min-h-full px-6 py-12 max-w-xl mx-auto">
       <Link to="/sender" className="text-sm text-slate hover:text-ink">&larr; back</Link>
       <div className="mt-6 flex items-baseline justify-between gap-4">
-        <h1 className="font-serif text-3xl text-ink">Edit request</h1>
+        <h1 className="font-display text-3xl text-ink">Edit request</h1>
         <span className="text-xs uppercase tracking-widest text-slate">{request.order_number}</span>
       </div>
 
@@ -250,7 +250,7 @@ export default function EditRequest() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none disabled:opacity-60"
+            className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none disabled:opacity-60"
           />
         </Field>
         <Field label="Approx. size">
@@ -261,7 +261,7 @@ export default function EditRequest() {
             value={size}
             onChange={(e) => setSize(e.target.value)}
             placeholder="Shoebox, envelope, etc."
-            className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none disabled:opacity-60"
+            className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none disabled:opacity-60"
           />
         </Field>
         <Field label="Photo of the package">
@@ -277,10 +277,10 @@ export default function EditRequest() {
           <Row label="Service fee (15%)" value={money(feeCents)} />
           <div className="border-t border-slate/20 pt-1.5 flex justify-between items-baseline">
             <span className="text-xs uppercase tracking-widest text-ink">Total</span>
-            <span className="font-serif text-xl text-ink">{money(totalCents)}</span>
+            <span className="font-display text-xl text-ink">{money(totalCents)}</span>
           </div>
           {overMax && (
-            <div className="text-xs text-signal pt-1">
+            <div className="text-xs text-teal pt-1">
               Over the {MAX_DISTANCE_MILES} mi limit.
             </div>
           )}
@@ -291,7 +291,7 @@ export default function EditRequest() {
             <button
               type="submit"
               disabled={saving || cancelling}
-              className="flex-1 px-4 py-3 rounded-lg bg-ink text-cream font-medium hover:bg-signal transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-3 rounded-lg bg-ink text-white font-medium hover:bg-teal-light transition-colors disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Save changes'}
             </button>
@@ -299,7 +299,7 @@ export default function EditRequest() {
               type="button"
               onClick={handleCancel}
               disabled={saving || cancelling}
-              className="px-4 py-3 rounded-lg border border-mist text-slate hover:text-signal hover:border-signal transition-colors disabled:opacity-50"
+              className="px-4 py-3 rounded-lg border border-mist text-slate hover:text-teal hover:border-teal transition-colors disabled:opacity-50"
             >
               {cancelling ? 'Cancelling…' : 'Cancel request'}
             </button>
@@ -320,7 +320,7 @@ function AddressField({ label, value, disabled, onChange, onBlur, geo }) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
-        className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none disabled:opacity-60"
+        className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none disabled:opacity-60"
       />
       <GeoCaption geo={geo} />
     </Field>
@@ -333,7 +333,7 @@ function GeoCaption({ geo }) {
     return <div className="text-xs text-slate mt-1.5">Looking up address…</div>
   }
   if (geo.status === 'error') {
-    return <div className="text-xs text-signal mt-1.5">{geo.error}</div>
+    return <div className="text-xs text-teal mt-1.5">{geo.error}</div>
   }
   return (
     <div className="text-xs text-slate mt-1.5 truncate">

@@ -23,9 +23,9 @@ function timeLabel(iso) {
 
 const BG_LABEL = {
   not_started: { label: 'Not started', tone: 'text-slate' },
-  pending: { label: 'In progress', tone: 'text-signal' },
-  consider: { label: 'Under review', tone: 'text-signal' },
-  clear: { label: 'Verified ✓', tone: 'text-forest' },
+  pending: { label: 'In progress', tone: 'text-teal' },
+  consider: { label: 'Under review', tone: 'text-teal' },
+  clear: { label: 'Verified ✓', tone: 'text-green' },
   rejected: { label: 'Not approved', tone: 'text-red-600' },
 }
 
@@ -103,9 +103,9 @@ export default function CourierProfile() {
     <div className="min-h-full">
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-10">
         <div className="flex items-center gap-3">
-          <p className="text-xs uppercase tracking-widest text-signal">Courier</p>
+          <p className="text-xs uppercase tracking-widest text-teal">Courier</p>
           <span className="text-slate/40">·</span>
-          <h1 className="font-serif text-4xl text-ink">Profile</h1>
+          <h1 className="font-display text-4xl text-ink">Profile</h1>
         </div>
 
         <section className="space-y-3">
@@ -121,14 +121,14 @@ export default function CourierProfile() {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="First name"
-                    className="w-full px-3 py-2 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none text-sm"
+                    className="w-full px-3 py-2 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none text-sm"
                   />
                   <input
                     type="text"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Last name (optional)"
-                    className="w-full px-3 py-2 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none text-sm"
+                    className="w-full px-3 py-2 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none text-sm"
                   />
                   <div className="flex items-center gap-2 justify-end">
                     <button
@@ -143,7 +143,7 @@ export default function CourierProfile() {
                       type="button"
                       onClick={saveName}
                       disabled={savingName}
-                      className="px-3 py-1 rounded-lg bg-ink text-cream text-xs font-medium hover:bg-signal transition-colors disabled:opacity-50"
+                      className="px-3 py-1 rounded-lg bg-ink text-white text-xs font-medium hover:bg-teal-light transition-colors disabled:opacity-50"
                     >
                       {savingName ? 'Saving…' : 'Save'}
                     </button>
@@ -159,7 +159,7 @@ export default function CourierProfile() {
                     <button
                       type="button"
                       onClick={startEditName}
-                      className="text-xs text-signal hover:underline"
+                      className="text-xs text-teal hover:underline"
                     >
                       Edit
                     </button>
@@ -214,7 +214,7 @@ export default function CourierProfile() {
               {bgStatus !== 'clear' && bgStatus !== 'pending' && bgStatus !== 'consider' && (
                 <Link
                   to="/courier/verify"
-                  className="text-xs text-signal hover:underline whitespace-nowrap"
+                  className="text-xs text-teal hover:underline whitespace-nowrap"
                 >
                   {bgStatus === 'rejected' ? 'Details' : 'Start'}
                 </Link>
@@ -252,7 +252,7 @@ export default function CourierProfile() {
             <>
               <div className="rounded-xl border border-mist bg-white p-4 flex items-baseline justify-between">
                 <span className="text-xs uppercase tracking-wide text-slate/70">Total earned</span>
-                <span className="font-serif text-2xl text-ink">{dollars(totalEarnedCents)}</span>
+                <span className="font-display text-2xl text-ink">{dollars(totalEarnedCents)}</span>
               </div>
               <ul className="rounded-xl border border-mist bg-white divide-y divide-mist">
                 {earnings.map((e) => {
@@ -280,7 +280,7 @@ export default function CourierProfile() {
                             </span>
                             <span
                               className={`text-xs uppercase tracking-wide ${
-                                e.status === 'delivered' ? 'text-forest' : 'text-slate/70 line-through'
+                                e.status === 'delivered' ? 'text-green' : 'text-slate/70 line-through'
                               }`}
                             >
                               {e.status}

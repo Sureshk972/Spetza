@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 
 function Check() {
   return (
-    <svg viewBox="0 0 20 20" className="w-5 h-5 shrink-0 text-forest" fill="currentColor" aria-hidden="true">
+    <svg viewBox="0 0 20 20" className="w-5 h-5 shrink-0 text-green" fill="currentColor" aria-hidden="true">
       <path fillRule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0L3.3 10.7a1 1 0 1 1 1.4-1.4l3.1 3.1 6.8-6.8a1 1 0 0 1 1.4 0Z" clipRule="evenodd" />
     </svg>
   )
@@ -29,8 +29,8 @@ export default function Trust() {
         <Link to="/welcome" className="text-sm text-slate hover:text-ink">&larr; back</Link>
 
         <div className="mt-8">
-          <div className="text-xs uppercase tracking-widest text-signal">Trust &amp; Safety</div>
-          <h1 className="font-serif text-4xl text-ink mt-2 leading-tight">
+          <div className="text-xs uppercase tracking-widest text-teal">Trust &amp; Safety</div>
+          <h1 className="font-display text-4xl text-ink mt-2 leading-tight">
             Your package, handed to someone you can trust.
           </h1>
           <p className="text-slate mt-4 leading-relaxed">
@@ -58,7 +58,7 @@ export default function Trust() {
         </div>
 
         <div className="mt-10">
-          <h2 className="font-serif text-2xl text-ink">You're protected end to end</h2>
+          <h2 className="font-display text-2xl text-ink">You're protected end to end</h2>
           <ul className="mt-4 space-y-3">
             <li className="flex items-start gap-3">
               <Check />
@@ -92,7 +92,7 @@ export default function Trust() {
         <div className="mt-8">
           <Link
             to="/signup"
-            className="inline-block px-6 py-3 rounded-lg bg-ink text-cream font-medium hover:bg-signal transition-colors"
+            className="inline-block px-6 py-3 rounded-lg bg-ink text-white font-medium hover:bg-teal-light transition-colors"
           >
             Send a package
           </Link>

@@ -63,7 +63,7 @@ export default function SignIn() {
         <Link to="/welcome" className="text-sm text-slate hover:text-ink">
           &larr; back
         </Link>
-        <h1 className="font-serif text-3xl text-ink mt-6">Sign in</h1>
+        <h1 className="font-display text-3xl text-ink mt-6">Sign in</h1>
 
         {step === 'reset-sent' ? (
           <div className="mt-6 space-y-4">
@@ -88,18 +88,18 @@ export default function SignIn() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
+                className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
               />
               <button
                 type="submit"
-                className="w-full px-4 py-3 rounded-lg bg-ink text-cream font-medium hover:bg-signal transition-colors"
+                className="w-full px-4 py-3 rounded-lg bg-ink text-white font-medium hover:bg-teal-light transition-colors"
               >
                 Continue
               </button>
             </form>
             <p className="text-slate text-sm text-center mt-6">
               New to Spetza?{' '}
-              <Link to="/signup" className="text-signal hover:underline">Create an account</Link>
+              <Link to="/signup" className="text-teal hover:underline">Create an account</Link>
             </p>
           </>
         ) : (
@@ -113,7 +113,7 @@ export default function SignIn() {
                     setStep('email')
                     setPassword('')
                   }}
-                  className="text-xs text-signal hover:underline"
+                  className="text-xs text-teal hover:underline"
                 >
                   change
                 </button>
@@ -125,12 +125,12 @@ export default function SignIn() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
-                className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
+                className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full px-4 py-3 rounded-lg bg-ink text-cream font-medium hover:bg-signal transition-colors disabled:opacity-50"
+                className="w-full px-4 py-3 rounded-lg bg-ink text-white font-medium hover:bg-teal-light transition-colors disabled:opacity-50"
               >
                 {submitting ? 'Signing in…' : 'Sign in'}
               </button>
@@ -138,14 +138,14 @@ export default function SignIn() {
                 type="button"
                 onClick={sendPasswordReset}
                 disabled={submitting}
-                className="block w-full text-center text-sm text-signal hover:underline"
+                className="block w-full text-center text-sm text-teal hover:underline"
               >
                 Forgot password?
               </button>
             </form>
             <p className="text-slate text-sm text-center mt-6">
               New to Spetza?{' '}
-              <Link to="/signup" className="text-signal hover:underline">Create an account</Link>
+              <Link to="/signup" className="text-teal hover:underline">Create an account</Link>
             </p>
           </>
         )}

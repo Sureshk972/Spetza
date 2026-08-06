@@ -75,7 +75,7 @@ export default function PhoneVerify() {
       >
         &larr; back
       </button>
-      <h1 className="font-serif text-3xl text-ink mt-6">Verify your phone</h1>
+      <h1 className="font-display text-3xl text-ink mt-6">Verify your phone</h1>
       <p className="text-sm text-slate mt-2">
         We send a 6-digit code to make sure you're a real person. We won't share your number.
       </p>
@@ -92,18 +92,18 @@ export default function PhoneVerify() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+1 555 123 4567"
-              className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
+              className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
             />
           </label>
           {status === 'send_error' && (
-            <p className="text-xs text-signal">
+            <p className="text-xs text-teal">
               {SEND_ERROR_COPY[error] || 'Something went wrong. Try again.'}
             </p>
           )}
           <button
             type="submit"
             disabled={status === 'sending'}
-            className="w-full px-4 py-3 rounded-lg bg-ink text-cream font-medium hover:bg-signal transition-colors disabled:opacity-50"
+            className="w-full px-4 py-3 rounded-lg bg-ink text-white font-medium hover:bg-teal-light transition-colors disabled:opacity-50"
           >
             {status === 'sending' ? 'Sending…' : 'Send code'}
           </button>
@@ -123,32 +123,32 @@ export default function PhoneVerify() {
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
               required
-              className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none text-center text-2xl tracking-widest"
+              className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none text-center text-2xl tracking-widest"
             />
           </label>
           {error === 'phone_in_use' ? (
-            <p className="text-xs text-signal">
+            <p className="text-xs text-teal">
               This phone is already linked to another account.{' '}
               <Link to="/signin" className="underline">
                 Sign in instead?
               </Link>
             </p>
           ) : error ? (
-            <p className="text-xs text-signal">
+            <p className="text-xs text-teal">
               {VERIFY_ERROR_COPY[error] || 'Something went wrong. Try again.'}
             </p>
           ) : null}
           <button
             type="submit"
             disabled={status === 'verifying'}
-            className="w-full px-4 py-3 rounded-lg bg-ink text-cream font-medium hover:bg-signal transition-colors disabled:opacity-50"
+            className="w-full px-4 py-3 rounded-lg bg-ink text-white font-medium hover:bg-teal-light transition-colors disabled:opacity-50"
           >
             {status === 'verifying' ? 'Verifying…' : 'Verify'}
           </button>
           <button
             type="button"
             onClick={() => sendCode(normalizePhone(phone))}
-            className="block w-full text-center text-xs text-signal hover:underline"
+            className="block w-full text-center text-xs text-teal hover:underline"
           >
             Resend code
           </button>

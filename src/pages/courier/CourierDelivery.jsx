@@ -20,9 +20,9 @@ function fmt(iso) {
 
 const statusStyles = {
   open: 'bg-mist text-slate',
-  accepted: 'bg-signal/10 text-signal',
-  picked_up: 'bg-signal/10 text-signal',
-  delivered: 'bg-forest/10 text-forest',
+  accepted: 'bg-teal/10 text-teal',
+  picked_up: 'bg-teal/10 text-teal',
+  delivered: 'bg-green/10 text-green',
   cancelled: 'bg-mist text-slate',
 }
 
@@ -171,7 +171,7 @@ export default function CourierDelivery() {
       <div className="mt-6 flex items-start justify-between gap-4">
         <div>
           <div className="text-xs uppercase tracking-widest text-slate">{request.order_number}</div>
-          <h1 className="font-serif text-3xl text-ink mt-1">Delivery</h1>
+          <h1 className="font-display text-3xl text-ink mt-1">Delivery</h1>
         </div>
         <span className={`px-2 py-0.5 text-xs rounded-full ${statusStyles[request.status] ?? 'bg-mist text-slate'}`}>
           {statusLabel[request.status] ?? request.status}
@@ -241,7 +241,7 @@ export default function CourierDelivery() {
                     t.error
                       ? 'bg-red-500'
                       : t.done
-                      ? 'bg-forest'
+                      ? 'bg-green'
                       : 'bg-mist border border-slate/30'
                   }`}
                 />
@@ -258,7 +258,7 @@ export default function CourierDelivery() {
           <Row label="Platform fee" value={`-${dollars(request.platform_fee_cents ?? 0)}`} />
           <div className="border-t border-slate/20 pt-1.5 flex justify-between items-baseline">
             <span className="text-xs uppercase tracking-widest text-ink">You receive</span>
-            <span className="font-serif text-xl text-ink">{dollars(courierTake)}</span>
+            <span className="font-display text-xl text-ink">{dollars(courierTake)}</span>
           </div>
           <div className="text-xs text-slate pt-1">
             {request.status === 'delivered'
@@ -296,7 +296,7 @@ export default function CourierDelivery() {
               <button
                 onClick={handlePickedUp}
                 disabled={acting}
-                className="px-4 py-1.5 rounded-lg bg-white border border-forest text-forest text-sm font-medium hover:bg-forest hover:text-cream disabled:opacity-50"
+                className="px-4 py-1.5 rounded-lg bg-white border border-green text-green text-sm font-medium hover:bg-green hover:text-white disabled:opacity-50"
               >
                 {acting ? 'Saving…' : 'Mark picked up'}
               </button>
@@ -306,7 +306,7 @@ export default function CourierDelivery() {
             <button
               onClick={handleDelivered}
               disabled={acting}
-              className="px-4 py-1.5 rounded-lg bg-forest text-cream text-sm font-medium hover:opacity-90 disabled:opacity-50"
+              className="px-4 py-1.5 rounded-lg bg-green text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
             >
               {acting ? 'Capturing…' : 'Mark delivered'}
             </button>

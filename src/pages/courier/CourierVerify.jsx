@@ -65,8 +65,8 @@ export default function CourierVerify() {
 
   return (
     <div className="min-h-full px-6 py-12 max-w-xl mx-auto">
-      <div className="text-xs uppercase tracking-widest text-signal">Courier</div>
-      <h1 className="font-serif text-3xl text-ink mt-1">Get verified</h1>
+      <div className="text-xs uppercase tracking-widest text-teal">Courier</div>
+      <h1 className="font-display text-3xl text-ink mt-1">Get verified</h1>
       <p className="text-slate mt-3">
         Three quick steps: a selfie, your payout account, and a background check.
       </p>
@@ -78,9 +78,9 @@ export default function CourierVerify() {
             <div className="text-ink text-sm">1 · Selfie</div>
             <div className="text-slate text-xs mt-0.5">A clear, face-on photo. Recipients see this.</div>
           </div>
-          {selfiePath && <span className="text-xs text-forest">Uploaded ✓</span>}
+          {selfiePath && <span className="text-xs text-green">Uploaded ✓</span>}
         </div>
-        <label className="mt-3 block px-4 py-3 rounded-lg border-2 border-dashed border-mist text-center text-sm text-slate hover:border-signal hover:text-ink cursor-pointer">
+        <label className="mt-3 block px-4 py-3 rounded-lg border-2 border-dashed border-mist text-center text-sm text-slate hover:border-teal hover:text-ink cursor-pointer">
           {uploading ? 'Uploading…' : selfiePath ? 'Replace selfie' : 'Tap to upload (up to 5 MB)'}
           <input type="file" accept="image/*" onChange={onSelfie} disabled={uploading} className="hidden" />
         </label>
@@ -94,8 +94,8 @@ export default function CourierVerify() {
             <div className="text-slate text-xs mt-0.5">Set up Stripe to get paid. This also verifies your identity.</div>
           </div>
           {payoutsReady
-            ? <span className="text-xs text-forest">Connected ✓</span>
-            : <button onClick={() => navigate('/courier/profile')} className="text-xs text-signal hover:underline">Set up →</button>}
+            ? <span className="text-xs text-green">Connected ✓</span>
+            : <button onClick={() => navigate('/courier/profile')} className="text-xs text-teal hover:underline">Set up →</button>}
         </div>
       </section>
 
@@ -103,11 +103,11 @@ export default function CourierVerify() {
       <section className="mt-4 p-4 rounded-xl border border-mist bg-white">
         <div className="text-ink text-sm">3 · Background check</div>
         {bg === 'clear' ? (
-          <div className="mt-2 p-3 rounded-lg bg-forest/10 text-forest text-sm">Cleared ✓ You can accept deliveries.</div>
+          <div className="mt-2 p-3 rounded-lg bg-green/10 text-green text-sm">Cleared ✓ You can accept deliveries.</div>
         ) : bg === 'pending' ? (
-          <div className="mt-2 p-3 rounded-lg bg-signal/10 text-signal text-sm">In progress. We'll update this when it's done.</div>
+          <div className="mt-2 p-3 rounded-lg bg-teal/10 text-teal text-sm">In progress. We'll update this when it's done.</div>
         ) : bg === 'consider' ? (
-          <div className="mt-2 p-3 rounded-lg bg-signal/10 text-signal text-sm">Under review. We'll be in touch.</div>
+          <div className="mt-2 p-3 rounded-lg bg-teal/10 text-teal text-sm">Under review. We'll be in touch.</div>
         ) : bg === 'rejected' ? (
           <div className="mt-2 p-3 rounded-lg bg-red-50 text-red-700 text-sm">Not approved. Check your email from Checkr for details.</div>
         ) : (
@@ -116,7 +116,7 @@ export default function CourierVerify() {
             <button
               onClick={startCheck}
               disabled={!selfiePath || !payoutsReady || starting}
-              className="mt-3 w-full px-4 py-3 rounded-lg bg-forest text-cream text-sm font-medium hover:opacity-90 disabled:opacity-50"
+              className="mt-3 w-full px-4 py-3 rounded-lg bg-green text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
             >
               {starting ? 'Starting…' : 'Start background check'}
             </button>

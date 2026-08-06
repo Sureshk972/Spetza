@@ -59,7 +59,7 @@ export default function CourierServiceAreaSection({ profile, onProfileChange }) 
         </div>
         <button
           onClick={() => setEditing(true)}
-          className="text-sm text-signal hover:underline"
+          className="text-sm text-teal hover:underline"
         >
           Change
         </button>
@@ -79,7 +79,7 @@ export default function CourierServiceAreaSection({ profile, onProfileChange }) 
         value={address}
         onChange={(e) => setAddress(e.target.value)}
         placeholder="123 Main St, San Francisco"
-        className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-signal focus:outline-none"
+        className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
       />
       <div>
         <div className="text-xs uppercase tracking-widest text-slate mb-2">Service radius</div>
@@ -92,8 +92,8 @@ export default function CourierServiceAreaSection({ profile, onProfileChange }) 
               className={
                 'px-3 py-1.5 rounded-lg border text-sm transition-colors ' +
                 (Number(radius) === r
-                  ? 'border-ink bg-ink text-cream'
-                  : 'border-mist text-slate hover:border-signal hover:text-ink')
+                  ? 'border-ink bg-ink text-white'
+                  : 'border-mist text-slate hover:border-teal hover:text-ink')
               }
             >
               {r} mi
@@ -105,7 +105,7 @@ export default function CourierServiceAreaSection({ profile, onProfileChange }) 
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-4 py-2 rounded-lg bg-ink text-cream text-sm font-medium hover:bg-signal transition-colors disabled:opacity-50"
+          className="px-4 py-2 rounded-lg bg-ink text-white text-sm font-medium hover:bg-teal-light transition-colors disabled:opacity-50"
         >
           {saving ? 'Saving…' : 'Save'}
         </button>

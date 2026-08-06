@@ -43,11 +43,11 @@ function CardForm({ onDone }) {
   return (
     <form onSubmit={submit} className="space-y-3">
       <PaymentElement />
-      {error && <p className="text-sm text-signal">{error}</p>}
+      {error && <p className="text-sm text-teal">{error}</p>}
       <button
         type="submit"
         disabled={saving || !stripe}
-        className="bg-forest text-cream px-4 py-2 rounded-lg disabled:opacity-50"
+        className="bg-green text-white px-4 py-2 rounded-lg disabled:opacity-50"
       >
         {saving ? 'Saving…' : 'Save card'}
       </button>
@@ -94,11 +94,11 @@ export default function SenderPaymentSection({ profile, onProfileChange }) {
           ? 'Card saved ✓'
           : 'Add a card to start requesting deliveries.'}
       </p>
-      {error && <p className="text-sm text-signal">{error}</p>}
+      {error && <p className="text-sm text-teal">{error}</p>}
       <button
         onClick={open}
         disabled={opening}
-        className="bg-ink text-cream px-4 py-2 rounded-lg disabled:opacity-50"
+        className="bg-ink text-white px-4 py-2 rounded-lg disabled:opacity-50"
       >
         {opening
           ? 'Opening…'
