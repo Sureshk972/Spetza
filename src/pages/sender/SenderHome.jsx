@@ -303,7 +303,7 @@ export default function SenderHome() {
                           e.stopPropagation()
                           navigate(`/sender/requests/${r.id}/edit`)
                         }}
-                        className="px-3 py-1 rounded-lg border border-mist text-xs text-slate hover:border-ink hover:text-ink transition-colors"
+                        className="px-3 py-1.5 rounded-lg bg-teal text-white text-xs font-medium hover:bg-teal/90 transition-colors"
                       >
                         Edit
                       </button>
@@ -320,7 +320,7 @@ export default function SenderHome() {
                           handleCancel(r)
                         }}
                         disabled={cancelling === r.id}
-                        className="px-3 py-1 rounded-lg border border-mist text-xs text-slate hover:border-ink hover:text-ink transition-colors disabled:opacity-50"
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
                       >
                         {cancelling === r.id ? 'Cancelling…' : 'Cancel'}
                       </button>
