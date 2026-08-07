@@ -294,6 +294,22 @@ export default function CourierProfile() {
             </>
           )}
         </section>
+
+        <section className="space-y-3">
+          <h2 className="text-xs uppercase tracking-widest text-slate">Support</h2>
+          <div className="rounded-xl border border-mist bg-white p-4">
+            <a
+              href="mailto:contact@spetza.com"
+              className="flex items-center gap-3 text-sm text-teal hover:underline"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              </svg>
+              Contact Support
+            </a>
+          </div>
+        </section>
       </div>
     </div>
   )
