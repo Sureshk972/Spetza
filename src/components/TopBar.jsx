@@ -1,7 +1,27 @@
+import { useAuth } from '../context/AuthContext.jsx'
+
+function greeting() {
+  const h = new Date().getHours()
+  if (h < 12) return 'Good morning'
+  if (h < 17) return 'Good afternoon'
+  return 'Good evening'
+}
+
 export default function TopBar() {
+  const { profile } = useAuth()
+
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-mist">
-      <div className="max-w-3xl mx-auto flex items-center justify-end px-4 py-2">
+      <div className="max-w-3xl mx-auto flex items-center justify-between px-4 py-2">
+        {/* Greeting — left */}
+        <div className="text-sm text-ink font-medium">
+          {profile?.first_name
+            ? <>{greeting()}, <span className="font-bold">{profile.first_name}</span></>
+            : <>{greeting()}</>
+          }
+        </div>
+
+        {/* Logo — right */}
         <svg
           aria-label="Spetza"
           viewBox="0 0 960 350"
