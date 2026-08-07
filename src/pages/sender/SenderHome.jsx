@@ -215,9 +215,8 @@ export default function SenderHome() {
         <div>
           <div className="text-xs uppercase tracking-widest text-teal">Sender</div>
           <h1 className="font-display text-3xl text-ink mt-1">Your requests</h1>
-          <div className="flex items-center gap-3 mt-1">
+          <div className="mt-1">
             <RatingBadge avg={profile?.rating_avg} count={profile?.rating_count} />
-            {requests.length > 0 && <HowItWorks variant="link" />}
           </div>
         </div>
         <Link
@@ -228,7 +227,9 @@ export default function SenderHome() {
         </Link>
       </header>
 
-      <div className="mt-10">
+      {requests.length > 0 && <HowItWorks variant="link" />}
+
+      <div className="mt-6">
         {loading ? (
           <div className="text-slate">Loading…</div>
         ) : requests.length === 0 ? (
