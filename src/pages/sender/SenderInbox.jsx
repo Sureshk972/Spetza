@@ -172,10 +172,9 @@ export default function SenderInbox() {
   return (
     <div className="min-h-full">
       <div className="max-w-3xl mx-auto px-6 py-10">
-        <div className="flex items-center gap-3 mb-2">
-          <p className="text-xs uppercase tracking-widest text-teal">Sender</p>
-          <span className="text-slate/40">·</span>
-          <h1 className="font-display text-4xl text-ink">Inbox</h1>
+        <div className="mb-2">
+          <div className="text-xs uppercase tracking-widest text-teal">Sender</div>
+          <h1 className="font-display text-3xl text-ink mt-1">Inbox</h1>
         </div>
         {events.length > 0 && (
           <div className="mb-6">

@@ -102,10 +102,9 @@ export default function CourierProfile() {
   return (
     <div className="min-h-full">
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-10">
-        <div className="flex items-center gap-3">
-          <p className="text-xs uppercase tracking-widest text-teal">Courier</p>
-          <span className="text-slate/40">·</span>
-          <h1 className="font-display text-4xl text-ink">Profile</h1>
+        <div>
+          <div className="text-xs uppercase tracking-widest text-teal">Courier</div>
+          <h1 className="font-display text-3xl text-ink mt-1">Profile</h1>
         </div>
 
         <section className="space-y-3">
