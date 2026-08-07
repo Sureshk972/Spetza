@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
@@ -6,6 +6,108 @@ import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
 import PackagePhoto from '../../components/PackagePhoto.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
+
+/* ── How It Works ── */
+const STEPS = [
+  {
+    num: '1',
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+        <line x1="12" y1="22.08" x2="12" y2="12" />
+      </svg>
+    ),
+    title: 'Post your delivery',
+    desc: 'Tap "New request". Enter pickup and drop-off addresses, describe your package, snap a photo, and set your price.',
+  },
+  {
+    num: '2',
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    ),
+    title: 'A courier accepts',
+    desc: 'Nearby couriers see your request and accept it. You get a notification the moment someone picks it up.',
+  },
+  {
+    num: '3',
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+        <polyline points="22 4 12 14.01 9 11.01" />
+      </svg>
+    ),
+    title: 'Delivered!',
+    desc: 'Track the status in your Inbox. Once delivered, you can rate your courier.',
+  },
+]
+
+function HowItWorks({ variant = 'full' }) {
+  if (variant === 'link') {
+    const [open, setOpen] = useState(false)
+    if (!open) {
+      return (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="text-xs text-teal hover:underline"
+        >
+          How it works
+        </button>
+      )
+    }
+    return (
+      <div className="mt-4 p-4 rounded-xl border border-teal/20 bg-teal/5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-xs uppercase tracking-widest text-teal font-bold">How it works</div>
+          <button type="button" onClick={() => setOpen(false)} className="text-xs text-slate hover:text-ink">
+            Close
+          </button>
+        </div>
+        <ol className="space-y-3">
+          {STEPS.map((s) => (
+            <li key={s.num} className="flex gap-3 items-start">
+              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-teal text-white text-xs flex items-center justify-center font-bold">{s.num}</span>
+              <div>
+                <div className="text-sm font-bold text-ink">{s.title}</div>
+                <div className="text-xs text-slate mt-0.5">{s.desc}</div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    )
+  }
+
+  // Full variant — for empty state
+  return (
+    <div className="text-center py-10 rounded-2xl border border-dashed border-mist">
+      <div className="text-xs uppercase tracking-widest text-teal font-bold mb-6">How it works</div>
+      <div className="space-y-6 max-w-sm mx-auto text-left px-6">
+        {STEPS.map((s) => (
+          <div key={s.num} className="flex gap-4 items-start">
+            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-teal/10 text-teal flex items-center justify-center">
+              {s.icon}
+            </div>
+            <div>
+              <div className="font-display text-lg font-extrabold text-ink">{s.title}</div>
+              <p className="text-sm text-slate mt-1 leading-relaxed">{s.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <Link
+        to="/sender/new"
+        className="inline-block mt-8 px-6 py-3 rounded-lg bg-teal text-white font-bold hover:bg-teal/90 transition-colors"
+      >
+        Post your first delivery
+      </Link>
+    </div>
+  )
+}
 
 const statusStyles = {
   open: 'bg-mist text-slate',
@@ -113,8 +215,9 @@ export default function SenderHome() {
         <div>
           <div className="text-xs uppercase tracking-widest text-teal">Sender</div>
           <h1 className="font-display text-3xl text-ink mt-1">Your requests</h1>
-          <div className="mt-1">
+          <div className="flex items-center gap-3 mt-1">
             <RatingBadge avg={profile?.rating_avg} count={profile?.rating_count} />
+            {requests.length > 0 && <HowItWorks variant="link" />}
           </div>
         </div>
         <Link
@@ -129,12 +232,7 @@ export default function SenderHome() {
         {loading ? (
           <div className="text-slate">Loading…</div>
         ) : requests.length === 0 ? (
-          <div className="text-center py-16 rounded-2xl border border-dashed border-mist">
-            <p className="text-slate">No requests yet.</p>
-            <Link to="/sender/new" className="inline-block mt-4 text-teal hover:underline">
-              Post your first delivery
-            </Link>
-          </div>
+          <HowItWorks variant="full" />
         ) : (
           <ul className="space-y-3">
             {requests.map((r) => {
