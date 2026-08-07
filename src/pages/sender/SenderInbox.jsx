@@ -41,8 +41,13 @@ function InboxGuide({ variant = 'full' }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="text-xs text-teal hover:underline"
+          className="inline-flex items-center gap-1.5 text-sm text-slate underline underline-offset-4 hover:text-ink transition-colors"
         >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
           How it works
         </button>
       )
