@@ -199,7 +199,7 @@ export default function SenderHome() {
 
   const handleCancel = async (request) => {
     const ok = window.confirm(
-      `Cancel this delivery? The ${dollars(request.max_price_cents)} hold on your card will be released.`,
+      'Cancel this delivery? The hold on your card will be released.',
     )
     if (!ok) return
     setCancelling(request.id)

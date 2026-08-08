@@ -131,7 +131,7 @@ export default function CourierDelivery() {
 
   const handleDelivered = async () => {
     const ok = window.confirm(
-      `Confirm delivered? The sender will be charged ${dollars(request.max_price_cents)}.`,
+      `Confirm delivered? You'll earn ${dollars(courierTake)}.`,
     )
     if (!ok) return
     setActing(true)
@@ -277,10 +277,8 @@ export default function CourierDelivery() {
         </div>
 
         <div className="p-4 rounded-xl border border-mist bg-white space-y-1.5">
-          <div className="text-xs uppercase tracking-widest text-slate">Your take</div>
-          <Row label="Delivery" value={dollars(request.accepted_price_cents ?? request.max_price_cents)} />
-          <Row label="Platform fee" value={`-${dollars(request.platform_fee_cents ?? 0)}`} />
-          <div className="border-t border-slate/20 pt-1.5 flex justify-between items-baseline">
+          <div className="text-xs uppercase tracking-widest text-slate">Your earnings</div>
+          <div className="flex justify-between items-baseline">
             <span className="text-xs uppercase tracking-widest text-ink">You receive</span>
             <span className="font-display text-xl text-ink">{dollars(courierTake)}</span>
           </div>

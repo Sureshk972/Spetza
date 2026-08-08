@@ -170,8 +170,9 @@ export default function CourierHome() {
   }
 
   const handleDelivered = async (request) => {
+    const take = (request.accepted_price_cents ?? request.max_price_cents) - (request.platform_fee_cents ?? 0)
     const ok = window.confirm(
-      `Confirm delivered? The sender will be charged ${dollars(request.max_price_cents)}.`,
+      `Confirm delivered? You'll earn ${dollars(take)}.`,
     )
     if (!ok) return
     setProgressing(request.id)

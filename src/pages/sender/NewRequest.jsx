@@ -202,9 +202,7 @@ export default function NewRequest() {
             label="Distance"
             value={distance == null ? '—' : `${distance.toFixed(1)} mi`}
           />
-          <Row label="Delivery" value={money(priceCents)} />
-          <Row label="Service fee (15%)" value={money(feeCents)} />
-          <div className="border-t border-slate/20 pt-1.5 flex justify-between items-baseline">
+          <div className="flex justify-between items-baseline">
             <span className="text-xs uppercase tracking-widest text-ink">Total</span>
             <span className="font-display text-xl text-ink">{money(totalCents)}</span>
           </div>

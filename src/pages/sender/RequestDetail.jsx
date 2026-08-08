@@ -102,7 +102,7 @@ export default function RequestDetail() {
 
   const handleCancel = async () => {
     const ok = window.confirm(
-      `Cancel this delivery? The ${dollars(request.max_price_cents)} hold on your card will be released.`,
+      'Cancel this delivery? The hold on your card will be released.',
     )
     if (!ok) return
     setCancelling(true)
@@ -272,8 +272,7 @@ export default function RequestDetail() {
 
         <div className="p-4 rounded-xl border border-mist bg-white space-y-1.5">
           <div className="text-xs uppercase tracking-widest text-slate">Payment</div>
-          <Row label="Delivery" value={dollars(priceCents)} />
-          <Row label="Service fee (15%)" value={dollars(feeCents)} />
+          <Row label="Delivery" value={dollars(totalCents)} />
           {request.tip_cents > 0 && (
             <Row label="Tip" value={dollars(request.tip_cents)} />
           )}
