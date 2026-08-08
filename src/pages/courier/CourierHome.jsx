@@ -387,7 +387,7 @@ export default function CourierHome() {
           <PricingTable variant="courier" />
         </div>
 
-        <div className="mt-10">
+        <div id="open-requests" className="mt-10">
           <div className="text-xs uppercase tracking-widest text-slate mb-3">
             Open in your area
           </div>

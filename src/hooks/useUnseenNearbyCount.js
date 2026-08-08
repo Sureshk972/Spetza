@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -22,6 +23,8 @@ export function markDiscoverSeen() {
  */
 export function useUnseenNearbyCount() {
   const { profile } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
   const [requests, setRequests] = useState([])
 
   const serviceArea =
@@ -70,7 +73,22 @@ export function useUnseenNearbyCount() {
           return miles != null && miles <= serviceArea.radius
         })
         if (nearbyNew.length > prevCountRef.current) {
-          toast('📦 New delivery request nearby!', { duration: 5000 })
+          toast('📦 New delivery request nearby!', {
+            duration: 5000,
+            action: {
+              label: 'View',
+              onClick: () => {
+                if (location.pathname === '/courier') {
+                  document.getElementById('open-requests')?.scrollIntoView({ behavior: 'smooth' })
+                } else {
+                  navigate('/courier')
+                  setTimeout(() => {
+                    document.getElementById('open-requests')?.scrollIntoView({ behavior: 'smooth' })
+                  }, 300)
+                }
+              },
+            },
+          })
         }
       }
       prevCountRef.current = newData.length
