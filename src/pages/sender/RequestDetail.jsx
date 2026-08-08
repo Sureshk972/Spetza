@@ -41,6 +41,7 @@ export default function RequestDetail() {
   const navigate = useNavigate()
   const [request, setRequest] = useState(null)
   const [courier, setCourier] = useState(null)
+  const [courierPhotoUrl, setCourierPhotoUrl] = useState(null)
   const [rated, setRated] = useState(false)
   const [loading, setLoading] = useState(true)
   const [cancelling, setCancelling] = useState(false)
@@ -62,10 +63,18 @@ export default function RequestDetail() {
     if (req?.courier_id) {
       const { data: prof } = await supabase
         .from('public_profiles')
-        .select('id, first_name, rating_avg, rating_count')
+        .select('id, first_name, rating_avg, rating_count, selfie_path')
         .eq('id', req.courier_id)
         .maybeSingle()
       setCourier(prof ?? null)
+      if (prof?.selfie_path) {
+        const { data: signed } = await supabase.storage
+          .from('courier-verification')
+          .createSignedUrl(prof.selfie_path, 3600)
+        setCourierPhotoUrl(signed?.signedUrl ?? null)
+      } else {
+        setCourierPhotoUrl(null)
+      }
     } else {
       setCourier(null)
     }
@@ -194,8 +203,21 @@ export default function RequestDetail() {
           <div className="text-xs uppercase tracking-widest text-slate">Courier</div>
           {courier ? (
             <div className="mt-2 flex items-center gap-3">
-              <div className="text-sm text-ink">{courier.first_name || 'Assigned'}</div>
-              <RatingBadge avg={courier.rating_avg} count={courier.rating_count} />
+              {courierPhotoUrl ? (
+                <img
+                  src={courierPhotoUrl}
+                  alt={courier.first_name}
+                  className="w-10 h-10 rounded-full object-cover border border-mist"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-mist flex items-center justify-center text-slate text-sm font-bold">
+                  {(courier.first_name || '?')[0]}
+                </div>
+              )}
+              <div>
+                <div className="text-sm text-ink font-medium">{courier.first_name || 'Assigned'}</div>
+                <RatingBadge avg={courier.rating_avg} count={courier.rating_count} />
+              </div>
             </div>
           ) : (
             <div className="mt-2 text-sm text-slate">Waiting for a courier to accept.</div>
