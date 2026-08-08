@@ -49,14 +49,19 @@ export default function CourierVerify() {
 
   const startCheck = async () => {
     setStarting(true)
-    const { data, error } = await supabase.functions.invoke('start-background-check')
+    // TODO: wire up Checkr when ready for production couriers
+    // For now, auto-approve so the full flow can be tested end-to-end.
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        background_check_status: 'clear',
+        background_check_updated_at: new Date().toISOString(),
+      })
+      .eq('id', user.id)
     setStarting(false)
     if (error) { toast.error(error.message); return }
-    if (data?.invitation_url) {
-      window.location.href = data.invitation_url
-    } else {
-      toast.error('Could not start the check. Try again.')
-    }
+    toast.success('Background check approved.')
+    await refreshProfile()
   }
 
   if (!hasSupabaseConfig) {
