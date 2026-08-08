@@ -11,6 +11,7 @@ import PackagePhoto from '../../components/PackagePhoto.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 import { canAcceptDeliveries, courierStep } from '../../lib/courierGate.js'
 import { markDiscoverSeen } from '../../hooks/useUnseenNearbyCount.js'
+import PricingTable from '../../components/PricingTable.jsx'
 
 function dollars(cents) {
   return `$${(cents / 100).toFixed(2)}`
@@ -381,6 +382,10 @@ export default function CourierHome() {
             </ul>
           </section>
         )}
+
+        <div className="mt-6">
+          <PricingTable variant="courier" />
+        </div>
 
         <div className="mt-10">
           <div className="text-xs uppercase tracking-widest text-slate mb-3">

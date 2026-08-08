@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import PackagePhotoInput from '../../components/PackagePhotoInput.jsx'
 import StructuredAddressInput from '../../components/StructuredAddressInput.jsx'
 import RouteMap from '../../components/RouteMap.jsx'
+import PricingTable from '../../components/PricingTable.jsx'
 import { MAX_DISTANCE_MILES, priceForDistance, feeFor, totalFor } from '../../lib/pricing.js'
 import { geocodeAddress, haversineMiles } from '../../lib/geocode.js'
 import { trackEvent } from '../../lib/analytics.js'
@@ -212,6 +213,8 @@ export default function NewRequest() {
             </div>
           )}
         </div>
+
+        <PricingTable variant="sender" />
 
         <button
           type="submit"
