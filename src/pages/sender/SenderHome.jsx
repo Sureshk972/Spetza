@@ -296,11 +296,19 @@ export default function SenderHome() {
                     </div>
                   )}
                   {r.status === 'accepted' && r.pickup_pin && (
-                    <div className="mt-3 p-3 rounded-lg bg-teal/10 border border-teal/30">
+                    <div className={`mt-3 p-3 rounded-lg ${
+                      r.courier_arrived_at
+                        ? 'bg-green/10 border border-green/30 ring-2 ring-green/30'
+                        : 'bg-teal/10 border border-teal/30'
+                    }`}>
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">🔑</span>
+                        <span className="text-lg">{r.courier_arrived_at ? '🚗' : '🔑'}</span>
                         <div>
-                          <div className="text-sm font-bold text-teal">Courier accepted — share your PIN</div>
+                          <div className={`text-sm font-bold ${r.courier_arrived_at ? 'text-green' : 'text-teal'}`}>
+                            {r.courier_arrived_at
+                              ? 'Courier is here — share your PIN now!'
+                              : 'Courier accepted — share your PIN'}
+                          </div>
                           <div className="text-xs text-slate mt-0.5">
                             Tap to view your 4-digit pickup code
                           </div>

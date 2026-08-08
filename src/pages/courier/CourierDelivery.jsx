@@ -91,6 +91,23 @@ export default function CourierDelivery() {
     refresh: load,
   })
 
+  const handleArrived = async () => {
+    setActing(true)
+    const { error } = await supabase
+      .from('delivery_requests')
+      .update({ courier_arrived_at: new Date().toISOString() })
+      .eq('id', request.id)
+      .eq('courier_id', user.id)
+      .eq('status', 'accepted')
+    setActing(false)
+    if (error) {
+      toast.error(error.message)
+      return
+    }
+    toast.success('Sender has been notified!')
+    load()
+  }
+
   const handlePickedUp = async () => {
     const trimmed = pin.trim()
     if (trimmed.length !== 4) {
@@ -291,11 +308,50 @@ export default function CourierDelivery() {
 
       {(request.status === 'accepted' || request.status === 'picked_up') && (
         <div className="mt-6 flex flex-wrap justify-end gap-2">
-          {request.status === 'accepted' && (
+          {request.status === 'accepted' && !request.courier_arrived_at && (
+            <div className="w-full space-y-3">
+              <div className="p-4 rounded-xl border border-teal/30 bg-teal/5">
+                <div className="text-xs uppercase tracking-widest text-teal font-bold mb-2">Head to pickup</div>
+                <p className="text-sm text-slate mb-2">Go to the pickup address below. Tap "I've arrived" when you're there.</p>
+                <div className="mt-2 p-3 rounded-lg bg-white border border-mist">
+                  <div className="text-sm text-ink font-medium">{request.pickup_address}</div>
+                </div>
+                <a
+                  href={`https://maps.apple.com/?daddr=${encodeURIComponent(request.pickup_address)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-2 text-sm text-teal hover:underline"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="3 11 22 2 13 21 11 13 3 11" />
+                  </svg>
+                  Open in Maps
+                </a>
+                <button
+                  onClick={handleArrived}
+                  disabled={acting}
+                  className="mt-4 w-full py-3 rounded-lg bg-teal text-white text-sm font-bold hover:bg-teal/90 disabled:opacity-50 transition-colors"
+                >
+                  {acting ? 'Notifying sender…' : "I've arrived"}
+                </button>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={handleAbandon}
+                  disabled={acting}
+                  className="px-3 py-1.5 rounded-lg text-sm text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                >
+                  Abandon
+                </button>
+              </div>
+            </div>
+          )}
+          {request.status === 'accepted' && request.courier_arrived_at && (
             <div className="w-full space-y-3">
               <div className="p-4 rounded-xl border border-teal/30 bg-teal/5">
                 <div className="text-xs uppercase tracking-widest text-teal font-bold mb-2">Pickup handshake</div>
-                <p className="text-sm text-slate mb-3">Ask the sender for their 4-digit code to confirm pickup.</p>
+                <p className="text-sm text-slate mb-1">The sender has been notified you're here.</p>
+                <p className="text-sm text-slate mb-3">Ask them for the 4-digit code to confirm pickup.</p>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"

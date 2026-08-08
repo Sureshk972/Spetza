@@ -323,8 +323,12 @@ export default function CourierHome() {
                           <span />
                         )}
                         {r.status === 'accepted' ? (
-                          <span className="px-3 py-1 rounded-lg bg-teal/10 border border-teal/30 text-teal text-xs font-medium">
-                            🔑 Enter PIN to pick up →
+                          <span className={`px-3 py-1 rounded-lg text-xs font-medium ${
+                            r.courier_arrived_at
+                              ? 'bg-green/10 border border-green/30 text-green'
+                              : 'bg-teal/10 border border-teal/30 text-teal'
+                          }`}>
+                            {r.courier_arrived_at ? '🔑 Enter PIN →' : '📍 Head to pickup →'}
                           </span>
                         ) : (
                           <button
