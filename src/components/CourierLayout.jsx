@@ -3,9 +3,9 @@ import BottomNav from './BottomNav.jsx'
 
 export default function CourierLayout({ children }) {
   return (
-    <div className="min-h-full pb-28">
+    <div className="fixed inset-0 flex flex-col">
       <TopBar />
-      {children}
+      <main className="flex-1 overflow-y-auto">{children}</main>
       <BottomNav variant="courier" />
     </div>
   )

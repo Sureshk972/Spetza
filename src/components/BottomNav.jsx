@@ -65,7 +65,7 @@ export default function BottomNav({ variant = 'sender' }) {
 
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-40 bg-white border-t border-mist"
+      className="shrink-0 bg-white border-t border-mist"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="max-w-3xl mx-auto flex items-stretch">
