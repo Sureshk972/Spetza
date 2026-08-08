@@ -116,7 +116,7 @@ export default function StructuredAddressInput({
         className={inputClass}
       />
 
-      <div className="grid grid-cols-[1fr_auto_auto] gap-2">
+      <div className="grid grid-cols-[1fr_4.5rem_5.5rem] gap-2">
         <input
           type="text"
           required
@@ -132,7 +132,7 @@ export default function StructuredAddressInput({
           disabled={disabled}
           value={parts.state}
           onChange={(e) => update('state', e.target.value)}
-          className={`${inputClass} appearance-none px-2 min-w-[4.5rem] text-center ${
+          className={`${inputClass} appearance-none px-2 text-center ${
             !parts.state ? 'text-slate/50' : ''
           }`}
         >
@@ -158,7 +158,7 @@ export default function StructuredAddressInput({
           }}
           placeholder="Zip"
           maxLength={10}
-          className={`${inputClass} w-24`}
+          className={inputClass}
         />
       </div>
     </div>
