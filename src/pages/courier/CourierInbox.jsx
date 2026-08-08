@@ -115,6 +115,15 @@ export default function CourierInbox() {
                     <div className="mt-2 text-sm text-slate line-clamp-1">
                       {ev.request.pickup_address} → {ev.request.dropoff_address}
                     </div>
+                    {ev.kind === 'accepted' && ev.request.status === 'accepted' && (
+                      <div className="mt-3 p-2.5 rounded-lg bg-teal/10 border border-teal/30 flex items-center gap-2">
+                        <span className="text-lg">🔑</span>
+                        <div>
+                          <div className="text-xs font-bold text-teal">Enter PIN to confirm pickup</div>
+                          <div className="text-xs text-slate mt-0.5">Ask the sender for their 4-digit code</div>
+                        </div>
+                      </div>
+                    )}
                   </Link>
                 </li>
               )

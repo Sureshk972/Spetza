@@ -57,7 +57,7 @@ const iconProps = {
   height: 22,
 }
 
-export default function BottomNav({ variant = 'sender', discoverBadge = false }) {
+export default function BottomNav({ variant = 'sender', discoverBadge = false, inboxBadge = false }) {
   const navigate = useNavigate()
   const signOut = async () => {
     await supabase.auth.signOut()
@@ -79,7 +79,7 @@ export default function BottomNav({ variant = 'sender', discoverBadge = false })
             <line x1="12" y1="22.08" x2="12" y2="12" />
           </svg>
         </TabLink>
-        <TabLink to={`${base}/inbox`} label="Inbox">
+        <TabLink to={`${base}/inbox`} label="Inbox" badge={inboxBadge}>
           <svg {...iconProps}>
             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
             <polyline points="22,6 12,13 2,6" />
