@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { haversineMiles } from '../lib/geocode.js'
@@ -42,10 +43,12 @@ export function useUnseenNearbyCount() {
     }
   }, [])
 
+  const prevCountRef = useRef(0)
+
   useEffect(() => {
     if (!hasSupabaseConfig || !serviceArea) return
 
-    const fetchOpen = async () => {
+    const fetchOpen = async (isRealtime = false) => {
       let query = supabase
         .from('delivery_requests')
         .select('id, pickup_lat, pickup_lng, created_at')
@@ -56,17 +59,36 @@ export function useUnseenNearbyCount() {
       }
 
       const { data } = await query
-      setRequests(data || [])
+      const newData = data || []
+      setRequests(newData)
+
+      // Toast when new orders appear via realtime
+      if (isRealtime && newData.length > prevCountRef.current) {
+        const nearbyNew = newData.filter((r) => {
+          if (r.pickup_lat == null || r.pickup_lng == null) return false
+          const miles = haversineMiles(serviceArea.lat, serviceArea.lng, Number(r.pickup_lat), Number(r.pickup_lng))
+          return miles != null && miles <= serviceArea.radius
+        })
+        if (nearbyNew.length > prevCountRef.current) {
+          toast('📦 New delivery request nearby!', { duration: 5000 })
+        }
+      }
+      prevCountRef.current = newData.length
     }
 
-    fetchOpen()
+    fetchOpen(false)
 
     const channel = supabase
       .channel('unseen-nearby')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'delivery_requests', filter: 'status=eq.open' },
-        () => fetchOpen(),
+        { event: 'INSERT', schema: 'public', table: 'delivery_requests', filter: 'status=eq.open' },
+        () => fetchOpen(true),
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'delivery_requests' },
+        () => fetchOpen(false),
       )
       .subscribe()
 
