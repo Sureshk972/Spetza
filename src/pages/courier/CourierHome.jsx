@@ -382,7 +382,7 @@ export default function CourierHome() {
         )}
 
         <div className="mt-6">
-          <PricingTable variant="courier" />
+          <PricingTable variant="courier" collapsible />
         </div>
 
         <div id="open-requests" className="mt-10">
