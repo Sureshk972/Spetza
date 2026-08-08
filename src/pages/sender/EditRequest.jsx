@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import PackagePhotoInput from '../../components/PackagePhotoInput.jsx'
+import StructuredAddressInput from '../../components/StructuredAddressInput.jsx'
 import { MAX_DISTANCE_MILES, priceForDistance, feeFor, totalFor } from '../../lib/pricing.js'
 import { geocodeAddress, haversineMiles } from '../../lib/geocode.js'
 
@@ -221,28 +222,30 @@ export default function EditRequest() {
       )}
 
       <form onSubmit={handleSave} className="mt-8 space-y-5">
-        <AddressField
-          label="Pickup address"
-          value={pickup}
-          disabled={locked}
-          onChange={(v) => {
-            setPickup(v)
-            if (pickupGeo.status !== 'idle') setPickupGeo(blankGeo)
-          }}
-          onBlur={() => handleGeocode(pickup, setPickupGeo)}
-          geo={pickupGeo}
-        />
-        <AddressField
-          label="Dropoff address"
-          value={dropoff}
-          disabled={locked}
-          onChange={(v) => {
-            setDropoff(v)
-            if (dropoffGeo.status !== 'idle') setDropoffGeo(blankGeo)
-          }}
-          onBlur={() => handleGeocode(dropoff, setDropoffGeo)}
-          geo={dropoffGeo}
-        />
+        <Field label="Pickup address">
+          <StructuredAddressInput
+            value={pickup}
+            disabled={locked}
+            onChange={(v) => {
+              setPickup(v)
+              if (pickupGeo.status !== 'idle') setPickupGeo(blankGeo)
+            }}
+            onBlur={() => handleGeocode(pickup, setPickupGeo)}
+          />
+          <GeoCaption geo={pickupGeo} />
+        </Field>
+        <Field label="Dropoff address">
+          <StructuredAddressInput
+            value={dropoff}
+            disabled={locked}
+            onChange={(v) => {
+              setDropoff(v)
+              if (dropoffGeo.status !== 'idle') setDropoffGeo(blankGeo)
+            }}
+            onBlur={() => handleGeocode(dropoff, setDropoffGeo)}
+          />
+          <GeoCaption geo={dropoffGeo} />
+        </Field>
         <Field label="Package description">
           <textarea
             required
@@ -310,22 +313,6 @@ export default function EditRequest() {
   )
 }
 
-function AddressField({ label, value, disabled, onChange, onBlur, geo }) {
-  return (
-    <Field label={label}>
-      <input
-        type="text"
-        required
-        disabled={disabled}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onBlur={onBlur}
-        className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none disabled:opacity-60"
-      />
-      <GeoCaption geo={geo} />
-    </Field>
-  )
-}
 
 function GeoCaption({ geo }) {
   if (geo.status === 'idle') return null

@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import PackagePhotoInput from '../../components/PackagePhotoInput.jsx'
+import StructuredAddressInput from '../../components/StructuredAddressInput.jsx'
 import RouteMap from '../../components/RouteMap.jsx'
 import { MAX_DISTANCE_MILES, priceForDistance, feeFor, totalFor } from '../../lib/pricing.js'
 import { geocodeAddress, haversineMiles } from '../../lib/geocode.js'
@@ -143,28 +144,28 @@ export default function NewRequest() {
       <h1 className="font-display text-3xl text-ink mt-6">New delivery request</h1>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-        <AddressField
-          label="Pickup address"
-          placeholder="123 Main St, San Francisco"
-          value={pickup}
-          onChange={(v) => {
-            setPickup(v)
-            if (pickupGeo.status !== 'idle') setPickupGeo(blankGeo)
-          }}
-          onBlur={() => handleGeocode(pickup, setPickupGeo)}
-          geo={pickupGeo}
-        />
-        <AddressField
-          label="Dropoff address"
-          placeholder="456 Oak Ave, San Francisco"
-          value={dropoff}
-          onChange={(v) => {
-            setDropoff(v)
-            if (dropoffGeo.status !== 'idle') setDropoffGeo(blankGeo)
-          }}
-          onBlur={() => handleGeocode(dropoff, setDropoffGeo)}
-          geo={dropoffGeo}
-        />
+        <Field label="Pickup address">
+          <StructuredAddressInput
+            value={pickup}
+            onChange={(v) => {
+              setPickup(v)
+              if (pickupGeo.status !== 'idle') setPickupGeo(blankGeo)
+            }}
+            onBlur={() => handleGeocode(pickup, setPickupGeo)}
+          />
+          <GeoCaption geo={pickupGeo} />
+        </Field>
+        <Field label="Dropoff address">
+          <StructuredAddressInput
+            value={dropoff}
+            onChange={(v) => {
+              setDropoff(v)
+              if (dropoffGeo.status !== 'idle') setDropoffGeo(blankGeo)
+            }}
+            onBlur={() => handleGeocode(dropoff, setDropoffGeo)}
+          />
+          <GeoCaption geo={dropoffGeo} />
+        </Field>
         {pickupGeo.status === 'ok' && dropoffGeo.status === 'ok' && (
           <RouteMap
             pickup={{ lat: pickupGeo.lat, lng: pickupGeo.lng }}
@@ -226,22 +227,6 @@ export default function NewRequest() {
   )
 }
 
-function AddressField({ label, placeholder, value, onChange, onBlur, geo }) {
-  return (
-    <Field label={label}>
-      <input
-        type="text"
-        required
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onBlur={onBlur}
-        placeholder={placeholder}
-        className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
-      />
-      <GeoCaption geo={geo} />
-    </Field>
-  )
-}
 
 function GeoCaption({ geo }) {
   if (geo.status === 'idle') return null

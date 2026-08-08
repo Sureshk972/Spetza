@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { geocodeAddress } from '../lib/geocode.js'
+import StructuredAddressInput from './StructuredAddressInput.jsx'
 
 const RADIUS_OPTIONS = [5, 10, 25, 50]
 
@@ -74,12 +75,9 @@ export default function CourierServiceAreaSection({ profile, onProfileChange }) 
           Set your home address and service radius — you'll only see requests within range.
         </p>
       )}
-      <input
-        type="text"
+      <StructuredAddressInput
         value={address}
-        onChange={(e) => setAddress(e.target.value)}
-        placeholder="123 Main St, San Francisco"
-        className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
+        onChange={setAddress}
       />
       <div>
         <div className="text-xs uppercase tracking-widest text-slate mb-2">Service radius</div>
