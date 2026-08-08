@@ -421,9 +421,16 @@ export default function CourierHome() {
                 ].filter(Boolean)
                 return (
                   <li key={r.id} className="p-5 rounded-xl border border-mist bg-white space-y-3">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
-                        {r.order_number}
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
+                          {r.order_number}
+                        </span>
+                        {Date.now() - new Date(r.created_at).getTime() < 30 * 60 * 1000 && (
+                          <span className="px-1.5 py-0.5 rounded-full bg-green text-white text-[10px] font-bold uppercase tracking-wide">
+                            New
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
                         {timeLabel(r.created_at)}
