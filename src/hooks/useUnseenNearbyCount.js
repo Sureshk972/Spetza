@@ -36,7 +36,7 @@ export function useUnseenNearbyCount() {
       setCount(nearby)
 
       if (prevRef.current >= 0 && nearby > prevRef.current) {
-        toast('📦 New delivery request nearby!', { duration: 5000 })
+        toast('📦 New delivery request nearby!', { duration: 8000 })
       }
       prevRef.current = nearby
     }
