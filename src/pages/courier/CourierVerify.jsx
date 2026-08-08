@@ -13,10 +13,24 @@ export default function CourierVerify() {
   const [uploading, setUploading] = useState(false)
   const [starting, setStarting] = useState(false)
   const [selfiePath, setSelfiePath] = useState(profile?.selfie_path ?? null)
+  const [selfieUrl, setSelfieUrl] = useState(null)
 
   useEffect(() => {
     setSelfiePath(profile?.selfie_path ?? null)
   }, [profile?.selfie_path])
+
+  // Fetch a signed URL whenever selfiePath changes
+  useEffect(() => {
+    if (!selfiePath) { setSelfieUrl(null); return }
+    let cancelled = false
+    supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(selfiePath, 3600) // 1 hour
+      .then(({ data }) => {
+        if (!cancelled && data?.signedUrl) setSelfieUrl(data.signedUrl)
+      })
+    return () => { cancelled = true }
+  }, [selfiePath])
 
   const bg = profile?.background_check_status ?? 'not_started'
   const payoutsReady =
@@ -85,7 +99,16 @@ export default function CourierVerify() {
           </div>
           {selfiePath && <span className="text-xs text-green">Uploaded ✓</span>}
         </div>
-        <label className="mt-3 block px-4 py-3 rounded-lg border-2 border-dashed border-mist text-center text-sm text-slate hover:border-teal hover:text-ink cursor-pointer">
+        {selfieUrl && (
+          <div className="mt-3 flex justify-center">
+            <img
+              src={selfieUrl}
+              alt="Your selfie"
+              className="w-24 h-24 rounded-full object-cover border-2 border-mist"
+            />
+          </div>
+        )}
+        <label className={`${selfieUrl ? 'mt-2' : 'mt-3'} block px-4 py-3 rounded-lg border-2 border-dashed border-mist text-center text-sm text-slate hover:border-teal hover:text-ink cursor-pointer`}>
           {uploading ? 'Uploading…' : selfiePath ? 'Replace selfie' : 'Tap to upload (up to 5 MB)'}
           <input type="file" accept="image/*" onChange={onSelfie} disabled={uploading} className="hidden" />
         </label>
