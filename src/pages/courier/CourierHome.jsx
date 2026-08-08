@@ -132,9 +132,9 @@ export default function CourierHome() {
     enabled: !!user,
   })
 
-  const visibleRequests = useMemo(() => {
-    if (!serviceArea) return []
-    return requests
+  const { visibleRequests, newestId } = useMemo(() => {
+    if (!serviceArea) return { visibleRequests: [], newestId: null }
+    const list = requests
       .map((r) => {
         if (r.pickup_lat == null || r.pickup_lng == null) return null
         const miles = haversineMiles(
@@ -147,6 +147,8 @@ export default function CourierHome() {
         return { ...r, miles_from_you: miles }
       })
       .filter(Boolean)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    return { visibleRequests: list, newestId: list[0]?.id ?? null }
   }, [requests, serviceArea])
 
   const handleAccept = async (request) => {
@@ -426,7 +428,7 @@ export default function CourierHome() {
                         <span className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
                           {r.order_number}
                         </span>
-                        {Date.now() - new Date(r.created_at).getTime() < 30 * 60 * 1000 && (
+                        {r.id === newestId && (
                           <span className="px-1.5 py-0.5 rounded-full bg-green text-white text-[10px] font-bold uppercase tracking-wide">
                             New
                           </span>
