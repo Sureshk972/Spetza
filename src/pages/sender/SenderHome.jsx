@@ -295,6 +295,19 @@ export default function SenderHome() {
                       <RatingBadge avg={courier.rating_avg} count={courier.rating_count} />
                     </div>
                   )}
+                  {r.status === 'accepted' && r.pickup_pin && (
+                    <div className="mt-3 p-3 rounded-lg bg-teal/10 border border-teal/30">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">🔑</span>
+                        <div>
+                          <div className="text-sm font-bold text-teal">Courier accepted — share your PIN</div>
+                          <div className="text-xs text-slate mt-0.5">
+                            Tap to view your 4-digit pickup code
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between gap-3 pt-3 border-t border-mist">
                     {r.status === 'open' ? (
                       <button
