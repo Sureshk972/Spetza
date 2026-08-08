@@ -36,7 +36,33 @@ export default function CourierConnectSection({ profile }) {
   }, [profile?.stripe_connect_account_id, profile?.stripe_connect_payouts_enabled, refreshProfile])
 
   if (profile?.stripe_connect_payouts_enabled) {
-    return <p className="text-sm text-slate">Bank account connected ✓</p>
+    return (
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-slate">Bank account connected ✓</p>
+        <button
+          onClick={manage}
+          disabled={opening}
+          className="text-xs text-teal hover:underline disabled:opacity-50"
+        >
+          {opening ? 'Opening…' : 'Manage'}
+        </button>
+      </div>
+    )
+  }
+
+  async function manage() {
+    setOpening(true)
+    setError(null)
+    const { data, error: fnErr } = await supabase.functions.invoke(
+      'connect-courier',
+      { body: { return_url: window.location.origin + '/courier/profile', mode: 'manage' } },
+    )
+    if (fnErr) {
+      setOpening(false)
+      setError(fnErr.message)
+      return
+    }
+    window.location.href = data.url
   }
 
   async function connect() {

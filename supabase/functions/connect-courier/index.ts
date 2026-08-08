@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
   const { data: { user }, error: userErr } = await supabase.auth.getUser(token);
   if (userErr || !user) return json({ error: "unauthenticated" }, 401);
 
-  const { return_url } = await req.json().catch(() => ({}));
+  const { return_url, mode } = await req.json().catch(() => ({}));
   if (!return_url) return json({ error: "missing return_url" }, 400);
 
   const { data: profile } = await supabase
@@ -42,6 +42,18 @@ Deno.serve(async (req) => {
     return json({ error: "only couriers can onboard" }, 403);
   }
 
+  // "manage" mode — open the Express Dashboard for an already-connected courier
+  if (mode === "manage") {
+    if (!profile.stripe_connect_account_id) {
+      return json({ error: "no Stripe account to manage" }, 409);
+    }
+    const loginLink = await stripe.accounts.createLoginLink(
+      profile.stripe_connect_account_id,
+    );
+    return json({ url: loginLink.url });
+  }
+
+  // Default: onboarding flow
   let accountId = profile.stripe_connect_account_id;
   if (!accountId) {
     const account = await stripe.accounts.create({
