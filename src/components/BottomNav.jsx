@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 
-function TabLink({ to, label, children }) {
+function TabLink({ to, label, badge, children }) {
   return (
     <NavLink
       to={to}
@@ -15,11 +15,14 @@ function TabLink({ to, label, children }) {
       {({ isActive }) => (
         <>
           <span
-            className={`inline-flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
+            className={`relative inline-flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
               isActive ? 'bg-teal/10' : ''
             }`}
           >
             {children}
+            {badge && !isActive && (
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-teal ring-2 ring-white" />
+            )}
           </span>
           <span>{label}</span>
         </>
@@ -54,7 +57,7 @@ const iconProps = {
   height: 22,
 }
 
-export default function BottomNav({ variant = 'sender' }) {
+export default function BottomNav({ variant = 'sender', discoverBadge = false }) {
   const navigate = useNavigate()
   const signOut = async () => {
     await supabase.auth.signOut()
@@ -69,7 +72,7 @@ export default function BottomNav({ variant = 'sender' }) {
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="max-w-3xl mx-auto flex items-stretch">
-        <TabLink to={base} label="Discover">
+        <TabLink to={base} label="Discover" badge={discoverBadge}>
           <svg {...iconProps}>
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
             <polyline points="3.27 6.96 12 12.01 20.73 6.96" />

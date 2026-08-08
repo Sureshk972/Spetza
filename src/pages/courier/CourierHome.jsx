@@ -10,6 +10,7 @@ import RatingBadge from '../../components/RatingBadge.jsx'
 import PackagePhoto from '../../components/PackagePhoto.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 import { canAcceptDeliveries, courierStep } from '../../lib/courierGate.js'
+import { markDiscoverSeen } from '../../hooks/useUnseenNearbyCount.js'
 
 function dollars(cents) {
   return `$${(cents / 100).toFixed(2)}`
@@ -112,6 +113,7 @@ export default function CourierHome() {
   }
 
   useEffect(() => {
+    markDiscoverSeen()
     refresh()
   }, [user?.id])
 
