@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
 import PackagePhoto from '../../components/PackagePhoto.jsx'
+import TipPrompt from '../../components/TipPrompt.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 
 /* ── How It Works ── */
@@ -353,18 +354,33 @@ export default function SenderHome() {
                 </div>
               )
               const canRate = r.status === 'delivered' && r.courier_id && !ratedIds.has(r.id)
+              const canTip = r.status === 'delivered' && r.courier_id && !r.tip_cents
+                && r.delivered_at && (Date.now() - new Date(r.delivered_at).getTime()) < 48 * 60 * 60 * 1000
+              const needsAction = canRate || canTip
+              const courierName = courier?.first_name || 'your courier'
               return (
                 <li key={r.id}>
-                  {canRate ? (
+                  {needsAction ? (
                     <div className="p-5 rounded-xl border border-mist bg-white">
                       {inner}
-                      <RatingPrompt
-                        request={r}
-                        raterId={user.id}
-                        rateeId={r.courier_id}
-                        rateeLabel="courier"
-                        onSubmitted={refresh}
-                      />
+                      {canRate && (
+                        <RatingPrompt
+                          request={r}
+                          raterId={user.id}
+                          rateeId={r.courier_id}
+                          rateeLabel="courier"
+                          onSubmitted={refresh}
+                        />
+                      )}
+                      {canTip && (
+                        <div className="mt-3 pt-3 border-t border-mist">
+                          <TipPrompt
+                            request={r}
+                            courierName={courierName}
+                            onTipped={refresh}
+                          />
+                        </div>
+                      )}
                       <div className="mt-3 pt-3 border-t border-mist text-right">
                         <Link
                           to={`/sender/requests/${r.id}`}
