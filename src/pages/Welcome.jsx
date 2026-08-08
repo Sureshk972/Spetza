@@ -70,9 +70,9 @@ function Testimonials() {
 
 const chooseRole = (role) => {
   try {
-    sessionStorage.setItem('spetza:intended_role', role)
+    localStorage.setItem('spetza:intended_role', role)
   } catch {
-    // sessionStorage can throw in private tabs; fall through — the
+    // localStorage can throw in private tabs; fall through — the
     // ChooseRole fallback will still catch these users after signup.
   }
   trackEvent('role_selected', { role })

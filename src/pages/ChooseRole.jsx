@@ -41,14 +41,14 @@ export default function ChooseRole() {
   useEffect(() => {
     if (autoSelected.current) return
     try {
-      const intended = sessionStorage.getItem('spetza:intended_role')
+      const intended = localStorage.getItem('spetza:intended_role')
       if (intended === 'sender' || intended === 'courier') {
         autoSelected.current = true
-        sessionStorage.removeItem('spetza:intended_role')
+        localStorage.removeItem('spetza:intended_role')
         choose(intended)
       }
     } catch {
-      // sessionStorage unavailable — show the picker
+      // localStorage unavailable — show the picker
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
