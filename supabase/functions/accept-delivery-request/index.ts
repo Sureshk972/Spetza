@@ -112,6 +112,9 @@ Deno.serve(async (req) => {
     return json({ error: `payment auth failed: ${pi.status}` }, 402);
   }
 
+  // Generate a 4-digit pickup PIN for the sender→courier handshake.
+  const pickupPin = String(Math.floor(1000 + Math.random() * 9000));
+
   // Atomic claim: only update if still open and unclaimed.
   const { data: updated, error: claimErr } = await supabase
     .from("delivery_requests")
@@ -122,6 +125,7 @@ Deno.serve(async (req) => {
       stripe_payment_intent_id: pi.id,
       platform_fee_cents: fee,
       accepted_price_cents: request.max_price_cents,
+      pickup_pin: pickupPin,
     })
     .eq("id", delivery_request_id)
     .eq("status", "open")

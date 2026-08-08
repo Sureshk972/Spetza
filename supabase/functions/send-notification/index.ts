@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
   const { data: request, error: requestErr } = await supabase
     .from("delivery_requests")
     .select(
-      "order_number, pickup_address, dropoff_address, package_size, max_price_cents, accepted_price_cents, sender_id, courier_id",
+      "order_number, pickup_address, dropoff_address, package_size, max_price_cents, accepted_price_cents, sender_id, courier_id, pickup_pin",
     )
     .eq("id", delivery_request_id)
     .single();
@@ -84,6 +84,7 @@ Deno.serve(async (req) => {
       dropoffAddress: request.dropoff_address,
       priceCents,
       packageSize: request.package_size,
+      pickupPin: request.pickup_pin ?? null,
       recipient: {
         email: senderInfo.email,
         firstName: senderInfo.firstName,

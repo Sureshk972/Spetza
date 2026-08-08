@@ -42,6 +42,8 @@ export default function CourierDelivery() {
   const [rated, setRated] = useState(false)
   const [loading, setLoading] = useState(true)
   const [acting, setActing] = useState(false)
+  const [pin, setPin] = useState('')
+  const [pinError, setPinError] = useState('')
 
   const load = async () => {
     if (!hasSupabaseConfig || !user) {
@@ -90,18 +92,23 @@ export default function CourierDelivery() {
   })
 
   const handlePickedUp = async () => {
-    setActing(true)
-    const { error } = await supabase
-      .from('delivery_requests')
-      .update({ status: 'picked_up', picked_up_at: new Date().toISOString() })
-      .eq('id', request.id)
-      .eq('courier_id', user.id)
-      .eq('status', 'accepted')
-    setActing(false)
-    if (error) {
-      toast.error(error.message)
+    const trimmed = pin.trim()
+    if (trimmed.length !== 4) {
+      setPinError('Enter the 4-digit code from the sender')
       return
     }
+    setPinError('')
+    setActing(true)
+    const { error } = await supabase.functions.invoke('verify-pickup-pin', {
+      body: { delivery_request_id: request.id, pin: trimmed },
+    })
+    setActing(false)
+    if (error) {
+      setPinError('Incorrect code — ask the sender to check')
+      return
+    }
+    setPin('')
+    setPinError('')
     load()
   }
 
@@ -285,22 +292,40 @@ export default function CourierDelivery() {
       {(request.status === 'accepted' || request.status === 'picked_up') && (
         <div className="mt-6 flex flex-wrap justify-end gap-2">
           {request.status === 'accepted' && (
-            <>
-              <button
-                onClick={handleAbandon}
-                disabled={acting}
-                className="px-3 py-1.5 rounded-lg border border-mist text-sm text-slate hover:border-red-500 hover:text-red-600 disabled:opacity-50"
-              >
-                Abandon
-              </button>
-              <button
-                onClick={handlePickedUp}
-                disabled={acting}
-                className="px-4 py-1.5 rounded-lg bg-white border border-green text-green text-sm font-medium hover:bg-green hover:text-white disabled:opacity-50"
-              >
-                {acting ? 'Saving…' : 'Mark picked up'}
-              </button>
-            </>
+            <div className="w-full space-y-3">
+              <div className="p-4 rounded-xl border border-teal/30 bg-teal/5">
+                <div className="text-xs uppercase tracking-widest text-teal font-bold mb-2">Pickup handshake</div>
+                <p className="text-sm text-slate mb-3">Ask the sender for their 4-digit code to confirm pickup.</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={pin}
+                    onChange={(e) => { setPin(e.target.value.replace(/\D/g, '')); setPinError('') }}
+                    placeholder="0000"
+                    className="w-24 px-3 py-2 rounded-lg bg-white border border-mist text-center text-lg font-bold tracking-[0.3em] focus:border-teal focus:outline-none"
+                  />
+                  <button
+                    onClick={handlePickedUp}
+                    disabled={acting || pin.trim().length < 4}
+                    className="px-4 py-2 rounded-lg bg-teal text-white text-sm font-medium hover:bg-teal/90 disabled:opacity-50 transition-colors"
+                  >
+                    {acting ? 'Verifying…' : 'Confirm pickup'}
+                  </button>
+                </div>
+                {pinError && <p className="text-sm text-red-500 mt-2">{pinError}</p>}
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={handleAbandon}
+                  disabled={acting}
+                  className="px-3 py-1.5 rounded-lg text-sm text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                >
+                  Abandon
+                </button>
+              </div>
+            </div>
           )}
           {request.status === 'picked_up' && (
             <button

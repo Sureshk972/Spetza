@@ -202,6 +202,18 @@ export default function RequestDetail() {
           )}
         </div>
 
+        {request.status === 'accepted' && request.pickup_pin && (
+          <div className="p-4 rounded-xl border border-teal/30 bg-teal/5">
+            <div className="text-xs uppercase tracking-widest text-teal font-bold">Pickup code</div>
+            <div className="mt-2 text-4xl font-bold tracking-[0.3em] text-ink text-center py-2">
+              {request.pickup_pin}
+            </div>
+            <p className="text-sm text-slate text-center mt-1">
+              Share this code with your courier when they arrive to confirm the handoff.
+            </p>
+          </div>
+        )}
+
         <div className="p-4 rounded-xl border border-mist bg-white">
           <div className="text-xs uppercase tracking-widest text-slate">Timeline</div>
           <ol className="mt-3 space-y-2">

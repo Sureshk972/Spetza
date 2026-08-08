@@ -34,6 +34,7 @@ export interface DeliveryContext {
   dropoffAddress: string;
   priceCents?: number | null;
   packageSize?: string | null;
+  pickupPin?: string | null;
   recipient: RecipientContext;
   counterparty?: CounterpartyContext | null;
 }
@@ -129,6 +130,16 @@ export function renderHtml(event: DeliveryEvent, ctx: DeliveryContext): string {
     rows.push(detailRow("Size", escapeHtml(ctx.packageSize)));
   }
 
+  // Show the pickup PIN prominently to the sender on "accepted"
+  const pinBlock =
+    event === "accepted" && role === "sender" && ctx.pickupPin
+      ? `<div style="margin:24px 0; padding:20px; background-color:#0378A6; border-radius:8px; text-align:center;">
+           <div style="color:#ffffff; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:2px; margin-bottom:8px;">Pickup Code</div>
+           <div style="color:#ffffff; font-size:36px; font-weight:900; letter-spacing:0.3em;">${escapeHtml(ctx.pickupPin)}</div>
+           <div style="color:#ffffff; font-size:13px; margin-top:8px; opacity:0.85;">Share this code with your courier at pickup</div>
+         </div>`
+      : "";
+
   return `
 <!DOCTYPE html>
 <html>
@@ -154,6 +165,7 @@ export function renderHtml(event: DeliveryEvent, ctx: DeliveryContext): string {
                 <p style="color:#1a1a2e; font-size:16px; line-height:1.6; margin:16px 0 24px;">
                   ${message}
                 </p>
+                ${pinBlock}
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8ec; border-radius:8px; overflow:hidden;">
                   ${rows.join("\n")}
                 </table>
