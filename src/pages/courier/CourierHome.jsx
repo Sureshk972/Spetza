@@ -428,9 +428,13 @@ export default function CourierHome() {
                         <span className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
                           {r.order_number}
                         </span>
-                        {r.id === newestId && (
+                        {r.id === newestId ? (
                           <span className="px-1.5 py-0.5 rounded-full bg-green text-white text-[10px] font-bold uppercase tracking-wide">
                             New
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 rounded-full bg-teal/10 text-teal text-[10px] font-bold uppercase tracking-wide">
+                            Open
                           </span>
                         )}
                       </div>
