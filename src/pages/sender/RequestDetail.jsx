@@ -8,6 +8,7 @@ import RouteMap from '../../components/RouteMap.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
 import PackagePhoto from '../../components/PackagePhoto.jsx'
+import TipPrompt from '../../components/TipPrompt.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 
 const dollars = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
@@ -261,9 +262,12 @@ export default function RequestDetail() {
           <div className="text-xs uppercase tracking-widest text-slate">Payment</div>
           <Row label="Delivery" value={dollars(priceCents)} />
           <Row label="Service fee (15%)" value={dollars(feeCents)} />
+          {request.tip_cents > 0 && (
+            <Row label="Tip" value={dollars(request.tip_cents)} />
+          )}
           <div className="border-t border-slate/20 pt-1.5 flex justify-between items-baseline">
             <span className="text-xs uppercase tracking-widest text-ink">Total</span>
-            <span className="font-display text-xl text-ink">{dollars(totalCents)}</span>
+            <span className="font-display text-xl text-ink">{dollars(totalCents + (request.tip_cents || 0))}</span>
           </div>
           <div className="text-xs text-slate pt-1">
             {request.status === 'delivered'
@@ -284,6 +288,16 @@ export default function RequestDetail() {
               rateeId={request.courier_id}
               rateeLabel="courier"
               onSubmitted={load}
+            />
+          </div>
+        )}
+
+        {request.status === 'delivered' && courier && (
+          <div className="p-4 rounded-xl border border-green/20 bg-green/5">
+            <TipPrompt
+              request={request}
+              courierName={courier.first_name || 'your courier'}
+              onTipped={load}
             />
           </div>
         )}

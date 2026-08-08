@@ -46,7 +46,7 @@ export default function CourierProfile() {
     setEarningsLoading(true)
     const { data } = await supabase
       .from('delivery_requests')
-      .select('id, order_number, accepted_price_cents, max_price_cents, platform_fee_cents, status, delivered_at, cancelled_at, accepted_at, dropoff_address')
+      .select('id, order_number, accepted_price_cents, max_price_cents, platform_fee_cents, tip_cents, status, delivered_at, cancelled_at, accepted_at, dropoff_address')
       .eq('courier_id', user.id)
       .in('status', ['delivered', 'cancelled'])
       .order('accepted_at', { ascending: false })
@@ -91,13 +91,13 @@ export default function CourierProfile() {
   const bgStatus = profile?.background_check_status ?? 'not_started'
   const bgCopy = BG_LABEL[bgStatus] ?? BG_LABEL.not_started
 
-  const totalEarnedCents = earnings
-    .filter((e) => e.status === 'delivered')
-    .reduce((sum, e) => {
-      const gross = e.accepted_price_cents ?? e.max_price_cents ?? 0
-      const fee = e.platform_fee_cents ?? 0
-      return sum + (gross - fee)
-    }, 0)
+  const delivered = earnings.filter((e) => e.status === 'delivered')
+  const totalEarnedCents = delivered.reduce((sum, e) => {
+    const gross = e.accepted_price_cents ?? e.max_price_cents ?? 0
+    const fee = e.platform_fee_cents ?? 0
+    return sum + (gross - fee)
+  }, 0)
+  const totalTipsCents = delivered.reduce((sum, e) => sum + (e.tip_cents || 0), 0)
 
   return (
     <div className="min-h-full">
@@ -249,9 +249,16 @@ export default function CourierProfile() {
             </div>
           ) : (
             <>
-              <div className="rounded-xl border border-mist bg-white p-4 flex items-baseline justify-between">
-                <span className="text-xs uppercase tracking-wide text-slate/70">Total earned</span>
-                <span className="font-display text-2xl text-ink">{dollars(totalEarnedCents)}</span>
+              <div className="rounded-xl border border-mist bg-white p-4">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-xs uppercase tracking-wide text-slate/70">Total earned</span>
+                  <span className="font-display text-2xl text-ink">{dollars(totalEarnedCents + totalTipsCents)}</span>
+                </div>
+                {totalTipsCents > 0 && (
+                  <div className="mt-1.5 flex items-baseline justify-between text-xs text-slate">
+                    <span>Deliveries {dollars(totalEarnedCents)} · Tips {dollars(totalTipsCents)}</span>
+                  </div>
+                )}
               </div>
               <ul className="rounded-xl border border-mist bg-white divide-y divide-mist">
                 {earnings.map((e) => {
@@ -275,8 +282,11 @@ export default function CourierProfile() {
                           <div className="text-sm text-ink truncate">{e.dropoff_address}</div>
                           <div className="flex items-center gap-2 shrink-0">
                             <span className="text-sm text-ink">
-                              {e.status === 'delivered' ? dollars(take) : '—'}
+                              {e.status === 'delivered' ? dollars(take + (e.tip_cents || 0)) : '—'}
                             </span>
+                            {e.tip_cents > 0 && (
+                              <span className="text-xs text-green">+tip</span>
+                            )}
                             <span
                               className={`text-xs uppercase tracking-wide ${
                                 e.status === 'delivered' ? 'text-green' : 'text-slate/70 line-through'
