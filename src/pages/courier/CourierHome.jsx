@@ -323,17 +323,9 @@ export default function CourierHome() {
                           <span />
                         )}
                         {r.status === 'accepted' ? (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              handlePickedUp(r)
-                            }}
-                            disabled={progressing === r.id}
-                            className="px-3 py-1 rounded-lg bg-white border border-green text-green text-xs font-medium hover:bg-green hover:text-white transition-colors disabled:opacity-50"
-                          >
-                            {progressing === r.id ? 'Saving…' : 'Mark picked up'}
-                          </button>
+                          <span className="px-3 py-1 rounded-lg bg-teal/10 border border-teal/30 text-teal text-xs font-medium">
+                            🔑 Enter PIN to pick up →
+                          </span>
                         ) : (
                           <button
                             onClick={(e) => {
