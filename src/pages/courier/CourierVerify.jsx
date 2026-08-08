@@ -131,6 +131,24 @@ export default function CourierVerify() {
           </>
         )}
       </section>
+
+      {/* All done — celebrate and guide to Discover */}
+      {selfiePath && payoutsReady && bg === 'clear' && (
+        <section className="mt-8 p-6 rounded-xl bg-green/10 border border-green/20 text-center">
+          <div className="text-4xl">🎉</div>
+          <h2 className="font-display text-2xl text-ink mt-3">You're all set!</h2>
+          <p className="text-slate mt-2 leading-relaxed">
+            You're verified and ready to earn. Head to Discover to see delivery
+            requests near you — accept one and start delivering.
+          </p>
+          <button
+            onClick={() => navigate('/courier')}
+            className="mt-4 px-6 py-3 rounded-lg bg-ink text-white font-medium hover:bg-teal transition-colors"
+          >
+            Browse deliveries →
+          </button>
+        </section>
+      )}
     </div>
   )
 }
