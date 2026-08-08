@@ -301,18 +301,19 @@ export default function SenderHome() {
                         ? 'bg-green/10 border border-green/30 ring-2 ring-green/30'
                         : 'bg-teal/10 border border-teal/30'
                     }`}>
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{r.courier_arrived_at ? '🚗' : '🔑'}</span>
-                        <div>
-                          <div className={`text-sm font-bold ${r.courier_arrived_at ? 'text-green' : 'text-teal'}`}>
-                            {r.courier_arrived_at
-                              ? 'Courier is here — share your PIN now!'
-                              : 'Courier accepted — share your PIN'}
-                          </div>
-                          <div className="text-xs text-slate mt-0.5">
-                            Tap to view your 4-digit pickup code
-                          </div>
-                        </div>
+                      {r.courier_arrived_at && (
+                        <div className="text-xs font-bold text-green mb-2">🚗 Courier is here — share your PIN now!</div>
+                      )}
+                      {!r.courier_arrived_at && (
+                        <div className="text-xs font-bold text-teal mb-2">🔑 Courier accepted — your pickup code:</div>
+                      )}
+                      <div className="text-3xl font-bold tracking-[0.3em] text-ink text-center py-1">
+                        {r.pickup_pin}
+                      </div>
+                      <div className="text-xs text-slate text-center mt-1">
+                        {r.courier_arrived_at
+                          ? 'Tell your courier this code now'
+                          : 'Share this code when your courier arrives'}
                       </div>
                     </div>
                   )}

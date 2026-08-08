@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
@@ -49,6 +49,7 @@ async function readInvokeErrorCode(error) {
 
 export default function CourierHome() {
   const { profile, user } = useAuth()
+  const navigate = useNavigate()
   const [requests, setRequests] = useState([])
   const [active, setActive] = useState([])
   const [recent, setRecent] = useState([])
@@ -165,23 +166,7 @@ export default function CourierHome() {
       toast.error(ACCEPT_ERROR_COPY[code] || 'Something went wrong. Try again.')
       return
     }
-    refresh()
-  }
-
-  const handlePickedUp = async (request) => {
-    setProgressing(request.id)
-    const { error } = await supabase
-      .from('delivery_requests')
-      .update({ status: 'picked_up', picked_up_at: new Date().toISOString() })
-      .eq('id', request.id)
-      .eq('courier_id', user.id)
-      .eq('status', 'accepted')
-    setProgressing(null)
-    if (error) {
-      alert(error.message)
-      return
-    }
-    refresh()
+    navigate(`/courier/deliveries/${request.id}`)
   }
 
   const handleDelivered = async (request) => {
