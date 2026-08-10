@@ -63,19 +63,18 @@ export default function CourierVerify() {
 
   const startCheck = async () => {
     setStarting(true)
-    // TODO: wire up Checkr when ready for production couriers
-    // For now, auto-approve so the full flow can be tested end-to-end.
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        background_check_status: 'clear',
-        background_check_updated_at: new Date().toISOString(),
-      })
-      .eq('id', user.id)
+    const { data, error } = await supabase.functions.invoke('start-background-check')
     setStarting(false)
     if (error) { toast.error(error.message); return }
-    toast.success('Background check approved.')
-    await refreshProfile()
+    // Checkr returns an invitation URL — courier completes it on checkr.com
+    if (data?.invitation_url) {
+      toast.success('Opening Checkr — follow the steps to complete your background check.')
+      await refreshProfile()
+      window.open(data.invitation_url, '_blank')
+    } else {
+      toast.success('Background check started.')
+      await refreshProfile()
+    }
   }
 
   if (!hasSupabaseConfig) {

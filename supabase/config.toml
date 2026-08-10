@@ -1,0 +1,8 @@
+[project]
+id = "ggjjoagjurlirdaenttp"
+
+# Checkr sends webhooks with an X-Checkr-Signature header, not a Supabase
+# JWT.  Disable JWT verification so the function can receive unauthenticated
+# POSTs — the function validates the HMAC signature itself.
+[functions.checkr-webhook]
+verify_jwt = false
