@@ -14,29 +14,6 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (!hasSupabaseConfig) {
-      setLoading(false)
-      return
-    }
-    let mounted = true
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return
-      setUser(data.session?.user ?? null)
-      setLoading(false)
-    })
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-
-    return () => {
-      mounted = false
-      sub.subscription.unsubscribe()
-    }
-  }, [])
-
   const fetchProfile = useCallback(async (uid) => {
     const { data } = await supabase
       .from('profiles')
@@ -49,12 +26,34 @@ export function AuthProvider({ children }) {
   }, [])
 
   useEffect(() => {
-    if (!user || !hasSupabaseConfig) {
-      setProfile(null)
+    if (!hasSupabaseConfig) {
+      setLoading(false)
       return
     }
-    fetchProfile(user.id)
-  }, [user, fetchProfile])
+    let mounted = true
+
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!mounted) return
+      const sessionUser = data.session?.user ?? null
+      setUser(sessionUser)
+      // Fetch profile BEFORE clearing loading so guards see the full state
+      if (sessionUser) {
+        await fetchProfile(sessionUser.id).catch(() => {})
+      }
+      if (mounted) setLoading(false)
+    })
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      const next = session?.user ?? null
+      setUser(next)
+      if (next) fetchProfile(next.id)
+    })
+
+    return () => {
+      mounted = false
+      sub.subscription.unsubscribe()
+    }
+  }, [fetchProfile])
 
   const refreshProfile = useCallback(async () => {
     if (!user || !hasSupabaseConfig) return null
