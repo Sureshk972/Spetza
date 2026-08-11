@@ -37,6 +37,12 @@ Deno.serve(async (req) => {
   if (!profile.stripe_connect_payouts_enabled) return json({ error: "finish payout setup first" }, 409);
   if (profile.background_check_status === "clear") return json({ error: "already cleared" }, 409);
 
+  // Guard: Checkr must be configured
+  const checkrKey = Deno.env.get("CHECKR_API_KEY");
+  if (!checkrKey) {
+    return json({ error: "Background checks are not available yet. Please try again later." }, 503);
+  }
+
   // COURIER_PAYS off-ramp (default off): when on, a successful Stripe
   // charge must precede invitation creation. Left as a guarded stub so
   // flipping the flag is a config change, not a rearchitecture.

@@ -65,7 +65,17 @@ export default function CourierVerify() {
     setStarting(true)
     const { data, error } = await supabase.functions.invoke('start-background-check')
     setStarting(false)
-    if (error) { toast.error(error.message); return }
+    if (error) {
+      // supabase.functions.invoke wraps non-2xx in a generic message;
+      // the real error is in the response body
+      let msg = error.message
+      try {
+        const body = await error.context?.json?.()
+        if (body?.error) msg = body.error
+      } catch { /* use generic */ }
+      toast.error(msg)
+      return
+    }
     // Checkr returns an invitation URL — courier completes it on checkr.com
     if (data?.invitation_url) {
       toast.success('Opening Checkr — follow the steps to complete your background check.')
