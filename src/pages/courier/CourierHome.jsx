@@ -271,7 +271,7 @@ export default function CourierHome() {
             )}
           </div>
           <div className="p-4 rounded-xl border border-mist bg-white">
-            <div className="text-xs uppercase tracking-widest text-slate">Deliveries</div>
+            <div className="text-xs uppercase tracking-widest text-slate">Completed</div>
             <div className="font-display text-2xl text-ink mt-1">{earnings.count}</div>
             {totalOpen > 0 && (
               <div className="text-xs text-teal font-medium mt-0.5">
