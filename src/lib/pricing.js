@@ -1,4 +1,4 @@
-export const MAX_DISTANCE_MILES = 20
+export const MAX_DISTANCE_MILES = 50
 export const PLATFORM_FEE_BPS = 1500 // 15% — must match the edge function env
 
 export const TIERS = [
@@ -6,6 +6,7 @@ export const TIERS = [
   { upTo: 5, cents: 1500 },
   { upTo: 10, cents: 2000 },
   { upTo: 20, cents: 2500 },
+  { upTo: 50, cents: 3500 },
 ]
 
 export function priceForDistance(miles) {
