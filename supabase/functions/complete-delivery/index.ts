@@ -40,8 +40,8 @@ Deno.serve(async (req) => {
     .single();
   if (requestErr || !request) return json({ error: "request not found" }, 404);
   if (request.courier_id !== user.id) return json({ error: "not your delivery" }, 403);
-  if (request.status !== "accepted" && request.status !== "picked_up") {
-    return json({ error: `cannot complete from status ${request.status}` }, 409);
+  if (request.status !== "picked_up") {
+    return json({ error: `cannot complete from status ${request.status} — pickup must be verified first` }, 409);
   }
   if (!request.stripe_payment_intent_id) {
     return json({ error: "no payment intent on record" }, 409);

@@ -43,6 +43,7 @@ export default function RequestDetail() {
   const [request, setRequest] = useState(null)
   const [courier, setCourier] = useState(null)
   const [courierPhotoUrl, setCourierPhotoUrl] = useState(null)
+  const [pickupPin, setPickupPin] = useState(null)
   const [rated, setRated] = useState(false)
   const [loading, setLoading] = useState(true)
   const [cancelling, setCancelling] = useState(false)
@@ -60,6 +61,18 @@ export default function RequestDetail() {
       .eq('sender_id', user.id)
       .maybeSingle()
     setRequest(req ?? null)
+
+    // Fetch pickup PIN from the sender-only table
+    if (req?.status === 'accepted') {
+      const { data: pinRow } = await supabase
+        .from('delivery_pins')
+        .select('pin')
+        .eq('delivery_request_id', req.id)
+        .maybeSingle()
+      setPickupPin(pinRow?.pin ?? null)
+    } else {
+      setPickupPin(null)
+    }
 
     if (req?.courier_id) {
       const { data: prof } = await supabase
@@ -225,7 +238,7 @@ export default function RequestDetail() {
           )}
         </div>
 
-        {request.status === 'accepted' && request.pickup_pin && (
+        {request.status === 'accepted' && pickupPin && (
           <div className={`p-4 rounded-xl border ${
             request.courier_arrived_at
               ? 'border-green bg-green/5 ring-2 ring-green/30'
@@ -239,7 +252,7 @@ export default function RequestDetail() {
             )}
             <div className="text-xs uppercase tracking-widest text-teal font-bold">Pickup code</div>
             <div className="mt-2 text-4xl font-bold tracking-[0.3em] text-ink text-center py-2">
-              {request.pickup_pin}
+              {pickupPin}
             </div>
             <p className="text-sm text-slate text-center mt-1">
               {request.courier_arrived_at

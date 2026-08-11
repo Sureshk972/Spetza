@@ -144,6 +144,7 @@ export default function SenderHome() {
   const [requests, setRequests] = useState([])
   const [ratedIds, setRatedIds] = useState(new Set())
   const [couriers, setCouriers] = useState({})
+  const [pins, setPins] = useState({})
   const [loading, setLoading] = useState(true)
   const [cancelling, setCancelling] = useState(null)
 
@@ -166,6 +167,20 @@ export default function SenderHome() {
     const rows = reqs ?? []
     setRequests(rows)
     setRatedIds(new Set((rats ?? []).map((r) => r.delivery_request_id)))
+
+    // Fetch pickup PINs for accepted deliveries (sender-only table)
+    const acceptedIds = rows.filter((r) => r.status === 'accepted').map((r) => r.id)
+    if (acceptedIds.length > 0) {
+      const { data: pinRows } = await supabase
+        .from('delivery_pins')
+        .select('delivery_request_id, pin')
+        .in('delivery_request_id', acceptedIds)
+      const pinMap = {}
+      for (const p of pinRows ?? []) pinMap[p.delivery_request_id] = p.pin
+      setPins(pinMap)
+    } else {
+      setPins({})
+    }
 
     const courierIds = Array.from(
       new Set(rows.map((r) => r.courier_id).filter(Boolean)),
@@ -296,7 +311,7 @@ export default function SenderHome() {
                       <RatingBadge avg={courier.rating_avg} count={courier.rating_count} />
                     </div>
                   )}
-                  {r.status === 'accepted' && r.pickup_pin && (
+                  {r.status === 'accepted' && pins[r.id] && (
                     <div className={`mt-3 p-3 rounded-lg ${
                       r.courier_arrived_at
                         ? 'bg-green/10 border border-green/30 ring-2 ring-green/30'
@@ -309,7 +324,7 @@ export default function SenderHome() {
                         <div className="text-xs font-bold text-teal mb-2">🔑 Courier accepted — your pickup code:</div>
                       )}
                       <div className="text-3xl font-bold tracking-[0.3em] text-ink text-center py-1">
-                        {r.pickup_pin}
+                        {pins[r.id]}
                       </div>
                       <div className="text-xs text-slate text-center mt-1">
                         {r.courier_arrived_at

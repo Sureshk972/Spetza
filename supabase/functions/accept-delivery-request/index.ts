@@ -125,7 +125,6 @@ Deno.serve(async (req) => {
       stripe_payment_intent_id: pi.id,
       platform_fee_cents: fee,
       accepted_price_cents: request.max_price_cents,
-      pickup_pin: pickupPin,
     })
     .eq("id", delivery_request_id)
     .eq("status", "open")
@@ -138,6 +137,14 @@ Deno.serve(async (req) => {
     await stripe.paymentIntents.cancel(pi.id).catch(() => {});
     return json({ error: "request was claimed by someone else" }, 409);
   }
+
+  // Store the pickup PIN in the sender-only table (courier cannot read it).
+  await supabase.from("delivery_pins").upsert({
+    delivery_request_id,
+    pin: pickupPin,
+    attempts: 0,
+    locked_until: null,
+  });
 
   await safeTrackEvent(supabase, user.id, "delivery_accepted", {
     delivery_request_id,

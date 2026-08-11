@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
   const { data: request, error: requestErr } = await supabase
     .from("delivery_requests")
     .select(
-      "order_number, pickup_address, dropoff_address, package_size, max_price_cents, accepted_price_cents, sender_id, courier_id, pickup_pin",
+      "order_number, pickup_address, dropoff_address, package_size, max_price_cents, accepted_price_cents, sender_id, courier_id",
     )
     .eq("id", delivery_request_id)
     .single();
@@ -68,6 +68,14 @@ Deno.serve(async (req) => {
   }
 
   const priceCents = request.accepted_price_cents ?? request.max_price_cents ?? null;
+
+  // Fetch pickup PIN from sender-only table (service_role bypasses RLS)
+  const { data: pinRow } = await supabase
+    .from("delivery_pins")
+    .select("pin")
+    .eq("delivery_request_id", delivery_request_id)
+    .maybeSingle();
+  const pickupPin: string | null = pinRow?.pin ?? null;
 
   const [senderInfo, courierInfo] = await Promise.all([
     lookupPerson(supabase, request.sender_id, "Your sender"),
@@ -84,7 +92,7 @@ Deno.serve(async (req) => {
       dropoffAddress: request.dropoff_address,
       priceCents,
       packageSize: request.package_size,
-      pickupPin: request.pickup_pin ?? null,
+      pickupPin,
       recipient: {
         email: senderInfo.email,
         firstName: senderInfo.firstName,

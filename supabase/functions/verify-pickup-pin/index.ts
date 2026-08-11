@@ -1,8 +1,12 @@
 // Validates the 4-digit pickup PIN entered by the courier, then
-// transitions the delivery to "picked_up". Replaces the old client-side
-// direct update so the handshake is enforced server-side.
+// transitions the delivery to "picked_up". Reads PIN from the
+// delivery_pins table (not readable by courier via RLS).
+// Includes brute-force protection: 5 attempts, then 15-min lockout.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MINUTES = 15;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -41,10 +45,10 @@ Deno.serve(async (req) => {
     return json({ error: "missing delivery_request_id or pin" }, 400);
   }
 
-  // Fetch the request — service role so we can read pickup_pin
+  // Verify the caller is the assigned courier and delivery is in accepted state
   const { data: request, error: reqErr } = await supabase
     .from("delivery_requests")
-    .select("id, courier_id, status, pickup_pin")
+    .select("id, courier_id, status")
     .eq("id", delivery_request_id)
     .single();
 
@@ -58,13 +62,61 @@ Deno.serve(async (req) => {
     return json({ error: "delivery is not in accepted state" }, 409);
   }
 
-  // Validate the PIN
-  const trimmedPin = String(pin).trim();
-  if (trimmedPin !== request.pickup_pin?.trim()) {
-    return json({ error: "incorrect pin" }, 422);
+  // Read PIN + attempt state from the sender-only table (service_role bypasses RLS)
+  const { data: pinRow, error: pinErr } = await supabase
+    .from("delivery_pins")
+    .select("pin, attempts, locked_until")
+    .eq("delivery_request_id", delivery_request_id)
+    .single();
+
+  if (pinErr || !pinRow) {
+    return json({ error: "no pin on record" }, 404);
   }
 
-  // Mark picked up
+  // Check lockout
+  if (pinRow.locked_until) {
+    const lockExpiry = new Date(pinRow.locked_until);
+    if (lockExpiry > new Date()) {
+      const minsLeft = Math.ceil((lockExpiry.getTime() - Date.now()) / 60000);
+      return json({
+        error: `too many attempts — try again in ${minsLeft} minute${minsLeft === 1 ? "" : "s"}`,
+      }, 429);
+    }
+    // Lockout expired — reset attempts
+    await supabase
+      .from("delivery_pins")
+      .update({ attempts: 0, locked_until: null })
+      .eq("delivery_request_id", delivery_request_id);
+    pinRow.attempts = 0;
+  }
+
+  // Validate the PIN
+  const trimmedPin = String(pin).trim();
+  if (trimmedPin !== pinRow.pin?.trim()) {
+    const newAttempts = (pinRow.attempts ?? 0) + 1;
+    const update: Record<string, unknown> = { attempts: newAttempts };
+    if (newAttempts >= MAX_ATTEMPTS) {
+      update.locked_until = new Date(
+        Date.now() + LOCKOUT_MINUTES * 60 * 1000,
+      ).toISOString();
+    }
+    await supabase
+      .from("delivery_pins")
+      .update(update)
+      .eq("delivery_request_id", delivery_request_id);
+
+    const remaining = MAX_ATTEMPTS - newAttempts;
+    if (remaining <= 0) {
+      return json({
+        error: `incorrect pin — locked for ${LOCKOUT_MINUTES} minutes`,
+      }, 429);
+    }
+    return json({
+      error: `incorrect pin — ${remaining} attempt${remaining === 1 ? "" : "s"} remaining`,
+    }, 422);
+  }
+
+  // PIN correct — mark picked up
   const { error: updateErr } = await supabase
     .from("delivery_requests")
     .update({
@@ -78,6 +130,12 @@ Deno.serve(async (req) => {
   if (updateErr) {
     return json({ error: updateErr.message }, 500);
   }
+
+  // Reset attempts on success
+  await supabase
+    .from("delivery_pins")
+    .update({ attempts: 0, locked_until: null })
+    .eq("delivery_request_id", delivery_request_id);
 
   return json({ ok: true });
 });
