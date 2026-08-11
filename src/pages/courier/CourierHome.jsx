@@ -281,6 +281,21 @@ export default function CourierHome() {
           </div>
         </div>
 
+        {/* Hot area banner */}
+        {visibleRequests.length > 0 && (
+          <a href="#open-requests" className="mt-4 block p-4 rounded-xl bg-green/10 border border-green/30 hover:bg-green/15 transition-colors">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-bold text-green">
+                  🔥 {visibleRequests.length} {visibleRequests.length === 1 ? 'delivery' : 'deliveries'} waiting near you
+                </div>
+                <div className="text-xs text-slate mt-0.5">You're in a hot area — scroll down to accept one</div>
+              </div>
+              <span className="text-green text-lg">↓</span>
+            </div>
+          </a>
+        )}
+
         {/* How it works — show for new couriers */}
         {earnings.count === 0 && courierStep(profile) === 'done' && (
           <section className="mt-6 p-5 rounded-xl border border-mist bg-white">
