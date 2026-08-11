@@ -33,6 +33,7 @@ import AdminDeliveryDetail from './pages/admin/AdminDeliveryDetail.jsx'
 import AdminPayments from './pages/admin/AdminPayments.jsx'
 import AdminVerifications from './pages/admin/AdminVerifications.jsx'
 import AdminRatings from './pages/admin/AdminRatings.jsx'
+import AdminDemandMap from './pages/admin/AdminDemandMap.jsx'
 
 function RootRedirect() {
   const { profile } = useAuth()
@@ -95,6 +96,7 @@ export default function App() {
         <Route path="payments" element={<AdminPayments />} />
         <Route path="verifications" element={<AdminVerifications />} />
         <Route path="ratings" element={<AdminRatings />} />
+        <Route path="demand" element={<AdminDemandMap />} />
       </Route>
     </Routes>
   )
