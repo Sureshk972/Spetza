@@ -78,6 +78,7 @@ Deno.serve(async (req) => {
         accepted_price_cents: null,
         platform_fee_cents: null,
         stripe_payment_intent_id: null,
+        courier_arrived_at: null,
       };
 
   const { error: updateErr } = await supabase
@@ -89,6 +90,12 @@ Deno.serve(async (req) => {
   if (updateErr) {
     return json({ error: "payment released but request update failed", detail: updateErr.message }, 500);
   }
+
+  // Clean up the pickup PIN when delivery is cancelled or abandoned
+  await supabase
+    .from("delivery_pins")
+    .delete()
+    .eq("delivery_request_id", delivery_request_id);
 
   return json({ delivery_request_id, outcome: isSender ? "cancelled" : "reopened" });
 });
