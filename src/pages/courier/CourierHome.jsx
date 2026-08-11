@@ -53,6 +53,7 @@ export default function CourierHome() {
   const [requests, setRequests] = useState([])
   const [active, setActive] = useState([])
   const [recent, setRecent] = useState([])
+  const [allDelivered, setAllDelivered] = useState([])
   const [ratedIds, setRatedIds] = useState(new Set())
   const [loading, setLoading] = useState(true)
   const [accepting, setAccepting] = useState(null)
@@ -92,11 +93,10 @@ export default function CourierHome() {
       user
         ? supabase
             .from('delivery_requests')
-            .select('*')
+            .select('id, sender_id, order_number, dropoff_address, max_price_cents, accepted_price_cents, platform_fee_cents, tip_cents, delivered_at, status')
             .eq('courier_id', user.id)
             .eq('status', 'delivered')
             .order('delivered_at', { ascending: false })
-            .limit(5)
         : Promise.resolve({ data: [] }),
       user
         ? supabase
@@ -104,10 +104,12 @@ export default function CourierHome() {
             .select('delivery_request_id')
             .eq('rater_id', user.id)
         : Promise.resolve({ data: [] }),
-    ]).then(([openRes, activeRes, recentRes, ratedRes]) => {
+    ]).then(([openRes, activeRes, deliveredRes, ratedRes]) => {
       setRequests(openRes.data ?? [])
       setActive(activeRes.data ?? [])
-      setRecent(recentRes.data ?? [])
+      const delivered = deliveredRes.data ?? []
+      setAllDelivered(delivered)
+      setRecent(delivered.slice(0, 5))
       setRatedIds(new Set((ratedRes.data ?? []).map((r) => r.delivery_request_id)))
       setLoading(false)
     })
@@ -131,6 +133,33 @@ export default function CourierHome() {
     refresh,
     enabled: !!user,
   })
+
+  // Earnings stats
+  const earnings = useMemo(() => {
+    const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
+    const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay()).toISOString()
+
+    let todayEarn = 0, weekEarn = 0, totalEarn = 0, totalTips = 0
+    for (const d of allDelivered) {
+      const net = (d.accepted_price_cents || d.max_price_cents || 0) - (d.platform_fee_cents || 0)
+      const tip = d.tip_cents || 0
+      totalEarn += net
+      totalTips += tip
+      if (d.delivered_at >= todayStart) todayEarn += net + tip
+      if (d.delivered_at >= weekStart) weekEarn += net + tip
+    }
+    return {
+      today: todayEarn,
+      week: weekEarn,
+      total: totalEarn,
+      tips: totalTips,
+      count: allDelivered.length,
+    }
+  }, [allDelivered])
+
+  // Total open orders (all, not just in service area) — motivator
+  const totalOpen = requests.length
 
   const { visibleRequests, newestId } = useMemo(() => {
     if (!serviceArea) return { visibleRequests: [], newestId: null }
@@ -223,6 +252,64 @@ export default function CourierHome() {
             )}
           </div>
         </header>
+
+        {/* Stats cards */}
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <div className="p-4 rounded-xl border border-mist bg-white">
+            <div className="text-xs uppercase tracking-widest text-slate">Today</div>
+            <div className="font-display text-2xl text-ink mt-1">{dollars(earnings.today)}</div>
+          </div>
+          <div className="p-4 rounded-xl border border-mist bg-white">
+            <div className="text-xs uppercase tracking-widest text-slate">This week</div>
+            <div className="font-display text-2xl text-ink mt-1">{dollars(earnings.week)}</div>
+          </div>
+          <div className="p-4 rounded-xl border border-mist bg-white">
+            <div className="text-xs uppercase tracking-widest text-slate">All-time earnings</div>
+            <div className="font-display text-2xl text-green mt-1">{dollars(earnings.total)}</div>
+            {earnings.tips > 0 && (
+              <div className="text-xs text-slate mt-0.5">+ {dollars(earnings.tips)} tips</div>
+            )}
+          </div>
+          <div className="p-4 rounded-xl border border-mist bg-white">
+            <div className="text-xs uppercase tracking-widest text-slate">Deliveries</div>
+            <div className="font-display text-2xl text-ink mt-1">{earnings.count}</div>
+            {totalOpen > 0 && (
+              <div className="text-xs text-teal font-medium mt-0.5">
+                {totalOpen} open now
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* How it works — show for new couriers */}
+        {earnings.count === 0 && courierStep(profile) === 'done' && (
+          <section className="mt-6 p-5 rounded-xl border border-mist bg-white">
+            <div className="text-sm font-medium text-ink mb-3">How it works</div>
+            <ol className="space-y-3">
+              <li className="flex gap-3">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-teal/10 text-teal text-xs font-bold flex items-center justify-center">1</span>
+                <div>
+                  <div className="text-sm text-ink font-medium">Browse open requests</div>
+                  <div className="text-xs text-slate">See deliveries near you with pickup and drop-off addresses, distance, and price.</div>
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-teal/10 text-teal text-xs font-bold flex items-center justify-center">2</span>
+                <div>
+                  <div className="text-sm text-ink font-medium">Accept and pick up</div>
+                  <div className="text-xs text-slate">Tap Accept, head to the pickup spot, and enter the sender's 4-digit PIN to confirm the handoff.</div>
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-teal/10 text-teal text-xs font-bold flex items-center justify-center">3</span>
+                <div>
+                  <div className="text-sm text-ink font-medium">Deliver and get paid</div>
+                  <div className="text-xs text-slate">Drop off the package, mark it delivered, and your earnings hit your bank account automatically.</div>
+                </div>
+              </li>
+            </ol>
+          </section>
+        )}
 
         {courierStep(profile) !== 'done' && (
           <div className="mt-8 p-4 rounded-xl border border-teal/40 bg-teal/5">
@@ -388,8 +475,13 @@ export default function CourierHome() {
         </div>
 
         <div id="open-requests" className="mt-10">
-          <div className="text-xs uppercase tracking-widest text-slate mb-3">
+          <div className="text-xs uppercase tracking-widest text-slate mb-3 flex items-center gap-2">
             Open in your area
+            {visibleRequests.length > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-green text-white text-[10px] font-bold">
+                {visibleRequests.length}
+              </span>
+            )}
           </div>
           {loading ? (
             <div className="text-slate">Loading…</div>
