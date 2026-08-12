@@ -239,3 +239,51 @@ export async function sendDeliveryEmail(
     return { ok: false, error: message };
   }
 }
+
+// Push notification copy — shorter than email subjects.
+// Used by send-notification to build FCM push messages.
+export const PUSH_TITLES: Record<DeliveryEvent, Record<Role, string>> = {
+  created: {
+    sender: "Your delivery is live",
+    courier: "New delivery near you",
+  },
+  accepted: {
+    sender: "Courier accepted your delivery",
+    courier: "You accepted a delivery",
+  },
+  picked_up: {
+    sender: "Package picked up",
+    courier: "Package picked up — en route",
+  },
+  delivered: {
+    sender: "Package delivered!",
+    courier: "Delivery complete!",
+  },
+  cancelled: {
+    sender: "Delivery cancelled",
+    courier: "Delivery cancelled",
+  },
+};
+
+export const PUSH_BODIES: Record<DeliveryEvent, Record<Role, string>> = {
+  created: {
+    sender: "Couriers near you can see it now.",
+    courier: "", // filled dynamically with distance + price
+  },
+  accepted: {
+    sender: "{name} is heading to pick up your package.",
+    courier: "Head to the pickup to collect from {name}.",
+  },
+  picked_up: {
+    sender: "{name} is on the way to the dropoff.",
+    courier: "Head to the dropoff to complete delivery.",
+  },
+  delivered: {
+    sender: "Delivered by {name}. Thank you for using Spetza!",
+    courier: "Earnings on the way to your account.",
+  },
+  cancelled: {
+    sender: "Payment hold has been released.",
+    courier: "No further action needed.",
+  },
+};

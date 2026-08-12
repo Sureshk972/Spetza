@@ -1,11 +1,11 @@
-// Called by a Postgres trigger (via pg_net) whenever a delivery_requests
-// row changes lifecycle state. Looks up the delivery + sender/courier
-// profiles and auth emails, then sends the appropriate transactional
-// emails. Non-blocking: always returns 200 so a trigger's fire-and-forget
-// HTTP call never fails, even if email delivery itself fails.
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendDeliveryEmail, type DeliveryEvent } from "../_shared/email.ts";
+import {
+  sendDeliveryEmail,
+  PUSH_TITLES,
+  PUSH_BODIES,
+  type DeliveryEvent,
+} from "../_shared/email.ts";
+import { sendPushToUsers, type PushMessage } from "../_shared/fcm.ts";
 
 const VALID_EVENTS: DeliveryEvent[] = [
   "created",
@@ -21,14 +21,19 @@ const json = (body: unknown, status = 200) =>
     headers: { "Content-Type": "application/json" },
   });
 
+function formatPrice(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+function pushBody(template: string, counterpartyName: string | null): string {
+  return template.replace("{name}", counterpartyName ?? "your counterparty");
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return json({ error: "method not allowed" }, 405);
   }
 
-  // Guard: only the service-role key (sent by pg_net trigger) may call
-  // this function. Without this check any logged-in user could POST a
-  // fabricated event and trigger spurious emails.
   const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const bearer = req.headers.get("Authorization")?.replace("Bearer ", "");
   if (bearer !== SERVICE_ROLE_KEY) {
@@ -47,8 +52,6 @@ Deno.serve(async (req) => {
   }
   const deliveryEvent = event as DeliveryEvent;
 
-  // Service-role client — this is invoked from pg_net, not a user
-  // session, so there is no caller auth header to forward.
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -57,7 +60,7 @@ Deno.serve(async (req) => {
   const { data: request, error: requestErr } = await supabase
     .from("delivery_requests")
     .select(
-      "order_number, pickup_address, dropoff_address, package_size, max_price_cents, accepted_price_cents, sender_id, courier_id",
+      "order_number, pickup_address, dropoff_address, pickup_lat, pickup_lng, package_size, max_price_cents, accepted_price_cents, sender_id, courier_id",
     )
     .eq("id", delivery_request_id)
     .single();
@@ -69,7 +72,6 @@ Deno.serve(async (req) => {
 
   const priceCents = request.accepted_price_cents ?? request.max_price_cents ?? null;
 
-  // Fetch pickup PIN from sender-only table (service_role bypasses RLS)
   const { data: pinRow } = await supabase
     .from("delivery_pins")
     .select("pin")
@@ -82,11 +84,12 @@ Deno.serve(async (req) => {
     request.courier_id ? lookupPerson(supabase, request.courier_id, "Your courier") : Promise.resolve(null),
   ]);
 
-  const results: Record<string, { ok: boolean; error?: string }> = {};
+  const results: Record<string, unknown> = {};
 
-  // Sender always gets notified, for every event.
+  // ── EMAIL (existing) ──────────────────────────────────────────────
+
   if (senderInfo) {
-    results.sender = await sendDeliveryEmail(deliveryEvent, {
+    results.senderEmail = await sendDeliveryEmail(deliveryEvent, {
       orderNumber: request.order_number,
       pickupAddress: request.pickup_address,
       dropoffAddress: request.dropoff_address,
@@ -102,13 +105,11 @@ Deno.serve(async (req) => {
     });
   } else {
     console.error(`send-notification: sender profile/email not found for ${request.sender_id}`);
-    results.sender = { ok: false, error: "sender not found" };
+    results.senderEmail = { ok: false, error: "sender not found" };
   }
 
-  // Courier gets notified for every event except "created" (no courier
-  // is assigned yet when a request is first created).
   if (courierInfo && deliveryEvent !== "created") {
-    results.courier = await sendDeliveryEmail(deliveryEvent, {
+    results.courierEmail = await sendDeliveryEmail(deliveryEvent, {
       orderNumber: request.order_number,
       pickupAddress: request.pickup_address,
       dropoffAddress: request.dropoff_address,
@@ -121,6 +122,71 @@ Deno.serve(async (req) => {
       },
       counterparty: senderInfo ? { firstName: senderInfo.firstName } : null,
     });
+  }
+
+  // ── PUSH NOTIFICATIONS (new) ──────────────────────────────────────
+
+  // Sender push (all events)
+  if (senderInfo) {
+    const title = PUSH_TITLES[deliveryEvent].sender;
+    const bodyText = pushBody(PUSH_BODIES[deliveryEvent].sender, courierInfo?.firstName ?? null);
+    if (title) {
+      results.senderPush = await sendPushToUsers(supabase, [request.sender_id], {
+        title: `${request.order_number} — ${title}`,
+        body: bodyText,
+        data: {
+          event: deliveryEvent,
+          delivery_request_id,
+          deep_link: `/sender/requests/${delivery_request_id}`,
+        },
+      });
+    }
+  }
+
+  // Courier push (all events except "created" for the assigned courier)
+  if (courierInfo && deliveryEvent !== "created" && request.courier_id) {
+    const title = PUSH_TITLES[deliveryEvent].courier;
+    const bodyText = pushBody(PUSH_BODIES[deliveryEvent].courier, senderInfo?.firstName ?? null);
+    if (title) {
+      const pushMsg: PushMessage = {
+        title: `${request.order_number} — ${title}`,
+        body: bodyText,
+        data: {
+          event: deliveryEvent,
+          delivery_request_id,
+          deep_link: `/courier/deliveries/${delivery_request_id}`,
+        },
+      };
+      // On "delivered", add earnings to the body
+      if (deliveryEvent === "delivered" && priceCents != null) {
+        pushMsg.body = `${formatPrice(priceCents)} earned. Payout on the way.`;
+      }
+      results.courierPush = await sendPushToUsers(supabase, [request.courier_id], pushMsg);
+    }
+  }
+
+  // Fan-out: "new order near you" push to nearby couriers on "created"
+  if (deliveryEvent === "created" && request.pickup_lat && request.pickup_lng) {
+    const { data: nearbyCouriers } = await supabase.rpc("nearby_couriers_for_push", {
+      p_pickup_lat: request.pickup_lat,
+      p_pickup_lng: request.pickup_lng,
+    });
+
+    if (nearbyCouriers && nearbyCouriers.length > 0) {
+      const courierIds = nearbyCouriers.map((c: { id: string }) => c.id);
+      const priceStr = priceCents ? formatPrice(priceCents) : "";
+      results.fanoutPush = await sendPushToUsers(supabase, courierIds, {
+        title: "New delivery near you",
+        body: priceStr
+          ? `${priceStr} · ${request.pickup_address}`
+          : request.pickup_address,
+        data: {
+          event: "created",
+          delivery_request_id,
+          deep_link: "/courier",
+        },
+      });
+    }
   }
 
   console.log(`send-notification: ${deliveryEvent} for ${delivery_request_id}`, results);
