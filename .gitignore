@@ -11,3 +11,11 @@ coverage
 .claude/
 .superpowers/
 supabase/.temp/
+
+# Capacitor native projects — tracked, but ignore build output
+ios/App/Pods/
+ios/DerivedData/
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
