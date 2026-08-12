@@ -11,7 +11,7 @@ export default function TopBar() {
   const { profile } = useAuth()
 
   return (
-    <header className="shrink-0 bg-white border-b border-mist">
+    <header className="shrink-0 bg-white border-b border-mist pt-[env(safe-area-inset-top)]">
       <div className="max-w-3xl mx-auto flex items-center justify-between px-4 py-2">
         {/* Greeting — left */}
         <div className="text-sm text-ink font-medium">
