@@ -5,6 +5,7 @@ import { Toaster } from 'sonner'
 import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { initAnalytics } from './lib/analytics.js'
+import { hideSplash, configureStatusBar } from './lib/capacitor.js'
 import './index.css'
 
 initAnalytics(import.meta.env.VITE_MIXPANEL_TOKEN)
@@ -19,3 +20,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </BrowserRouter>
   </React.StrictMode>,
 )
+
+// Dismiss splash screen and configure status bar after first render
+hideSplash()
+configureStatusBar()

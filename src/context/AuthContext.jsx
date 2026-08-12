@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { supabase, hasSupabaseConfig } from '../lib/supabase.js'
+import { initPush, teardownPush } from '../lib/push.js'
 
 const AuthContext = createContext({
   user: null,
@@ -41,6 +42,10 @@ export function AuthProvider({ children }) {
         await fetchProfile(sessionUser.id).catch(() => {})
       }
       if (mounted) setLoading(false)
+      // Init push after auth is resolved and profile is loaded
+      if (sessionUser) {
+        initPush(sessionUser.id)
+      }
     })
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -61,6 +66,7 @@ export function AuthProvider({ children }) {
   }, [user, fetchProfile])
 
   const signOut = async () => {
+    if (user) await teardownPush(user.id)
     if (hasSupabaseConfig) await supabase.auth.signOut()
     setUser(null)
     setProfile(null)

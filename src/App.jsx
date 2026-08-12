@@ -1,4 +1,6 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { onBackButton } from './lib/capacitor.js'
 import RequireAuth from './components/auth/RequireAuth.jsx'
 import RequireRole from './components/auth/RequireRole.jsx'
 import SenderLayout from './components/SenderLayout.jsx'
@@ -63,6 +65,17 @@ function CourierRoute({ children }) {
 }
 
 export default function App() {
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const cleanup = onBackButton(({ canGoBack }) => {
+      if (canGoBack) {
+        navigate(-1)
+      }
+    })
+    return cleanup
+  }, [navigate])
+
   return (
     <Routes>
       <Route path="/welcome" element={<Welcome />} />
