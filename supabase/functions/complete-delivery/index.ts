@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14?target=denonext";
 import { safeTrackEvent } from "../_shared/analytics.ts";
+import { sendPushToUsers } from "../_shared/fcm.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, { apiVersion: "2024-06-20" });
 
@@ -35,7 +36,7 @@ Deno.serve(async (req) => {
 
   const { data: request, error: requestErr } = await supabase
     .from("delivery_requests")
-    .select("id, courier_id, status, stripe_payment_intent_id")
+    .select("id, courier_id, sender_id, order_number, status, stripe_payment_intent_id")
     .eq("id", delivery_request_id)
     .single();
   if (requestErr || !request) return json({ error: "request not found" }, 404);
@@ -75,6 +76,17 @@ Deno.serve(async (req) => {
     // PI already captured; surface a clear error but funds are collected.
     return json({ error: "payment captured but request update failed", detail: updateErr.message }, 500);
   }
+
+  // Push: payment captured notification to sender
+  await sendPushToUsers(supabase, [request.sender_id], {
+    title: `${request.order_number} — Payment processed`,
+    body: `$${(pi.amount / 100).toFixed(2)} has been charged for your delivery.`,
+    data: {
+      event: "payment_captured",
+      delivery_request_id,
+      deep_link: `/sender/requests/${delivery_request_id}`,
+    },
+  });
 
   await safeTrackEvent(supabase, user.id, "delivery_completed", {
     delivery_request_id,

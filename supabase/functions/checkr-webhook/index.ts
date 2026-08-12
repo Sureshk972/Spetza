@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifySignature, statusForEvent } from "../_shared/checkr.ts";
+import { sendPushToUsers } from "../_shared/fcm.ts";
 
 // Terminal states an admin owns — a late/duplicate webhook must never
 // overwrite them.
@@ -68,5 +69,21 @@ Deno.serve(async (req) => {
     // on its side; surface non-2xx.
     return new Response("db error", { status: 500 });
   }
+
+  // Push notification for background check status changes
+  if (nextStatus === "clear") {
+    await sendPushToUsers(supabase, [profile.id], {
+      title: "You're approved!",
+      body: "Your background check cleared. You can now accept deliveries.",
+      data: { event: "background_check_clear", deep_link: "/courier/verify" },
+    });
+  } else if (nextStatus === "consider") {
+    await sendPushToUsers(supabase, [profile.id], {
+      title: "Background check update",
+      body: "Your background check needs review. We'll be in touch.",
+      data: { event: "background_check_consider", deep_link: "/courier/verify" },
+    });
+  }
+
   return new Response("ok", { status: 200 });
 });
