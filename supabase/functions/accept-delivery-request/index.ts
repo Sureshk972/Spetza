@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
         capture_method: "manual",
         confirm: true,
         off_session: true,
-        application_fee_amount: fee,
+        application_fee_amount: fee * 2, // 15% from sender + 15% from courier
         transfer_data: { destination: courier.stripe_connect_account_id },
         on_behalf_of: courier.stripe_connect_account_id,
         metadata: {
