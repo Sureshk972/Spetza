@@ -32,6 +32,7 @@ export default function NewRequest() {
   const [description, setDescription] = useState('')
   const [size, setSize] = useState('')
   const [photoPath, setPhotoPath] = useState(null)
+  const [liabilityAccepted, setLiabilityAccepted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   const distance = useMemo(() => {
@@ -94,6 +95,10 @@ export default function NewRequest() {
       toast.error('A photo of the package is required.')
       return
     }
+    if (!liabilityAccepted) {
+      toast.error('Please acknowledge the liability disclaimer.')
+      return
+    }
     setSubmitting(true)
     const pickupAddress = pickupGeo.formatted || pickup
     const dropoffAddress = dropoffGeo.formatted || dropoff
@@ -112,6 +117,7 @@ export default function NewRequest() {
         package_size: size.trim() || null,
         package_photo_path: photoPath,
         max_price_cents: priceCents,
+        sender_liability_accepted_at: new Date().toISOString(),
       })
       .select('id')
       .single()
@@ -137,7 +143,8 @@ export default function NewRequest() {
     dropoffGeo.status === 'ok' &&
     distance != null &&
     !overMax &&
-    priceCents != null
+    priceCents != null &&
+    liabilityAccepted
 
   return (
     <div className="min-h-full px-6 py-12 max-w-xl mx-auto">
@@ -215,6 +222,20 @@ export default function NewRequest() {
         </div>
 
         <PricingTable variant="sender" />
+
+        <label className="flex items-start gap-3 p-4 rounded-lg border border-mist bg-white cursor-pointer">
+          <input
+            type="checkbox"
+            checked={liabilityAccepted}
+            onChange={(e) => setLiabilityAccepted(e.target.checked)}
+            className="mt-0.5 accent-teal"
+          />
+          <span className="text-xs text-slate leading-relaxed">
+            By posting this delivery, I confirm that Spetza is a marketplace connecting me
+            with independent couriers. Spetza is not liable for loss, damage, or delay.
+            Delivery is at my own risk.
+          </span>
+        </label>
 
         <button
           type="submit"

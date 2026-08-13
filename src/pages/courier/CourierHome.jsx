@@ -57,6 +57,8 @@ export default function CourierHome() {
   const [ratedIds, setRatedIds] = useState(new Set())
   const [loading, setLoading] = useState(true)
   const [accepting, setAccepting] = useState(null)
+  const [confirmRequest, setConfirmRequest] = useState(null)
+  const [liabilityChecked, setLiabilityChecked] = useState(false)
   const [progressing, setProgressing] = useState(null)
 
   const serviceArea =
@@ -180,15 +182,23 @@ export default function CourierHome() {
     return { visibleRequests: list, newestId: list[0]?.id ?? null }
   }, [requests, serviceArea])
 
-  const handleAccept = async (request) => {
-    const ok = window.confirm(
-      `Accept this delivery for $${(request.max_price_cents / 100).toFixed(2)}?`,
-    )
-    if (!ok) return
+  const handleAcceptClick = (request) => {
+    setLiabilityChecked(false)
+    setConfirmRequest(request)
+  }
+
+  const handleAcceptConfirm = async () => {
+    const request = confirmRequest
+    setConfirmRequest(null)
     setAccepting(request.id)
     const { error } = await supabase.functions.invoke(
       'accept-delivery-request',
-      { body: { delivery_request_id: request.id } },
+      {
+        body: {
+          delivery_request_id: request.id,
+          courier_liability_accepted_at: new Date().toISOString(),
+        },
+      },
     )
     setAccepting(null)
     if (error) {
@@ -579,7 +589,7 @@ export default function CourierHome() {
                     )}
                     <div className="flex items-center justify-end gap-3 pt-3 border-t border-mist">
                       <button
-                        onClick={() => handleAccept(r)}
+                        onClick={() => handleAcceptClick(r)}
                         disabled={accepting === r.id || !canAccept}
                         title={disabledReason}
                         className="px-3 py-1 rounded-lg bg-green text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
@@ -594,6 +604,48 @@ export default function CourierHome() {
           )}
         </div>
       </div>
+
+      {/* Accept confirmation modal */}
+      {confirmRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-6">
+          <div className="w-full max-w-sm bg-white rounded-2xl p-6 space-y-4">
+            <h2 className="font-display text-xl text-ink">
+              Accept for {dollars(confirmRequest.max_price_cents)}?
+            </h2>
+            <p className="text-sm text-slate">
+              {confirmRequest.order_number} · {confirmRequest.pickup_address} → {confirmRequest.dropoff_address}
+            </p>
+            <label className="flex items-start gap-3 p-3 rounded-lg border border-mist bg-mist/50 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={liabilityChecked}
+                onChange={(e) => setLiabilityChecked(e.target.checked)}
+                className="mt-0.5 accent-green"
+              />
+              <span className="text-xs text-slate leading-relaxed">
+                I am an independent contractor, not a Spetza employee. I am responsible
+                for the safe handling and delivery of packages I accept. Spetza is not
+                liable for any claims arising from deliveries I perform.
+              </span>
+            </label>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmRequest(null)}
+                className="flex-1 px-4 py-2.5 rounded-lg border border-mist text-sm text-slate hover:border-ink hover:text-ink transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAcceptConfirm}
+                disabled={!liabilityChecked}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-green text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                Accept delivery
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

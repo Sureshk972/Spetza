@@ -31,8 +31,9 @@ Deno.serve(async (req) => {
   const { data: { user }, error: userErr } = await supabase.auth.getUser(token);
   if (userErr || !user) return json({ error: "unauthenticated" }, 401);
 
-  const { delivery_request_id } = await req.json().catch(() => ({}));
+  const { delivery_request_id, courier_liability_accepted_at } = await req.json().catch(() => ({}));
   if (!delivery_request_id) return json({ error: "missing delivery_request_id" }, 400);
+  if (!courier_liability_accepted_at) return json({ error: "liability acknowledgment required" }, 400);
 
   // Courier (caller) must have a selfie, Connect payouts, and a clear check.
   const { data: courier } = await supabase
@@ -125,6 +126,7 @@ Deno.serve(async (req) => {
       stripe_payment_intent_id: pi.id,
       platform_fee_cents: fee,
       accepted_price_cents: request.max_price_cents,
+      courier_liability_accepted_at,
     })
     .eq("id", delivery_request_id)
     .eq("status", "open")
