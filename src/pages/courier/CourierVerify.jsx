@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
+import EarnBackTracker from '../../components/EarnBackTracker.jsx'
 
 const MAX_BYTES = 5 * 1024 * 1024
 const BUCKET = 'courier-verification'
@@ -14,6 +15,18 @@ export default function CourierVerify() {
   const [starting, setStarting] = useState(false)
   const [selfiePath, setSelfiePath] = useState(profile?.selfie_path ?? null)
   const [selfieUrl, setSelfieUrl] = useState(null)
+  const [deliveredCount, setDeliveredCount] = useState(0)
+
+  // Fetch completed delivery count for earn-back tracker
+  useEffect(() => {
+    if (!hasSupabaseConfig || !user) return
+    supabase
+      .from('delivery_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('courier_id', user.id)
+      .eq('status', 'delivered')
+      .then(({ count }) => setDeliveredCount(count ?? 0))
+  }, [user])
 
   useEffect(() => {
     setSelfiePath(profile?.selfie_path ?? null)
@@ -140,22 +153,32 @@ export default function CourierVerify() {
       <section className="mt-4 p-4 rounded-xl border border-mist bg-white">
         <div className="text-ink text-sm">3 · Background check</div>
         {bg === 'clear' ? (
-          <div className="mt-2 p-3 rounded-lg bg-green/10 text-green text-sm">Cleared ✓ You can accept deliveries.</div>
+          <>
+            <div className="mt-2 p-3 rounded-lg bg-green/10 text-green text-sm">Cleared ✓ You can accept deliveries.</div>
+            <EarnBackTracker completedCount={deliveredCount} variant="signup" />
+          </>
         ) : bg === 'pending' ? (
-          <div className="mt-2 p-3 rounded-lg bg-teal/10 text-teal text-sm">In progress. We'll update this when it's done.</div>
+          <>
+            <div className="mt-2 p-3 rounded-lg bg-teal/10 text-teal text-sm">In progress. We'll update this when it's done.</div>
+            <EarnBackTracker completedCount={deliveredCount} variant="signup" />
+          </>
         ) : bg === 'consider' ? (
-          <div className="mt-2 p-3 rounded-lg bg-teal/10 text-teal text-sm">Under review. We'll be in touch.</div>
+          <>
+            <div className="mt-2 p-3 rounded-lg bg-teal/10 text-teal text-sm">Under review. We'll be in touch.</div>
+            <EarnBackTracker completedCount={deliveredCount} variant="signup" />
+          </>
         ) : bg === 'rejected' ? (
           <div className="mt-2 p-3 rounded-lg bg-red-50 text-red-700 text-sm">Not approved. Check your email from Checkr for details.</div>
         ) : (
           <>
-            <div className="text-slate text-xs mt-0.5">Runs through Checkr. Free to you.</div>
+            <div className="text-slate text-xs mt-0.5">Runs through Checkr · one-time $40 fee.</div>
+            <EarnBackTracker completedCount={deliveredCount} variant="signup" />
             <button
               onClick={startCheck}
               disabled={!selfiePath || !payoutsReady || starting}
               className="mt-3 w-full px-4 py-3 rounded-lg bg-green text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
             >
-              {starting ? 'Starting…' : 'Start background check'}
+              {starting ? 'Starting…' : 'Start background check — $40'}
             </button>
             {(!selfiePath || !payoutsReady) && (
               <div className="text-xs text-slate mt-2">Finish steps 1 and 2 first.</div>

@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import CourierServiceAreaSection from '../../components/CourierServiceAreaSection.jsx'
 import CourierConnectSection from '../../components/CourierConnectSection.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
+import EarnBackTracker from '../../components/EarnBackTracker.jsx'
 
 function dollars(cents) {
   return `$${(cents / 100).toFixed(2)}`
@@ -219,6 +220,9 @@ export default function CourierProfile() {
                 </Link>
               )}
             </div>
+            {bgStatus !== 'not_started' && bgStatus !== 'rejected' && (
+              <EarnBackTracker completedCount={delivered.length} variant="profile" />
+            )}
           </div>
         </section>
 
