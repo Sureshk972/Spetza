@@ -15,18 +15,6 @@ export default function CourierVerify() {
   const [starting, setStarting] = useState(false)
   const [selfiePath, setSelfiePath] = useState(profile?.selfie_path ?? null)
   const [selfieUrl, setSelfieUrl] = useState(null)
-  const [deliveredCount, setDeliveredCount] = useState(0)
-
-  // Fetch completed delivery count for earn-back tracker
-  useEffect(() => {
-    if (!hasSupabaseConfig || !user) return
-    supabase
-      .from('delivery_requests')
-      .select('id', { count: 'exact', head: true })
-      .eq('courier_id', user.id)
-      .eq('status', 'delivered')
-      .then(({ count }) => setDeliveredCount(count ?? 0))
-  }, [user])
 
   useEffect(() => {
     setSelfiePath(profile?.selfie_path ?? null)
@@ -155,24 +143,24 @@ export default function CourierVerify() {
         {bg === 'clear' ? (
           <>
             <div className="mt-2 p-3 rounded-lg bg-green/10 text-green text-sm">Cleared ✓ You can accept deliveries.</div>
-            <EarnBackTracker completedCount={deliveredCount} variant="signup" />
+            <EarnBackTracker creditedCents={profile?.earnback_credited_cents ?? 0} variant="signup" />
           </>
         ) : bg === 'pending' ? (
           <>
             <div className="mt-2 p-3 rounded-lg bg-teal/10 text-teal text-sm">In progress. We'll update this when it's done.</div>
-            <EarnBackTracker completedCount={deliveredCount} variant="signup" />
+            <EarnBackTracker creditedCents={profile?.earnback_credited_cents ?? 0} variant="signup" />
           </>
         ) : bg === 'consider' ? (
           <>
             <div className="mt-2 p-3 rounded-lg bg-teal/10 text-teal text-sm">Under review. We'll be in touch.</div>
-            <EarnBackTracker completedCount={deliveredCount} variant="signup" />
+            <EarnBackTracker creditedCents={profile?.earnback_credited_cents ?? 0} variant="signup" />
           </>
         ) : bg === 'rejected' ? (
           <div className="mt-2 p-3 rounded-lg bg-red-50 text-red-700 text-sm">Not approved. Check your email from Checkr for details.</div>
         ) : (
           <>
             <div className="text-slate text-xs mt-0.5">Runs through Checkr · one-time $40 fee.</div>
-            <EarnBackTracker completedCount={deliveredCount} variant="signup" />
+            <EarnBackTracker creditedCents={profile?.earnback_credited_cents ?? 0} variant="signup" />
             <button
               onClick={startCheck}
               disabled={!selfiePath || !payoutsReady || starting}

@@ -221,7 +221,7 @@ export default function CourierProfile() {
               )}
             </div>
             {bgStatus !== 'rejected' && (
-              <EarnBackTracker completedCount={delivered.length} variant="profile" />
+              <EarnBackTracker creditedCents={profile?.earnback_credited_cents ?? 0} variant="profile" />
             )}
           </div>
         </section>

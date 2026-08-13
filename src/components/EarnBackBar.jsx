@@ -2,40 +2,26 @@
  * Slim persistent earn-back bar — sits below TopBar in CourierLayout.
  * Shows for all couriers until the $40 is fully earned back.
  *
+ * Reads earnback_credited_cents from the profile (set by the
+ * apply_earnback_credit DB function on each completed delivery).
+ *
  * - Before bg check: teaser CTA linking to /courier/verify
  * - After bg check started: progress bar with $ earned
- * - After 5 deliveries: auto-hides
+ * - After $40 earned back: auto-hides
  */
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase, hasSupabaseConfig } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 
-const TOTAL = 5
-const PER = 800 // cents
 const FEE = 4000 // cents
 const money = (c) => `$${(c / 100).toFixed(0)}`
 
 export default function EarnBackBar() {
-  const { user, profile } = useAuth()
-  const [count, setCount] = useState(null)
+  const { profile } = useAuth()
 
   const bg = profile?.background_check_status ?? 'not_started'
   const isCourier = profile?.account_type === 'courier'
   const rejected = bg === 'rejected'
   const started = bg !== 'not_started' && !rejected
-
-  useEffect(() => {
-    if (!isCourier || !hasSupabaseConfig || !user) return
-    let cancelled = false
-    supabase
-      .from('delivery_requests')
-      .select('id', { count: 'exact', head: true })
-      .eq('courier_id', user.id)
-      .eq('status', 'delivered')
-      .then(({ count: c }) => { if (!cancelled) setCount(c ?? 0) })
-    return () => { cancelled = true }
-  }, [isCourier, user])
 
   if (!isCourier || rejected) return null
 
@@ -49,7 +35,7 @@ export default function EarnBackBar() {
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
           <span className="text-xs text-ink">
             <span className="font-medium">Background check · $40</span>
-            <span className="text-slate"> — earn it back over 5 deliveries</span>
+            <span className="text-slate"> — earn $1 back with every delivery</span>
           </span>
           <span className="text-[11px] text-teal whitespace-nowrap">Get verified →</span>
         </div>
@@ -57,16 +43,12 @@ export default function EarnBackBar() {
     )
   }
 
-  // Still loading count
-  if (count === null) return null
-
-  const credited = Math.min(count, TOTAL)
-  const earned = credited * PER
-  const done = credited >= TOTAL
+  const earned = profile?.earnback_credited_cents ?? 0
+  const done = earned >= FEE
 
   if (done) return null
 
-  const pct = (credited / TOTAL) * 100
+  const pct = (earned / FEE) * 100
 
   return (
     <Link

@@ -77,6 +77,18 @@ Deno.serve(async (req) => {
     return json({ error: "payment captured but request update failed", detail: updateErr.message }, 500);
   }
 
+  // Earn-back: credit $1 from platform fee toward courier's bg check fee
+  let earnbackApplied = 0;
+  try {
+    const { data: credit } = await supabase.rpc("apply_earnback_credit", {
+      p_courier_id: user.id,
+      p_delivery_id: delivery_request_id,
+    });
+    earnbackApplied = credit ?? 0;
+  } catch {
+    // Non-fatal — delivery is complete regardless of earn-back
+  }
+
   // Push: payment captured notification to sender
   await sendPushToUsers(supabase, [request.sender_id], {
     title: `${request.order_number} — Payment processed`,
@@ -90,6 +102,7 @@ Deno.serve(async (req) => {
 
   await safeTrackEvent(supabase, user.id, "delivery_completed", {
     delivery_request_id,
+    earnback_credit_cents: earnbackApplied,
   });
   await safeTrackEvent(supabase, user.id, "payment_captured", {
     delivery_request_id,
