@@ -1,6 +1,6 @@
 -- Liability acknowledgment timestamps on every delivery
 ALTER TABLE delivery_requests
-  ADD COLUMN sender_liability_accepted_at timestamptz,
+  ADD COLUMN sender_liability_accepted_at timestamptz NOT NULL DEFAULT now(),
   ADD COLUMN courier_liability_accepted_at timestamptz;
 
 COMMENT ON COLUMN delivery_requests.sender_liability_accepted_at

@@ -25,6 +25,7 @@ export default function EditRequest() {
   const [description, setDescription] = useState('')
   const [size, setSize] = useState('')
   const [photoPath, setPhotoPath] = useState(null)
+  const [liabilityAccepted, setLiabilityAccepted] = useState(false)
   const [saving, setSaving] = useState(false)
   const [cancelling, setCancelling] = useState(false)
 
@@ -134,6 +135,10 @@ export default function EditRequest() {
     }
     if (!photoPath) {
       toast.error('A photo of the package is required.')
+      return
+    }
+    if (!liabilityAccepted) {
+      toast.error('Please acknowledge the liability disclaimer.')
       return
     }
     setSaving(true)
@@ -288,10 +293,26 @@ export default function EditRequest() {
         </div>
 
         {!locked && (
+          <label className="flex items-start gap-3 p-4 rounded-lg border border-mist bg-white cursor-pointer">
+            <input
+              type="checkbox"
+              checked={liabilityAccepted}
+              onChange={(e) => setLiabilityAccepted(e.target.checked)}
+              className="mt-0.5 accent-teal"
+            />
+            <span className="text-xs text-slate leading-relaxed">
+              By saving these changes, I confirm that Spetza is a marketplace connecting me
+              with independent couriers. Spetza is not liable for loss, damage, or delay.
+              Delivery is at my own risk.
+            </span>
+          </label>
+        )}
+
+        {!locked && (
           <div className="flex gap-3 pt-2">
             <button
               type="submit"
-              disabled={saving || cancelling}
+              disabled={saving || cancelling || !liabilityAccepted}
               className="flex-1 px-4 py-3 rounded-lg bg-ink text-white font-medium hover:bg-teal-light transition-colors disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Save changes'}

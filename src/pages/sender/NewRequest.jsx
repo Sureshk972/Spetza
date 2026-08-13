@@ -117,7 +117,6 @@ export default function NewRequest() {
         package_size: size.trim() || null,
         package_photo_path: photoPath,
         max_price_cents: priceCents,
-        sender_liability_accepted_at: new Date().toISOString(),
       })
       .select('id')
       .single()

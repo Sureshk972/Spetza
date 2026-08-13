@@ -33,9 +33,12 @@ const ACCEPT_ERROR_COPY = {
   'courier payouts not set up':
     "You cannot accept this order because you haven't set up your payouts yet. Open Profile → Payouts to connect a bank account.",
   'request not available': 'This request was just taken by another courier.',
+  'request was claimed by someone else': 'This request was just taken by another courier.',
   'cannot accept your own request': "You can't accept your own request.",
   'sender has no payment method on file':
     "The sender hasn't saved a payment method yet.",
+  'liability acknowledgment required':
+    'Please reload the app and try again — the liability acknowledgment is required.',
 }
 
 async function readInvokeErrorCode(error) {
@@ -189,6 +192,14 @@ export default function CourierHome() {
 
   const handleAcceptConfirm = async () => {
     const request = confirmRequest
+    // Re-check current price from the live requests list in case it changed while modal was open
+    const fresh = requests.find(r => r.id === request.id)
+    if (!fresh || fresh.max_price_cents !== request.max_price_cents) {
+      toast.error('This request was updated. Please review the new details.')
+      setConfirmRequest(null)
+      refresh()
+      return
+    }
     setConfirmRequest(null)
     setAccepting(request.id)
     const { error } = await supabase.functions.invoke(
@@ -196,7 +207,7 @@ export default function CourierHome() {
       {
         body: {
           delivery_request_id: request.id,
-          courier_liability_accepted_at: new Date().toISOString(),
+          courier_liability_accepted: true,
         },
       },
     )
@@ -607,8 +618,12 @@ export default function CourierHome() {
 
       {/* Accept confirmation modal */}
       {confirmRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-6">
-          <div className="w-full max-w-sm bg-white rounded-2xl p-6 space-y-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 px-6"
+          onClick={() => setConfirmRequest(null)}
+          onKeyDown={(e) => { if (e.key === 'Escape') setConfirmRequest(null) }}
+        >
+          <div className="w-full max-w-sm bg-white rounded-2xl p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <h2 className="font-display text-xl text-ink">
               Accept for {dollars(confirmRequest.max_price_cents)}?
             </h2>
@@ -637,10 +652,10 @@ export default function CourierHome() {
               </button>
               <button
                 onClick={handleAcceptConfirm}
-                disabled={!liabilityChecked}
+                disabled={!liabilityChecked || accepting}
                 className="flex-1 px-4 py-2.5 rounded-lg bg-green text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                Accept delivery
+                {accepting ? 'Accepting…' : 'Accept delivery'}
               </button>
             </div>
           </div>
