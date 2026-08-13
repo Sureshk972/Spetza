@@ -220,7 +220,7 @@ export default function CourierProfile() {
                 </Link>
               )}
             </div>
-            {bgStatus !== 'not_started' && bgStatus !== 'rejected' && (
+            {bgStatus !== 'rejected' && (
               <EarnBackTracker completedCount={delivered.length} variant="profile" />
             )}
           </div>

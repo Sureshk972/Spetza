@@ -1,7 +1,10 @@
 /**
- * Slim persistent earn-back progress bar — sits below TopBar in CourierLayout.
- * Only renders when the courier has started a background check and hasn't
- * yet earned back the full $40 (5 completed deliveries).
+ * Slim persistent earn-back bar — sits below TopBar in CourierLayout.
+ * Shows for all couriers until the $40 is fully earned back.
+ *
+ * - Before bg check: teaser CTA linking to /courier/verify
+ * - After bg check started: progress bar with $ earned
+ * - After 5 deliveries: auto-hides
  */
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -17,11 +20,13 @@ export default function EarnBackBar() {
   const { user, profile } = useAuth()
   const [count, setCount] = useState(null)
 
-  const bg = profile?.background_check_status
-  const show = bg && bg !== 'not_started' && bg !== 'rejected'
+  const bg = profile?.background_check_status ?? 'not_started'
+  const isCourier = profile?.account_type === 'courier'
+  const rejected = bg === 'rejected'
+  const started = bg !== 'not_started' && !rejected
 
   useEffect(() => {
-    if (!show || !hasSupabaseConfig || !user) return
+    if (!isCourier || !hasSupabaseConfig || !user) return
     let cancelled = false
     supabase
       .from('delivery_requests')
@@ -30,15 +35,36 @@ export default function EarnBackBar() {
       .eq('status', 'delivered')
       .then(({ count: c }) => { if (!cancelled) setCount(c ?? 0) })
     return () => { cancelled = true }
-  }, [show, user])
+  }, [isCourier, user])
 
-  if (!show || count === null) return null
+  if (!isCourier || rejected) return null
+
+  // Before bg check — teaser CTA
+  if (!started) {
+    return (
+      <Link
+        to="/courier/verify"
+        className="block shrink-0 bg-green/5 border-b border-green/20 px-4 py-2"
+      >
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
+          <span className="text-xs text-ink">
+            <span className="font-medium">Background check · $40</span>
+            <span className="text-slate"> — earn it back over 5 deliveries</span>
+          </span>
+          <span className="text-[11px] text-teal whitespace-nowrap">Get verified →</span>
+        </div>
+      </Link>
+    )
+  }
+
+  // Still loading count
+  if (count === null) return null
 
   const credited = Math.min(count, TOTAL)
   const earned = credited * PER
   const done = credited >= TOTAL
 
-  if (done) return null // fully earned back — no need to show
+  if (done) return null
 
   const pct = (credited / TOTAL) * 100
 
