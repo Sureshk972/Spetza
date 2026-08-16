@@ -1,5 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createCandidate, createInvitation } from "../_shared/checkr.ts";
+import Stripe from "https://esm.sh/stripe@14?target=denonext";
+import { createCandidate, createInvitation, type WorkLocation } from "../_shared/checkr.ts";
+
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, { apiVersion: "2024-06-20" });
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,7 +31,7 @@ Deno.serve(async (req) => {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("account_type, selfie_path, stripe_connect_payouts_enabled, background_check_status, checkr_candidate_id")
+    .select("account_type, first_name, last_name, selfie_path, stripe_connect_payouts_enabled, background_check_status, checkr_candidate_id, bgcheck_checkout_session_id, bgcheck_paid_at")
     .eq("id", user.id)
     .single();
 
@@ -43,24 +46,56 @@ Deno.serve(async (req) => {
     return json({ error: "Background checks are not available yet. Please try again later." }, 503);
   }
 
-  // COURIER_PAYS off-ramp (default off): when on, a successful Stripe
-  // charge must precede invitation creation. Left as a guarded stub so
-  // flipping the flag is a config change, not a rearchitecture.
+  // When COURIER_PAYS is on, verify the courier has paid $40 via
+  // Stripe Checkout before creating the Checkr invitation.
   if (COURIER_PAYS) {
-    return json({ error: "courier-pays flow not yet enabled" }, 501);
+    if (!profile.bgcheck_checkout_session_id) {
+      return json({ error: "payment required — use create-bgcheck-payment first" }, 402);
+    }
+    if (!profile.bgcheck_paid_at) {
+      // Verify with Stripe that the session is actually paid.
+      try {
+        const session = await stripe.checkout.sessions.retrieve(
+          profile.bgcheck_checkout_session_id,
+        );
+        if (session.payment_status !== "paid") {
+          return json({ error: "payment not completed — please try again" }, 402);
+        }
+        // Mark as paid so subsequent calls skip the Stripe round-trip.
+        await supabase.from("profiles").update({
+          bgcheck_paid_at: new Date().toISOString(),
+        }).eq("id", user.id);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error("bgcheck payment verification failed:", msg);
+        return json({ error: "could not verify payment" }, 502);
+      }
+    }
   }
+
+  if (!profile.first_name || !profile.last_name) {
+    return json({ error: "add your first and last name before starting" }, 409);
+  }
+
+  // Work location for Checkr compliance — Chicago is the launch market.
+  // TODO: derive from courier's service_area when multi-city.
+  const workLocations: WorkLocation[] = [
+    { country: "US", state: "IL", city: "Chicago" },
+  ];
 
   try {
     let candidateId = profile.checkr_candidate_id;
     if (!candidateId) {
-      candidateId = await createCandidate(user.id, user.email ?? "");
+      candidateId = await createCandidate(
+        user.id, user.email ?? "", profile.first_name, profile.last_name,
+      );
       // Store candidate id SYNCHRONOUSLY before creating the invitation,
       // so a fast webhook can always match this profile.
       await supabase.from("profiles")
         .update({ checkr_candidate_id: candidateId })
         .eq("id", user.id);
     }
-    const invitation = await createInvitation(candidateId);
+    const invitation = await createInvitation(candidateId, workLocations);
     await supabase.from("profiles").update({
       checkr_invitation_id: invitation.id,
       background_check_status: "pending",

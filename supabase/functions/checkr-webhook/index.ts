@@ -83,6 +83,13 @@ Deno.serve(async (req) => {
       body: "Your background check needs review. We'll be in touch.",
       data: { event: "background_check_consider", deep_link: "/courier/verify" },
     });
+  } else if (nextStatus === "not_started") {
+    // Invitation expired — courier can re-request.
+    await sendPushToUsers(supabase, [profile.id], {
+      title: "Background check expired",
+      body: "Your invitation expired. Tap to start a new one.",
+      data: { event: "background_check_expired", deep_link: "/courier/verify" },
+    });
   }
 
   return new Response("ok", { status: 200 });

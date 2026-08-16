@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
@@ -11,6 +11,7 @@ const BUCKET = 'courier-verification'
 export default function CourierVerify() {
   const { user, profile, refreshProfile } = useAuth()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [uploading, setUploading] = useState(false)
   const [starting, setStarting] = useState(false)
   const [selfiePath, setSelfiePath] = useState(profile?.selfie_path ?? null)
@@ -36,6 +37,18 @@ export default function CourierVerify() {
   const bg = profile?.background_check_status ?? 'not_started'
   const payoutsReady =
     profile?.stripe_connect_charges_enabled && profile?.stripe_connect_payouts_enabled
+  const alreadyPaid = !!profile?.bgcheck_paid_at
+
+  // Auto-start background check after returning from Stripe Checkout.
+  useEffect(() => {
+    if (searchParams.get('bg_paid') !== '1') return
+    // Clear the query params so a refresh doesn't re-trigger.
+    setSearchParams({}, { replace: true })
+    // Only auto-start if courier hasn't already begun the check.
+    if (bg !== 'not_started') return
+    toast.success('Payment received!')
+    startCheck()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSelfie = async (e) => {
     const file = e.target.files?.[0]
@@ -64,11 +77,33 @@ export default function CourierVerify() {
 
   const startCheck = async () => {
     setStarting(true)
+
+    // If the courier hasn't paid yet, redirect to Stripe Checkout first.
+    if (!alreadyPaid && !searchParams.get('bg_paid')) {
+      const returnUrl = window.location.origin + '/courier/verify'
+      const { data: payData, error: payErr } = await supabase.functions.invoke(
+        'create-bgcheck-payment',
+        { body: { return_url: returnUrl } },
+      )
+      if (payErr || !payData?.checkout_url) {
+        setStarting(false)
+        let msg = payErr?.message ?? 'Could not start payment'
+        try {
+          const body = await payErr?.context?.json?.()
+          if (body?.error) msg = body.error
+        } catch { /* use generic */ }
+        toast.error(msg)
+        return
+      }
+      // Redirect to Stripe Checkout — they'll come back with ?bg_paid=1.
+      window.location.href = payData.checkout_url
+      return
+    }
+
+    // Payment verified (or not required) — start the background check.
     const { data, error } = await supabase.functions.invoke('start-background-check')
     setStarting(false)
     if (error) {
-      // supabase.functions.invoke wraps non-2xx in a generic message;
-      // the real error is in the response body
       let msg = error.message
       try {
         const body = await error.context?.json?.()
