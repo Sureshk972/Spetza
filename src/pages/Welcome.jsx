@@ -213,6 +213,9 @@ export default function Welcome() {
             <div className="font-display text-xl mt-2 font-extrabold text-ink group-hover:text-green transition-colors">
               I want to deliver packages
             </div>
+            <div className="mt-2 text-xs text-slate leading-relaxed">
+              One-time $40 background check — <span className="text-green font-semibold">earn it all back</span>, $1 per delivery.
+            </div>
           </Link>
         </div>
 

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "157356211162",
+    "project_id": "spteza",
+    "storage_bucket": "spteza.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:157356211162:android:50e4a753c087a2ec5fdee3",
+        "android_client_info": {
+          "package_name": "com.spetza.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDfZpnNFV9d_VmMwfA6E6nUtaaS_f2mu5w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

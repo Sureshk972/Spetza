@@ -50,6 +50,12 @@ export default function Trust() {
             Every courier passes a criminal background check through Checkr — the same screening
             partner used by Uber, DoorDash, and Instacart — before they can pick up a single
             package. If something's flagged, a real person reviews it. No shortcuts.
+            <div className="mt-2 px-3 py-2 rounded-lg bg-green/5 border border-green/15 text-xs leading-relaxed">
+              <span className="text-ink font-medium">$40 one-time fee</span>
+              <span className="text-slate"> — earn it all back at </span>
+              <span className="text-green font-medium">$1 per completed delivery</span>
+              <span className="text-slate">. After 40 deliveries, the full $40 is covered.</span>
+            </div>
           </VettingCard>
           <VettingCard title="A face, not a stranger">
             Each courier adds a photo, so when someone arrives at your door, you already know
