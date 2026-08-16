@@ -126,8 +126,7 @@ export default function SenderProfile() {
     <div className="min-h-full">
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-10">
         <div>
-          <div className="text-xs uppercase tracking-widest text-teal">Sender</div>
-          <h1 className="font-display text-3xl text-ink mt-1">Profile</h1>
+          <h1 className="font-display text-3xl text-ink">Profile</h1>
         </div>
 
         <section className="space-y-3">

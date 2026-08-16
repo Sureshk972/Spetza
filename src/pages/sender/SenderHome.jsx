@@ -234,17 +234,16 @@ export default function SenderHome() {
     <div className="min-h-full px-6 py-12 max-w-3xl mx-auto">
       <header className="flex items-center justify-between">
         <div>
-          <div className="text-xs uppercase tracking-widest text-teal">Sender</div>
-          <h1 className="font-display text-3xl text-ink mt-1">Your requests</h1>
+          <h1 className="font-display text-3xl text-ink">Your deliveries</h1>
           <div className="mt-1">
             <RatingBadge avg={profile?.rating_avg} count={profile?.rating_count} />
           </div>
         </div>
         <Link
           to="/sender/new"
-          className="px-4 py-2 rounded-lg bg-ink text-white text-sm font-medium hover:bg-teal-light transition-colors"
+          className="px-4 py-2 rounded-lg bg-teal text-white text-sm font-medium hover:bg-teal/90 transition-colors"
         >
-          New request
+          Send a package
         </Link>
       </header>
 

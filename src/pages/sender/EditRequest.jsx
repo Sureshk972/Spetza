@@ -313,7 +313,7 @@ export default function EditRequest() {
             <button
               type="submit"
               disabled={saving || cancelling || !liabilityAccepted}
-              className="flex-1 px-4 py-3 rounded-lg bg-ink text-white font-medium hover:bg-teal-light transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-3 rounded-lg bg-teal text-white font-medium hover:bg-teal/90 transition-colors disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Save changes'}
             </button>

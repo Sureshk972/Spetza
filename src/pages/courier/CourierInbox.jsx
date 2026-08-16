@@ -34,6 +34,18 @@ const EVENT_COPY = {
   },
 }
 
+function dollars(cents) {
+  return `$${(cents / 100).toFixed(2)}`
+}
+
+function courierTake(r) {
+  if (r.status !== 'delivered') return null
+  const gross = r.accepted_price_cents ?? r.max_price_cents ?? 0
+  const fee = r.platform_fee_cents ?? 0
+  const tip = r.tip_cents ?? 0
+  return gross - fee + tip
+}
+
 function buildEvents(requests) {
   const events = []
   for (const r of requests) {
@@ -57,7 +69,7 @@ export default function CourierInbox() {
     }
     const { data } = await supabase
       .from('delivery_requests')
-      .select('*')
+      .select('*, accepted_price_cents, max_price_cents, platform_fee_cents, tip_cents')
       .eq('courier_id', user.id)
       .order('accepted_at', { ascending: false })
     setRequests(data || [])
@@ -107,7 +119,12 @@ export default function CourierInbox() {
                   >
                     <div className="flex items-baseline justify-between gap-3">
                       <div className={`text-sm font-medium ${copy.tone}`}>{copy.title}</div>
-                      <div className="text-xs text-slate whitespace-nowrap">{timeLabel(ev.time)}</div>
+                      <div className="flex items-baseline gap-2">
+                        {ev.kind === 'delivered' && courierTake(ev.request) != null && (
+                          <span className="text-sm font-bold text-green">+{dollars(courierTake(ev.request))}</span>
+                        )}
+                        <span className="text-xs text-slate whitespace-nowrap">{timeLabel(ev.time)}</span>
+                      </div>
                     </div>
                     <div className="mt-1 text-xs uppercase tracking-wide text-slate">
                       {ev.request.order_number}

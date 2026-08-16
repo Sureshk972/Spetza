@@ -108,6 +108,25 @@ export default function CourierProfile() {
           <h1 className="font-display text-3xl text-ink mt-1">Profile</h1>
         </div>
 
+        {/* Earnings summary — front and center for money-focused cockpit */}
+        {!earningsLoading && delivered.length > 0 && (
+          <section className="rounded-xl border border-green/20 bg-green/5 p-5">
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm font-medium text-ink">Total earned</span>
+              <span className="font-display text-3xl text-green">{dollars(totalEarnedCents + totalTipsCents)}</span>
+            </div>
+            <div className="mt-2 flex items-center gap-4 text-xs text-slate">
+              <span>{delivered.length} deliveries</span>
+              {totalTipsCents > 0 && (
+                <>
+                  <span className="text-slate/40">·</span>
+                  <span>{dollars(totalTipsCents)} in tips</span>
+                </>
+              )}
+            </div>
+          </section>
+        )}
+
         <section className="space-y-3">
           <h2 className="text-xs uppercase tracking-widest text-slate">Basics</h2>
           <div className="rounded-xl border border-mist bg-white divide-y divide-mist">

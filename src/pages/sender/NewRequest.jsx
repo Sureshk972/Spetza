@@ -239,9 +239,9 @@ export default function NewRequest() {
         <button
           type="submit"
           disabled={!canSubmit}
-          className="w-full px-4 py-3 rounded-lg bg-ink text-white font-medium hover:bg-teal-light transition-colors disabled:opacity-50"
+          className="w-full px-4 py-3 rounded-lg bg-teal text-white font-medium hover:bg-teal/90 transition-colors disabled:opacity-50"
         >
-          {submitting ? 'Posting…' : 'Post request'}
+          {submitting ? 'Posting…' : 'Send it'}
         </button>
       </form>
     </div>

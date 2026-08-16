@@ -105,22 +105,27 @@ const EVENT_COPY = {
   accepted: {
     title: 'Courier accepted your request',
     tone: 'text-teal',
+    accent: 'border-l-4 border-l-teal',
   },
   picked_up: {
     title: 'Your package is on the way',
     tone: 'text-teal',
+    accent: 'border-l-4 border-l-teal',
   },
   delivered: {
-    title: 'Delivered',
+    title: 'Delivered!',
     tone: 'text-green',
+    accent: 'border-l-4 border-l-green',
   },
   cancelled: {
     title: 'Cancelled',
     tone: 'text-slate',
+    accent: '',
   },
   posted: {
     title: 'Request posted',
     tone: 'text-slate',
+    accent: '',
   },
 }
 
@@ -173,8 +178,7 @@ export default function SenderInbox() {
     <div className="min-h-full">
       <div className="max-w-3xl mx-auto px-6 py-10">
         <div className="mb-2">
-          <div className="text-xs uppercase tracking-widest text-teal">Sender</div>
-          <h1 className="font-display text-3xl text-ink mt-1">Inbox</h1>
+          <h1 className="font-display text-3xl text-ink">Inbox</h1>
         </div>
         {events.length > 0 && (
           <div className="mb-6">
@@ -194,7 +198,7 @@ export default function SenderInbox() {
                 <li key={ev.id}>
                   <Link
                     to={`/sender/requests/${ev.request.id}`}
-                    className="block p-4 rounded-xl border border-mist bg-white hover:border-teal transition-colors"
+                    className={`block p-4 rounded-xl border border-mist bg-white hover:border-teal transition-colors ${copy.accent}`}
                   >
                     <div className="flex items-baseline justify-between gap-3">
                       <div className={`text-sm font-medium ${copy.tone}`}>{copy.title}</div>
