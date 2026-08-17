@@ -10,6 +10,7 @@ import RatingBadge from '../../components/RatingBadge.jsx'
 import PackagePhoto from '../../components/PackagePhoto.jsx'
 import TipPrompt from '../../components/TipPrompt.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
+import { chime } from '../../lib/chime.js'
 
 const dollars = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
 
@@ -112,6 +113,19 @@ export default function RequestDetail() {
     filter: id ? `id=eq.${id}` : null,
     refresh: load,
   })
+
+  // Play a chime the moment the courier arrives so the sender knows to
+  // check the door even if their attention has wandered. Only fires on
+  // the null → set transition; a fresh page-load with the courier
+  // already arrived stays silent.
+  const [wasArrived, setWasArrived] = useState(false)
+  useEffect(() => {
+    const arrivedNow = !!request?.courier_arrived_at
+    if (arrivedNow && !wasArrived) {
+      chime()
+    }
+    setWasArrived(arrivedNow)
+  }, [request?.courier_arrived_at, wasArrived])
 
   const handleCancel = async () => {
     // Only 'accepted' requests have an authorized PaymentIntent — 'open'

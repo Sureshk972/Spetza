@@ -11,6 +11,7 @@ import { sendSmsToUser, sendSmsToCouriers, type SmsEvent } from "../_shared/sms.
 const VALID_EVENTS: DeliveryEvent[] = [
   "created",
   "accepted",
+  "arrived",
   "picked_up",
   "delivered",
   "cancelled",

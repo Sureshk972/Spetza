@@ -9,6 +9,7 @@ const FROM_ADDRESS = "Spetza <notifications@spetza.com>";
 export type DeliveryEvent =
   | "created"
   | "accepted"
+  | "arrived"
   | "picked_up"
   | "delivered"
   | "cancelled";
@@ -51,6 +52,12 @@ const SUBJECTS: Record<DeliveryEvent, Record<Role, string>> = {
     sender: "A courier accepted your delivery",
     courier: "You accepted a delivery",
   },
+  arrived: {
+    // Push-only event; we don't send emails for arrival (too transient
+    // to justify inbox space).
+    sender: "",
+    courier: "",
+  },
   picked_up: {
     sender: "Your package has been picked up",
     courier: "Picked up, en route to dropoff",
@@ -77,6 +84,11 @@ const BODIES: Record<DeliveryEvent, Record<Role, string>> = {
   accepted: {
     sender: "Great news — {name} has accepted your delivery and is heading to the pickup location.",
     courier: "You've accepted this delivery. Head to the pickup address to collect the package from {name}.",
+  },
+  arrived: {
+    // Push-only; body empty because sendDeliveryEmail skips events with empty subject.
+    sender: "",
+    courier: "",
   },
   picked_up: {
     sender: "{name} has picked up your package and is on the way to the dropoff.",
@@ -251,6 +263,10 @@ export const PUSH_TITLES: Record<DeliveryEvent, Record<Role, string>> = {
     sender: "Courier accepted your delivery",
     courier: "You accepted a delivery",
   },
+  arrived: {
+    sender: "🚗 Courier is at pickup",
+    courier: "", // no push to the courier — they just tapped 'I have arrived' themselves
+  },
   picked_up: {
     sender: "Package picked up",
     courier: "Package picked up — en route",
@@ -273,6 +289,10 @@ export const PUSH_BODIES: Record<DeliveryEvent, Record<Role, string>> = {
   accepted: {
     sender: "{name} is heading to pick up your package.",
     courier: "Head to the pickup to collect from {name}.",
+  },
+  arrived: {
+    sender: "{name} is at pickup — share your 4-digit code now.",
+    courier: "",
   },
   picked_up: {
     sender: "{name} is on the way to the dropoff.",

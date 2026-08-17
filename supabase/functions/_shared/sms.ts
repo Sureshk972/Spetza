@@ -9,6 +9,7 @@ const TWILIO_PHONE_NUMBER = () => Deno.env.get("TWILIO_PHONE_NUMBER");
 export type SmsEvent =
   | "created"
   | "accepted"
+  | "arrived"
   | "picked_up"
   | "delivered"
   | "cancelled";
@@ -33,6 +34,11 @@ const SMS_TEMPLATES: Record<SmsEvent, Record<SmsRole, string>> = {
       "✅ {order} — {name} accepted your delivery and is heading to pick up.\n\nYour pickup code: {pin}\nShare this code with your courier.",
     courier:
       "✅ {order} — You accepted a delivery. Head to the pickup to collect from {name}.\n\nhttps://spetza.com/#/courier/deliveries/{id}",
+  },
+  arrived: {
+    sender:
+      "🚗 {order} — {name} is at pickup. Share your 4-digit code now: {pin}",
+    courier: "", // no SMS to the courier — they just tapped 'I have arrived' themselves
   },
   picked_up: {
     sender: "🚗 {order} — {name} picked up your package and is on the way to the dropoff.",

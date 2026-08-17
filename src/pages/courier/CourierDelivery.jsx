@@ -93,12 +93,12 @@ export default function CourierDelivery() {
 
   const handleArrived = async () => {
     setActing(true)
-    const { error } = await supabase
-      .from('delivery_requests')
-      .update({ courier_arrived_at: new Date().toISOString() })
-      .eq('id', request.id)
-      .eq('courier_id', user.id)
-      .eq('status', 'accepted')
+    // mark-arrived does the DB update AND fans out push/SMS to the sender.
+    // Previous version was a raw client update — the toast lied because
+    // no notification actually fired.
+    const { error } = await supabase.functions.invoke('mark-arrived', {
+      body: { delivery_request_id: request.id },
+    })
     setActing(false)
     if (error) {
       toast.error(error.message)
