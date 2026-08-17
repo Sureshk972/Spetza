@@ -5,6 +5,25 @@
 [build.environment]
   NODE_VERSION = "20"
 
+# Serve the static HTML privacy + terms pages to bots and hard-refresh
+# visitors. Twilio's A2P 10DLC verifier is a static crawler — it doesn't
+# run JS, so the SPA's client-rendered /privacy and /terms return an
+# empty shell and fail vetting. These rules serve the pre-rendered
+# HTML versions at the same URLs. In-app <Link>s still work because
+# React Router intercepts them client-side before hitting the network.
+[[redirects]]
+  from = "/privacy"
+  to = "/privacy.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/terms"
+  to = "/terms.html"
+  status = 200
+  force = true
+
+# SPA fallback — everything else falls through to the React app.
 [[redirects]]
   from = "/*"
   to = "/index.html"
