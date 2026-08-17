@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Don't index auth/app-only routes — they're behind auth anyway but the
+# SPA shell would look identical to Google and might get indexed as
+# thin duplicate content.
+Disallow: /sender
+Disallow: /courier
+Disallow: /admin
+Disallow: /signin
+Disallow: /signup
+Disallow: /verify-phone
+Disallow: /name
+Disallow: /choose-role
+Disallow: /reset-password
+
+Sitemap: https://spetza.com/sitemap.xml

@@ -4,7 +4,28 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#F2F2F2" />
-    <meta name="description" content="Peer-to-peer package delivery. Post a package, a nearby courier picks it up and delivers it." />
+
+    <!-- Primary SEO -->
+    <title>Spetza — Peer-to-peer package delivery in Chicago</title>
+    <meta name="description" content="Spetza is a peer-to-peer package delivery marketplace in Chicago. Post a package and a nearby courier picks it up and delivers it. No schedules, no depots — just neighbors moving things for neighbors." />
+    <meta name="keywords" content="Spetza, package delivery, courier, Chicago delivery, peer-to-peer delivery, same-day delivery, local delivery" />
+    <link rel="canonical" href="https://spetza.com/" />
+
+    <!-- OpenGraph (Facebook, LinkedIn, iMessage) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Spetza" />
+    <meta property="og:title" content="Spetza — Peer-to-peer package delivery in Chicago" />
+    <meta property="og:description" content="Post a package. A nearby courier picks it up and delivers it. No schedules. No depots. Just neighbors moving things for neighbors." />
+    <meta property="og:url" content="https://spetza.com/" />
+    <meta property="og:image" content="https://spetza.com/app-icon.png" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Spetza — Peer-to-peer package delivery in Chicago" />
+    <meta name="twitter:description" content="Post a package. A nearby courier picks it up and delivers it." />
+    <meta name="twitter:image" content="https://spetza.com/app-icon.png" />
+
+    <!-- Icons + PWA -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet" />
@@ -14,10 +35,44 @@
     <meta name="apple-mobile-web-app-title" content="Spetza" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <title>Spetza</title>
+
+    <!-- Structured data (Organization) — helps Google build a Knowledge Panel -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Spetza",
+      "legalName": "12 Sigma LLC",
+      "url": "https://spetza.com",
+      "logo": "https://spetza.com/app-icon.png",
+      "description": "Peer-to-peer package delivery marketplace in Chicago.",
+      "areaServed": {
+        "@type": "City",
+        "name": "Chicago"
+      },
+      "email": "contact@spetza.com"
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <div style="max-width:640px;margin:3rem auto;padding:0 1.5rem;font-family:system-ui,sans-serif;color:#1a1d23;line-height:1.6;">
+        <h1 style="font-size:1.75rem;">Spetza — Peer-to-peer package delivery in Chicago</h1>
+        <p>Post a package. A nearby courier picks it up and delivers it. No schedules. No depots. Just neighbors moving things for neighbors.</p>
+        <p><strong>Spetza requires JavaScript to run.</strong> Please enable JavaScript in your browser to use the app.</p>
+        <p>Learn more:
+          <a href="/trust">How we vet couriers</a> ·
+          <a href="/privacy">Privacy Policy</a> ·
+          <a href="/terms">Terms of Service</a>
+        </p>
+        <p style="color:#5f6570;font-size:0.85rem;margin-top:2rem;">
+          © 2026 12 Sigma LLC · Spetza is a DBA of 12 Sigma LLC ·
+          <a href="mailto:contact@spetza.com">contact@spetza.com</a> ·
+          Chicago, IL
+        </p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
