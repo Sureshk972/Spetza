@@ -598,25 +598,25 @@ export default function CourierHome() {
                         ))}
                       </div>
                     )}
-                    <div className="flex items-center justify-between gap-3 pt-3 border-t border-mist">
+                    <div className="pt-3 border-t border-mist space-y-2">
                       {/* Inline reason for disabled Accept — tooltips (title=)
                           are invisible on touch, so couriers were tapping a
                           greyed button and getting zero feedback. */}
-                      {!canAccept ? (
+                      {!canAccept && (
                         <Link
                           to="/courier/verify"
-                          className="text-xs text-teal font-semibold hover:underline"
+                          className="block text-center text-xs text-teal font-semibold hover:underline"
                         >
                           {disabledReason} →
                         </Link>
-                      ) : <span />}
+                      )}
                       <button
                         onClick={() => handleAcceptClick(r)}
                         disabled={accepting === r.id || !canAccept}
                         title={disabledReason}
-                        className="px-3 py-1 rounded-lg bg-green text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                        className="w-full py-3 rounded-lg bg-green text-white text-base font-bold shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:shadow-none"
                       >
-                        {accepting === r.id ? 'Accepting…' : 'Accept'}
+                        {accepting === r.id ? 'Accepting…' : `Accept · ${dollars(r.max_price_cents)}`}
                       </button>
                     </div>
                   </li>
