@@ -33,6 +33,13 @@ export default function PhoneVerify() {
   const [code, setCode] = useState('')
 
   async function onCancel() {
+    // Explicit confirm — the only way out of this screen is signing
+    // out (there's no earlier onboarding step to go back to), so make
+    // the destructive nature obvious instead of hiding it behind "back".
+    const ok = window.confirm(
+      'This will sign you out. You can sign back in anytime with the same email. Continue?',
+    )
+    if (!ok) return
     await signOut()
     navigate('/welcome', { replace: true })
   }
@@ -73,7 +80,7 @@ export default function PhoneVerify() {
         onClick={onCancel}
         className="text-sm text-slate hover:text-ink"
       >
-        &larr; back
+        Cancel &amp; sign out
       </button>
       <h1 className="font-display text-3xl text-ink mt-6">Verify your phone</h1>
       <p className="text-sm text-slate mt-2">

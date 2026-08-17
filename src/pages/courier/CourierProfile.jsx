@@ -107,7 +107,7 @@ export default function CourierProfile() {
     profile?.stripe_connect_charges_enabled && profile?.stripe_connect_payouts_enabled
   const bgCleared = bgStatus === 'clear'
   const bgInProgress = bgStatus === 'pending' || bgStatus === 'consider'
-  const hasServiceArea = !!(profile?.service_area_lat && profile?.service_area_radius_miles)
+  const hasServiceArea = !!(profile?.home_lat && profile?.service_radius_miles)
   const allDone = hasName && hasSelfie && payoutsReady && bgCleared && hasServiceArea
 
   const hasFirstDelivery = delivered.length > 0

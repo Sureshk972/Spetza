@@ -33,7 +33,10 @@ export default function NameCapture() {
     setSaving(true)
     let intendedRole = null
     try {
-      const stashed = sessionStorage.getItem('spetza:intended_role')
+      // Welcome writes to localStorage; keep sessionStorage as fallback
+      // for anyone mid-flow before this change landed.
+      const stashed = localStorage.getItem('spetza:intended_role')
+        || sessionStorage.getItem('spetza:intended_role')
       if (stashed === 'sender' || stashed === 'courier') intendedRole = stashed
     } catch {
       // private tabs can throw; fall through to ChooseRole
@@ -53,6 +56,7 @@ export default function NameCapture() {
     }
     if (intendedRole) {
       try {
+        localStorage.removeItem('spetza:intended_role')
         sessionStorage.removeItem('spetza:intended_role')
       } catch {}
     }

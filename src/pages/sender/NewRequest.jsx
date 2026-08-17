@@ -23,8 +23,9 @@ const zipFrom = (address) => {
 const blankGeo = { status: 'idle', lat: null, lng: null, formatted: null, error: null }
 
 export default function NewRequest() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const navigate = useNavigate()
+  const hasPaymentMethod = !!profile?.stripe_default_payment_method_id
   const [pickup, setPickup] = useState('')
   const [dropoff, setDropoff] = useState('')
   const [pickupGeo, setPickupGeo] = useState(blankGeo)
@@ -99,6 +100,11 @@ export default function NewRequest() {
       toast.error('Please acknowledge the liability disclaimer.')
       return
     }
+    if (!hasPaymentMethod) {
+      toast.error('Add a payment method before posting a delivery.')
+      navigate('/sender/profile')
+      return
+    }
     setSubmitting(true)
     const pickupAddress = pickupGeo.formatted || pickup
     const dropoffAddress = dropoffGeo.formatted || dropoff
@@ -143,12 +149,31 @@ export default function NewRequest() {
     distance != null &&
     !overMax &&
     priceCents != null &&
-    liabilityAccepted
+    liabilityAccepted &&
+    hasPaymentMethod
 
   return (
     <div className="min-h-full px-6 py-12 max-w-xl mx-auto">
       <Link to="/sender" className="text-sm text-slate hover:text-ink">&larr; back</Link>
       <h1 className="font-display text-3xl text-ink mt-6">New delivery request</h1>
+
+      {!hasPaymentMethod && (
+        <div className="mt-6 p-4 rounded-lg border-2 border-teal/30 bg-teal/5 flex items-start gap-3">
+          <span className="text-xl">💳</span>
+          <div className="flex-1">
+            <div className="text-sm font-bold text-ink">Add a payment method first</div>
+            <p className="text-xs text-slate mt-1 leading-relaxed">
+              We authorize your card when a courier accepts — you're not charged until it's delivered.
+            </p>
+            <Link
+              to="/sender/profile"
+              className="inline-block mt-2 text-sm text-teal font-semibold hover:underline"
+            >
+              Add a card →
+            </Link>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5">
         <Field label="Pickup address">

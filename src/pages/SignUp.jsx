@@ -8,7 +8,10 @@ import Footer from '../components/Footer.jsx'
 
 function readRole() {
   try {
-    const r = sessionStorage.getItem('spetza:intended_role')
+    // Welcome writes to localStorage so intent survives tab close.
+    // Fall back to sessionStorage for anyone mid-flow before this change.
+    const r = localStorage.getItem('spetza:intended_role')
+      || sessionStorage.getItem('spetza:intended_role')
     return r === 'sender' || r === 'courier' ? r : null
   } catch {
     return null
@@ -59,6 +62,20 @@ export default function SignUp() {
       } else {
         toast.error(error.message)
       }
+      return
+    }
+
+    // If Supabase is configured to require email confirmation, signUp
+    // returns a user but no session. Tell the user explicitly instead
+    // of stranding them on a spinning form.
+    if (data?.user && !data?.session) {
+      setSubmitting(false)
+      toast.success(
+        `Check ${email} for a confirmation link. Come back here after clicking it.`,
+        { duration: 8000 },
+      )
+      setStep('email')
+      setPassword('')
       return
     }
 
