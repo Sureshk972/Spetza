@@ -31,6 +31,15 @@ export default function ChooseRole() {
       .upsert({ id: user.id, account_type: role, updated_at: new Date().toISOString() })
     setBusy(null)
     if (error) {
+      // Stale session — the auth.users row was deleted (e.g., admin cleanup)
+      // but the client still holds a valid JWT. Sign out and send them to
+      // sign up so they don't loop forever hitting the FK violation.
+      if (error.code === '23503' || /profiles_id_fkey/.test(error.message)) {
+        toast.error('Your session is out of date. Please sign in again.')
+        await supabase.auth.signOut()
+        navigate('/signup', { replace: true })
+        return
+      }
       toast.error(error.message)
       return
     }
