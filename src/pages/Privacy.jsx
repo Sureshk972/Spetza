@@ -48,10 +48,11 @@ export default function Privacy() {
               <strong className="text-ink">HELP</strong> for support.
             </div>
             <div className="mt-3 p-3 rounded-lg bg-mist border border-mist">
-              <strong className="text-ink">No sharing of mobile information:</strong> Your mobile phone number,
-              SMS messaging consent, and opt-in data are never sold, rented, or shared with third parties
+              <strong className="text-ink">No mobile information will be shared with third parties/affiliates for marketing/promotional purposes.</strong>{' '}
+              Your mobile phone number, SMS messaging consent, and opt-in data are never sold, rented, or shared with third parties
               or affiliates for marketing or promotional purposes. Mobile information is used exclusively
-              for transactional delivery notifications as described above.
+              for transactional delivery notifications as described above. All the above categories exclude
+              text messaging originator opt-in data and consent; this information will not be shared with any third parties.
             </div>
           </Section>
 
