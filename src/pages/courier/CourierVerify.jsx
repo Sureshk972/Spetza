@@ -4,8 +4,9 @@ import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import EarnBackTracker from '../../components/EarnBackTracker.jsx'
+import { resizeImage } from '../../lib/resizeImage.js'
 
-const MAX_BYTES = 5 * 1024 * 1024
+const MAX_BYTES = 15 * 1024 * 1024 // raw camera photos can top 10 MB; we resize before upload
 const BUCKET = 'courier-verification'
 
 export default function CourierVerify() {
@@ -54,12 +55,18 @@ export default function CourierVerify() {
     const file = e.target.files?.[0]
     if (!file || !user) return
     if (!file.type.startsWith('image/')) { toast.error('Pick an image file.'); return }
-    if (file.size > MAX_BYTES) { toast.error('Image must be under 5 MB.'); return }
+    if (file.size > MAX_BYTES) { toast.error('Image must be under 15 MB.'); return }
     setUploading(true)
-    const ext = file.name.split('.').pop() || 'jpg'
+    let uploadFile = file
+    try {
+      uploadFile = await resizeImage(file)
+    } catch {
+      // resize failed — fall back to raw upload rather than blocking the flow
+    }
+    const ext = uploadFile.type === 'image/jpeg' ? 'jpg' : (uploadFile.name.split('.').pop() || 'jpg')
     const objectPath = `${user.id}/selfie-${crypto.randomUUID()}.${ext}`
     const { error: upErr } = await supabase.storage
-      .from(BUCKET).upload(objectPath, file, { contentType: file.type })
+      .from(BUCKET).upload(objectPath, uploadFile, { contentType: uploadFile.type })
     if (upErr) { setUploading(false); toast.error(upErr.message); return }
     const previous = selfiePath
     const { error: dbErr } = await supabase

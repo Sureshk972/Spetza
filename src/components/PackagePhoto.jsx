@@ -15,6 +15,10 @@ export default function PackagePhoto({ path, variant = 'block', alt = 'Package p
       <img
         src={url}
         alt={alt}
+        loading="lazy"
+        decoding="async"
+        width={80}
+        height={80}
         onError={() => setFailed(true)}
         className="w-20 h-20 object-cover rounded-lg border border-mist shrink-0"
       />
@@ -27,8 +31,11 @@ export default function PackagePhoto({ path, variant = 'block', alt = 'Package p
       <img
         src={url}
         alt={alt}
+        loading="lazy"
+        decoding="async"
         onError={() => setFailed(true)}
         className="mt-2 w-full max-h-64 object-cover rounded-lg border border-mist"
+        style={{ contentVisibility: 'auto', containIntrinsicSize: '256px' }}
       />
     </div>
   )

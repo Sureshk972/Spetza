@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import { resizeImage } from '../lib/resizeImage.js'
 
-const MAX_BYTES = 5 * 1024 * 1024
+const MAX_BYTES = 15 * 1024 * 1024 // raw camera photos can top 10 MB; we resize before upload
 
 function publicUrl(path) {
   if (!path) return null
@@ -24,15 +25,23 @@ export default function PackagePhotoInput({ path, onChange, disabled }) {
       return
     }
     if (file.size > MAX_BYTES) {
-      toast.error('Image must be under 5 MB.')
+      toast.error('Image must be under 15 MB.')
       return
     }
     setUploading(true)
-    const ext = file.name.split('.').pop() || 'jpg'
+    let uploadFile = file
+    try {
+      uploadFile = await resizeImage(file)
+    } catch {
+      // resize failed — fall back to raw upload rather than blocking the flow
+    }
+    const ext = uploadFile.type === 'image/jpeg'
+      ? 'jpg'
+      : (uploadFile.name.split('.').pop() || 'jpg')
     const objectPath = `${user.id}/${crypto.randomUUID()}.${ext}`
     const { error } = await supabase.storage
       .from('package-photos')
-      .upload(objectPath, file, { contentType: file.type })
+      .upload(objectPath, uploadFile, { contentType: uploadFile.type })
     setUploading(false)
     if (error) {
       toast.error(error.message)
