@@ -46,6 +46,12 @@ export default function Privacy() {
               any message, or disable SMS notifications in your profile settings. Reply{' '}
               <strong className="text-ink">HELP</strong> for support.
             </div>
+            <div className="mt-3 p-3 rounded-lg bg-mist border border-mist">
+              <strong className="text-ink">No sharing of mobile information:</strong> Your mobile phone number,
+              SMS messaging consent, and opt-in data are never sold, rented, or shared with third parties
+              or affiliates for marketing or promotional purposes. Mobile information is used exclusively
+              for transactional delivery notifications as described above.
+            </div>
           </Section>
 
           <Section title="Who we share data with">
@@ -58,7 +64,9 @@ export default function Privacy() {
             </ul>
             <p className="mt-3">
               We do not sell your personal information. We do not share your data with third parties
-              for marketing purposes.
+              for marketing purposes. Specifically, your mobile phone number, messaging consent, and
+              opt-in status are never shared with or disclosed to any third party or affiliate for
+              marketing or promotional purposes under any circumstances.
             </p>
           </Section>
 
