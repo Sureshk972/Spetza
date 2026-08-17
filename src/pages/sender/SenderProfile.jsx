@@ -123,12 +123,148 @@ export default function SenderProfile() {
     loadPaymentMethods()
   }
 
+  /* ── How-to journey ── */
+  const hasName = !!(profile?.first_name && profile?.last_name)
+  const hasPhone = !!profile?.phone_verified_at
+  const hasPaymentMethod = paymentMethods.length > 0
+  const hasFirstDelivery = transactions.length > 0
+  const allSetupDone = hasName && hasPhone && hasPaymentMethod
+
+  const SENDER_SETUP_STEPS = [
+    {
+      num: '1',
+      title: 'Create your account',
+      desc: 'Sign up with your name so couriers know who they\'re meeting.',
+      done: hasName,
+      action: null,
+    },
+    {
+      num: '2',
+      title: 'Verify your phone',
+      desc: 'We send a 6-digit code to confirm it\'s really you.',
+      done: hasPhone,
+      action: null,
+    },
+    {
+      num: '3',
+      title: 'Add a payment method',
+      desc: 'Your card is authorized when a courier accepts — you\'re only charged after delivery.',
+      done: hasPaymentMethod,
+      action: null,
+    },
+  ]
+
+  const SENDER_SEND_STEPS = [
+    {
+      num: '4',
+      emoji: '📦',
+      title: 'Post your delivery',
+      desc: 'Enter pickup and dropoff addresses, describe the package, snap a photo, and post it.',
+      done: hasFirstDelivery,
+    },
+    {
+      num: '5',
+      emoji: '🔔',
+      title: 'A courier accepts',
+      desc: 'Nearby couriers see your request. You get a notification the moment someone accepts.',
+    },
+    {
+      num: '6',
+      emoji: '🔑',
+      title: 'Share your pickup PIN',
+      desc: 'When the courier arrives, hand off the package and give them your 4-digit code.',
+    },
+    {
+      num: '7',
+      emoji: '✅',
+      title: 'Package delivered',
+      desc: 'Track status in your inbox. You\'re charged after the courier confirms delivery.',
+    },
+    {
+      num: '8',
+      emoji: '⭐',
+      title: 'Rate your courier',
+      desc: 'Leave a rating and optionally a tip — 100% of tips go directly to the courier.',
+    },
+  ]
+
+  const setupDoneCount = SENDER_SETUP_STEPS.filter((s) => s.done).length
+
   return (
     <div className="min-h-full">
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-10">
         <div>
           <h1 className="font-display text-3xl text-ink">Profile</h1>
         </div>
+
+        {/* ── How to send a package ── */}
+        <section className="rounded-xl border border-mist bg-white overflow-hidden">
+          <div className="px-5 pt-5 pb-4">
+            <h2 className="text-xs uppercase tracking-widest text-teal font-bold">Your journey</h2>
+            <p className="text-xs text-slate mt-1">From sign-up to package delivered.</p>
+            <div className="mt-3 h-2 rounded-full bg-mist overflow-hidden">
+              <div
+                className="h-full rounded-full bg-teal transition-all duration-500"
+                style={{ width: `${(setupDoneCount / SENDER_SETUP_STEPS.length) * 100}%` }}
+              />
+            </div>
+            <div className="mt-1.5 text-xs text-slate">
+              {allSetupDone
+                ? '✅ You\'re ready to send!'
+                : `${setupDoneCount} of ${SENDER_SETUP_STEPS.length} setup steps done`}
+            </div>
+          </div>
+
+          {/* Phase 1: Setup */}
+          <div className="px-5 pt-3 pb-1">
+            <div className="text-[10px] uppercase tracking-widest text-slate/60 font-bold">Set up your account</div>
+          </div>
+          <div className="divide-y divide-mist border-t border-mist">
+            {SENDER_SETUP_STEPS.map((step) => (
+              <div key={step.num} className="px-5 py-3.5 flex items-center gap-3">
+                {step.done ? (
+                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-teal/10 flex items-center justify-center">
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" className="text-teal">
+                      <path fillRule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0L3.3 10.7a1 1 0 1 1 1.4-1.4l3.1 3.1 6.8-6.8a1 1 0 0 1 1.4 0Z" clipRule="evenodd" />
+                    </svg>
+                  </span>
+                ) : (
+                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-mist flex items-center justify-center text-xs font-bold text-slate">
+                    {step.num}
+                  </span>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-ink">{step.title}</div>
+                  {!step.done && (
+                    <div className="text-xs text-slate mt-0.5">{step.desc}</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Phase 2: How to send */}
+          <div className="px-5 pt-4 pb-1 border-t border-mist">
+            <div className="text-[10px] uppercase tracking-widest text-slate/60 font-bold">How to send a package</div>
+          </div>
+          <div className="divide-y divide-mist border-t border-mist">
+            {SENDER_SEND_STEPS.map((step) => (
+              <div key={step.num} className="px-5 py-3.5 flex items-center gap-3">
+                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-teal/10 flex items-center justify-center text-sm">
+                  {step.done
+                    ? <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" className="text-teal">
+                        <path fillRule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0L3.3 10.7a1 1 0 1 1 1.4-1.4l3.1 3.1 6.8-6.8a1 1 0 0 1 1.4 0Z" clipRule="evenodd" />
+                      </svg>
+                    : step.emoji}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-ink">{step.title}</div>
+                  <div className="text-xs text-slate mt-0.5">{step.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <section className="space-y-3">
           <h2 className="text-xs uppercase tracking-widest text-slate">Basics</h2>
