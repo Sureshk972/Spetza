@@ -80,18 +80,29 @@ export default function CourierConnectSection({ profile }) {
     window.location.href = data.url
   }
 
+  const inProgress = !!profile?.stripe_connect_account_id
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
+      <p className="text-sm text-slate leading-relaxed">
+        {inProgress
+          ? "You started setting up payouts but didn't finish. Stripe still needs your bank details so we can pay you after each delivery."
+          : "Connect a bank account through Stripe so we can pay you after each delivery. Stripe also handles identity verification."}
+      </p>
       {syncing && (
         <p className="text-sm text-slate">Checking your bank connection…</p>
       )}
-      {error && <p className="text-sm text-teal">{error}</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
       <button
         onClick={connect}
         disabled={opening || syncing}
-        className="bg-ink text-white px-4 py-2 rounded-lg disabled:opacity-50"
+        className="bg-ink text-white px-4 py-2 rounded-lg disabled:opacity-50 text-sm font-medium"
       >
-        {opening ? 'Opening Stripe…' : profile?.stripe_connect_account_id ? 'Resume onboarding' : 'Connect bank account'}
+        {opening
+          ? 'Opening Stripe…'
+          : inProgress
+          ? 'Finish payout setup on Stripe'
+          : 'Set up payouts on Stripe'}
       </button>
     </div>
   )
