@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import Footer from '../components/Footer.jsx'
 
 export default function ResetPassword() {
   const { user, loading } = useAuth()
@@ -84,6 +85,7 @@ export default function ResetPassword() {
             {submitting ? 'Updating…' : 'Update password'}
           </button>
         </form>
+        <Footer />
       </div>
     </div>
   )

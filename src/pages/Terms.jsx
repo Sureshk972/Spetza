@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import Footer from '../components/Footer.jsx'
 
 export default function Terms() {
   return (
@@ -113,9 +114,7 @@ export default function Terms() {
           </Section>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-mist text-xs text-slate">
-          © 2026 12 Sigma LLC · Spetza is a DBA of 12 Sigma LLC
-        </div>
+        <Footer />
       </div>
     </div>
   )

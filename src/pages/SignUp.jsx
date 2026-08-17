@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { trackEvent, identifyUser } from '../lib/analytics.js'
+import Footer from '../components/Footer.jsx'
 
 function readRole() {
   try {
@@ -162,6 +163,7 @@ export default function SignUp() {
             </p>
           </>
         )}
+        <Footer />
       </div>
     </div>
   )

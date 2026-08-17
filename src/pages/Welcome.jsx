@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { trackEvent } from '../lib/analytics.js'
+import Footer from '../components/Footer.jsx'
 
 /* ── Testimonials ── */
 const TESTIMONIALS = [
@@ -236,15 +237,7 @@ export default function Welcome() {
         </section>
       </div>
 
-      {/* Legal footer */}
-      <footer className="mt-16 text-center text-[11px] text-slate/60 space-y-2">
-        <div className="flex justify-center gap-3">
-          <Link to="/privacy" className="hover:text-ink transition-colors">Privacy Policy</Link>
-          <span>·</span>
-          <Link to="/terms" className="hover:text-ink transition-colors">Terms of Service</Link>
-        </div>
-        <div>© 2026 12 Sigma LLC · Spetza is a DBA of 12 Sigma LLC</div>
-      </footer>
+      <Footer />
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import Footer from '../components/Footer.jsx'
 
 function Check() {
   return (
@@ -103,6 +104,7 @@ export default function Trust() {
             Send a package
           </Link>
         </div>
+        <Footer />
       </div>
     </div>
   )

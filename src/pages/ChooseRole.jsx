@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import Footer from '../components/Footer.jsx'
 
 export default function ChooseRole() {
   const { user, profile, refreshProfile } = useAuth()
@@ -83,6 +84,7 @@ export default function ChooseRole() {
             {busy === 'courier' && <div className="text-slate text-xs mt-3">Saving…</div>}
           </button>
         </div>
+        <Footer />
       </div>
     </div>
   )

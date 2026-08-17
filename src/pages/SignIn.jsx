@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import Footer from '../components/Footer.jsx'
 
 export default function SignIn() {
   const { user } = useAuth()
@@ -149,6 +150,7 @@ export default function SignIn() {
             </p>
           </>
         )}
+        <Footer />
       </div>
     </div>
   )
