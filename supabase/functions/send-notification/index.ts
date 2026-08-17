@@ -6,6 +6,7 @@ import {
   type DeliveryEvent,
 } from "../_shared/email.ts";
 import { sendPushToUsers, type PushMessage } from "../_shared/fcm.ts";
+import { sendSmsToUser, sendSmsToCouriers, type SmsEvent } from "../_shared/sms.ts";
 
 const VALID_EVENTS: DeliveryEvent[] = [
   "created",
@@ -165,7 +166,8 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Fan-out: "new order near you" push to nearby couriers on "created"
+  // Fan-out: "new order near you" push + SMS to nearby couriers on "created"
+  let nearbyCourierIds: string[] = [];
   if (deliveryEvent === "created" && request.pickup_lat && request.pickup_lng) {
     const { data: nearbyCouriers } = await supabase.rpc("nearby_couriers_for_push", {
       p_pickup_lat: request.pickup_lat,
@@ -173,9 +175,9 @@ Deno.serve(async (req) => {
     });
 
     if (nearbyCouriers && nearbyCouriers.length > 0) {
-      const courierIds = nearbyCouriers.map((c: { id: string }) => c.id);
+      nearbyCourierIds = nearbyCouriers.map((c: { id: string }) => c.id);
       const priceStr = priceCents ? formatPrice(priceCents) : "";
-      results.fanoutPush = await sendPushToUsers(supabase, courierIds, {
+      results.fanoutPush = await sendPushToUsers(supabase, nearbyCourierIds, {
         title: "New delivery near you",
         body: priceStr
           ? `${priceStr} · ${request.pickup_address}`
@@ -187,6 +189,44 @@ Deno.serve(async (req) => {
         },
       });
     }
+  }
+
+  // ── SMS NOTIFICATIONS ─────────────────────────────────────────────
+
+  const smsCtx = {
+    event: deliveryEvent as SmsEvent,
+    orderNumber: request.order_number,
+    deliveryRequestId: delivery_request_id,
+    pickupAddress: request.pickup_address,
+    priceCents,
+    pickupPin,
+    counterpartyName: null as string | null,
+  };
+
+  // Sender SMS (all events)
+  if (senderInfo) {
+    results.senderSms = await sendSmsToUser(supabase, request.sender_id, {
+      ...smsCtx,
+      role: "sender",
+      counterpartyName: courierInfo?.firstName ?? null,
+    });
+  }
+
+  // Courier SMS (all events except "created" for the assigned courier)
+  if (courierInfo && deliveryEvent !== "created" && request.courier_id) {
+    results.courierSms = await sendSmsToUser(supabase, request.courier_id, {
+      ...smsCtx,
+      role: "courier",
+      counterpartyName: senderInfo?.firstName ?? null,
+    });
+  }
+
+  // Fan-out SMS: "new delivery near you" to nearby couriers on "created"
+  if (deliveryEvent === "created" && nearbyCourierIds.length > 0) {
+    results.fanoutSms = await sendSmsToCouriers(supabase, nearbyCourierIds, {
+      ...smsCtx,
+      role: "courier",
+    });
   }
 
   console.log(`send-notification: ${deliveryEvent} for ${delivery_request_id}`, results);
