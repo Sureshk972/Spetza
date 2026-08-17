@@ -66,7 +66,7 @@ export default function ChooseRole() {
     <div className="min-h-full flex items-center justify-center px-6 py-16">
       <div className="w-full max-w-2xl">
         <h1 className="font-display text-3xl text-ink text-center">How will you use Spetza?</h1>
-        <p className="text-slate text-center mt-2">You can change this later in settings.</p>
+        <p className="text-slate text-center mt-2">Pick the one that fits.</p>
         <div className="grid sm:grid-cols-2 gap-4 mt-10">
           <button
             onClick={() => choose('sender')}

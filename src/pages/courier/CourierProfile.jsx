@@ -505,7 +505,7 @@ export default function CourierProfile() {
           </div>
         </section>
 
-        <ProfileFooterActions currentRole="courier" />
+        <ProfileFooterActions />
       </div>
     </div>
   )

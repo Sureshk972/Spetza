@@ -1,15 +1,17 @@
 // Consistent footer for both Sender and Courier profile pages.
-// - Role switch (backs up ChooseRole's "change later in settings" promise)
+// - Role switch code is kept but NOT exposed anywhere in the UI. A courier
+//   will never realistically pay to send a package. If the product ever
+//   needs it back (e.g. staff dashboards), flip SHOW_ROLE_SWITCHER to true.
 // - Sign out (replaces the old bottom-nav Sign-out tab)
 // - Legal links (Privacy / Terms / Trust)
-//
-// Kept in one place so we can evolve trust content once and both roles
-// stay in sync.
 
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
+
+// Locked off — no runtime toggle. Change here in source to expose again.
+const SHOW_ROLE_SWITCHER = false
 
 export default function ProfileFooterActions({ currentRole }) {
   const navigate = useNavigate()
@@ -43,22 +45,24 @@ export default function ProfileFooterActions({ currentRole }) {
 
   return (
     <div className="mt-8 space-y-3 pb-6">
-      <button
-        type="button"
-        onClick={switchRole}
-        className="w-full flex items-center justify-between px-4 py-3 rounded-lg border border-mist bg-white hover:border-teal transition-colors text-sm text-ink"
-      >
-        <span className="flex items-center gap-2">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="17 1 21 5 17 9" />
-            <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-            <polyline points="7 23 3 19 7 15" />
-            <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-          </svg>
-          Switch to {otherLabel}
-        </span>
-        <span className="text-slate">→</span>
-      </button>
+      {SHOW_ROLE_SWITCHER && currentRole && (
+        <button
+          type="button"
+          onClick={switchRole}
+          className="w-full flex items-center justify-between px-4 py-3 rounded-lg border border-mist bg-white hover:border-teal transition-colors text-sm text-ink"
+        >
+          <span className="flex items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="17 1 21 5 17 9" />
+              <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+              <polyline points="7 23 3 19 7 15" />
+              <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+            </svg>
+            Switch to {otherLabel}
+          </span>
+          <span className="text-slate">→</span>
+        </button>
+      )}
 
       <button
         type="button"

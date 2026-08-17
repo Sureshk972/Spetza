@@ -335,7 +335,7 @@ export default function SenderProfile() {
           </div>
         </section>
 
-        <ProfileFooterActions currentRole="sender" />
+        <ProfileFooterActions />
       </div>
     </div>
   )
