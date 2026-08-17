@@ -15,22 +15,29 @@ function timeLabel(iso) {
   })
 }
 
+// Left-border accent per event type — matches the sender inbox pattern
+// so both roles share a visual language: teal = in-progress,
+// green = completed / earning, muted slate = own action / neutral.
 const EVENT_COPY = {
   accepted: {
     title: 'You accepted a delivery',
     tone: 'text-teal',
+    accent: 'border-l-4 border-l-teal',
   },
   picked_up: {
     title: 'Picked up',
     tone: 'text-teal',
+    accent: 'border-l-4 border-l-teal',
   },
   delivered: {
     title: 'Delivered',
     tone: 'text-green',
+    accent: 'border-l-4 border-l-green',
   },
   cancelled: {
     title: 'Cancelled',
     tone: 'text-slate',
+    accent: 'border-l-4 border-l-slate/30',
   },
 }
 
@@ -115,7 +122,7 @@ export default function CourierInbox() {
                 <li key={ev.id}>
                   <Link
                     to={`/courier/deliveries/${ev.request.id}`}
-                    className="block p-4 rounded-xl border border-mist bg-white hover:border-teal transition-colors"
+                    className={`block p-4 rounded-xl border border-mist bg-white hover:border-teal transition-colors ${copy.accent}`}
                   >
                     <div className="flex items-baseline justify-between gap-3">
                       <div className={`text-sm font-medium ${copy.tone}`}>{copy.title}</div>
