@@ -230,29 +230,46 @@ export default function SenderHome() {
     refresh()
   }
 
+  const isEmpty = !loading && requests.length === 0
+  const firstName = profile?.first_name
+
   return (
     <div className="min-h-full px-6 py-12 max-w-3xl mx-auto">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-3xl text-ink">Your deliveries</h1>
-          <div className="mt-1">
-            <RatingBadge avg={profile?.rating_avg} count={profile?.rating_count} />
+      {isEmpty ? (
+        <header>
+          <h1 className="font-display text-3xl text-ink">
+            {firstName ? `Welcome, ${firstName}` : 'Welcome to Spetza'}
+          </h1>
+          <p className="text-slate mt-2 text-sm leading-relaxed">
+            Send a package across town without leaving home. Post a delivery
+            and a nearby courier picks it up.
+          </p>
+        </header>
+      ) : (
+        <header className="flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-3xl text-ink">Your deliveries</h1>
+            {(profile?.rating_count ?? 0) > 0 && (
+              <div className="mt-1">
+                <RatingBadge avg={profile?.rating_avg} count={profile?.rating_count} />
+              </div>
+            )}
           </div>
-        </div>
-        <Link
-          to="/sender/new"
-          className="px-4 py-2 rounded-lg bg-teal text-white text-sm font-medium hover:bg-teal/90 transition-colors"
-        >
-          Send a package
-        </Link>
-      </header>
+          <Link
+            to="/sender/new"
+            className="px-4 py-2 rounded-lg bg-teal text-white text-sm font-medium hover:bg-teal/90 transition-colors"
+          >
+            Send a package
+          </Link>
+        </header>
+      )}
 
       {requests.length > 0 && <HowItWorks variant="link" />}
 
       <div className="mt-6">
         {loading ? (
           <div className="text-slate">Loading…</div>
-        ) : requests.length === 0 ? (
+        ) : isEmpty ? (
           <HowItWorks variant="full" />
         ) : (
           <ul className="space-y-3">
