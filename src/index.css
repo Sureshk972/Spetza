@@ -14,9 +14,20 @@ html, body, #root {
   min-height: 100%;
 }
 
+html {
+  /* Prevent iOS from auto-resizing text when the system font size changes
+     or the device rotates. Belt-and-suspenders with the viewport meta
+     lock — the viewport tag stops user zoom, this stops OS-driven zoom. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   background-color: #F2F2F2;
   color: #1a1a2e;
   font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* Kill accidental double-tap-to-zoom on interactive surfaces without
+     losing tap event responsiveness. */
+  touch-action: manipulation;
 }
