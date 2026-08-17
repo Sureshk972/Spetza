@@ -333,6 +333,15 @@ export default function SenderProfile() {
             </a>
           </div>
         </section>
+
+        {/* Legal */}
+        <div className="mt-6 flex justify-center gap-3 text-[11px] text-slate/60 pb-4">
+          <Link to="/privacy" className="hover:text-ink transition-colors">Privacy Policy</Link>
+          <span>·</span>
+          <Link to="/terms" className="hover:text-ink transition-colors">Terms of Service</Link>
+          <span>·</span>
+          <Link to="/trust" className="hover:text-ink transition-colors">Trust &amp; Safety</Link>
+        </div>
       </div>
     </div>
   )
