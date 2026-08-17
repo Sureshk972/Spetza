@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
@@ -213,9 +214,12 @@ export default function SenderHome() {
   })
 
   const handleCancel = async (request) => {
-    const ok = window.confirm(
-      'Cancel this delivery? The hold on your card will be released.',
-    )
+    // Only 'accepted' requests have an authorized PaymentIntent — 'open'
+    // requests were never authorized because no courier has claimed them.
+    const msg = request.status === 'accepted'
+      ? 'Cancel this delivery? The hold on your card will be released.'
+      : 'Cancel this delivery? Your card has not been charged.'
+    const ok = window.confirm(msg)
     if (!ok) return
     setCancelling(request.id)
     const { error } = await supabase.functions.invoke(
@@ -224,7 +228,7 @@ export default function SenderHome() {
     )
     setCancelling(null)
     if (error) {
-      alert(error.message)
+      toast.error(error.message)
       return
     }
     refresh()

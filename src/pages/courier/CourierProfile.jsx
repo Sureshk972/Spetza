@@ -7,6 +7,7 @@ import CourierServiceAreaSection from '../../components/CourierServiceAreaSectio
 import CourierConnectSection from '../../components/CourierConnectSection.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
 import EarnBackTracker from '../../components/EarnBackTracker.jsx'
+import ProfileFooterActions from '../../components/ProfileFooterActions.jsx'
 
 function dollars(cents) {
   return `$${(cents / 100).toFixed(2)}`
@@ -504,14 +505,7 @@ export default function CourierProfile() {
           </div>
         </section>
 
-        {/* Legal */}
-        <div className="mt-6 flex justify-center gap-3 text-[11px] text-slate/60 pb-4">
-          <Link to="/privacy" className="hover:text-ink transition-colors">Privacy Policy</Link>
-          <span>·</span>
-          <Link to="/terms" className="hover:text-ink transition-colors">Terms of Service</Link>
-          <span>·</span>
-          <Link to="/trust" className="hover:text-ink transition-colors">Trust &amp; Safety</Link>
-        </div>
+        <ProfileFooterActions currentRole="courier" />
       </div>
     </div>
   )

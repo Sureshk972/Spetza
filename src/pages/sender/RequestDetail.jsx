@@ -114,9 +114,12 @@ export default function RequestDetail() {
   })
 
   const handleCancel = async () => {
-    const ok = window.confirm(
-      'Cancel this delivery? The hold on your card will be released.',
-    )
+    // Only 'accepted' requests have an authorized PaymentIntent — 'open'
+    // requests were never authorized because no courier has claimed them.
+    const msg = request?.status === 'accepted'
+      ? 'Cancel this delivery? The hold on your card will be released.'
+      : 'Cancel this delivery? Your card has not been charged.'
+    const ok = window.confirm(msg)
     if (!ok) return
     setCancelling(true)
     const { error } = await supabase.functions.invoke('cancel-delivery', {
@@ -336,7 +339,7 @@ export default function RequestDetail() {
             Edit
           </button>
         )}
-        {request.status === 'accepted' && (
+        {(request.status === 'open' || request.status === 'accepted') && (
           <button
             onClick={handleCancel}
             disabled={cancelling}

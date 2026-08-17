@@ -598,7 +598,18 @@ export default function CourierHome() {
                         ))}
                       </div>
                     )}
-                    <div className="flex items-center justify-end gap-3 pt-3 border-t border-mist">
+                    <div className="flex items-center justify-between gap-3 pt-3 border-t border-mist">
+                      {/* Inline reason for disabled Accept — tooltips (title=)
+                          are invisible on touch, so couriers were tapping a
+                          greyed button and getting zero feedback. */}
+                      {!canAccept ? (
+                        <Link
+                          to="/courier/verify"
+                          className="text-xs text-teal font-semibold hover:underline"
+                        >
+                          {disabledReason} →
+                        </Link>
+                      ) : <span />}
                       <button
                         onClick={() => handleAcceptClick(r)}
                         disabled={accepting === r.id || !canAccept}

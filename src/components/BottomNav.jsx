@@ -1,5 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase.js'
+import { NavLink } from 'react-router-dom'
 
 function TabLink({ to, label, badge, children }) {
   return (
@@ -31,21 +30,6 @@ function TabLink({ to, label, badge, children }) {
   )
 }
 
-function TabButton({ onClick, label, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex flex-col items-center justify-center flex-1 py-2 gap-1 text-xs text-slate/70 hover:text-teal transition-colors"
-    >
-      <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg">
-        {children}
-      </span>
-      <span>{label}</span>
-    </button>
-  )
-}
-
 const iconProps = {
   viewBox: '0 0 24 24',
   fill: 'none',
@@ -58,12 +42,6 @@ const iconProps = {
 }
 
 export default function BottomNav({ variant = 'sender', discoverBadge = false, inboxBadge = false }) {
-  const navigate = useNavigate()
-  const signOut = async () => {
-    await supabase.auth.signOut()
-    navigate('/welcome', { replace: true })
-  }
-
   const base = variant === 'courier' ? '/courier' : '/sender'
 
   return (
@@ -91,13 +69,6 @@ export default function BottomNav({ variant = 'sender', discoverBadge = false, i
             <circle cx="12" cy="7" r="4" />
           </svg>
         </TabLink>
-        <TabButton onClick={signOut} label="Sign out">
-          <svg {...iconProps}>
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
-        </TabButton>
       </div>
     </nav>
   )
