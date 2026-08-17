@@ -125,7 +125,10 @@ const EVENT_COPY = {
   posted: {
     title: 'Request posted',
     tone: 'text-slate',
-    accent: '',
+    // Muted slate border — signals "your own action" less loudly than
+    // teal/green events that need attention, but keeps visual hierarchy
+    // consistent so no card looks unstyled.
+    accent: 'border-l-4 border-l-slate/30',
   },
 }
 
