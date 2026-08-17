@@ -129,15 +129,15 @@ export default function CourierProfile() {
     },
     {
       num: '3',
-      title: 'Set up payouts',
-      desc: 'Connect your bank through Stripe so you can get paid.',
+      title: 'Set up Stripe payouts',
+      desc: 'Connect your bank account through Stripe so you get paid after every delivery.',
       done: payoutsReady,
       action: null,
     },
     {
       num: '4',
-      title: 'Background check',
-      desc: 'One-time $40 Checkr screening — earn it back at $1 per delivery.',
+      title: 'Checkr background check',
+      desc: 'One-time $40 screening by Checkr — earn it back at $1 per delivery.',
       done: bgCleared,
       inProgress: bgInProgress,
       action: '/courier/verify',
@@ -174,8 +174,8 @@ export default function CourierProfile() {
     {
       num: '9',
       emoji: '💰',
-      title: 'Get paid',
-      desc: 'Your earnings hit your bank account the next business day via Stripe. Tips are instant.',
+      title: 'Get paid via Stripe',
+      desc: 'Earnings hit your bank account the next business day. Tips are instant.',
     },
   ]
 
