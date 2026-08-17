@@ -5,6 +5,7 @@ import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import SenderPaymentSection from '../../components/SenderPaymentSection.jsx'
 import ProfileFooterActions from '../../components/ProfileFooterActions.jsx'
+import MyRatingSummary from '../../components/MyRatingSummary.jsx'
 
 function dollars(cents) {
   return `$${(cents / 100).toFixed(2)}`
@@ -265,6 +266,8 @@ export default function SenderProfile() {
             ))}
           </div>
         </section>
+
+        <MyRatingSummary />
 
         <section className="space-y-3">
           <h2 className="text-xs uppercase tracking-widest text-slate">Basics</h2>

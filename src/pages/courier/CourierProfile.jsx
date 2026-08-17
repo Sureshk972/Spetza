@@ -8,6 +8,7 @@ import CourierConnectSection from '../../components/CourierConnectSection.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
 import EarnBackTracker from '../../components/EarnBackTracker.jsx'
 import ProfileFooterActions from '../../components/ProfileFooterActions.jsx'
+import MyRatingSummary from '../../components/MyRatingSummary.jsx'
 
 function dollars(cents) {
   return `$${(cents / 100).toFixed(2)}`
@@ -294,6 +295,8 @@ export default function CourierProfile() {
             </div>
           </section>
         )}
+
+        <MyRatingSummary />
 
         {/* ── Basics ── */}
         <section className="space-y-3">
