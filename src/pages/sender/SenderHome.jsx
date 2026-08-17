@@ -109,7 +109,7 @@ function HowItWorks({ variant = 'full' }) {
         to="/sender/new"
         className="inline-block mt-8 px-6 py-3 rounded-lg bg-teal text-white font-bold hover:bg-teal/90 transition-colors"
       >
-        Post your first delivery
+        Send a Package
       </Link>
     </div>
   )
