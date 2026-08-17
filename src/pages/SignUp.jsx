@@ -26,6 +26,7 @@ export default function SignUp() {
   }, [user, navigate])
   const [step, setStep] = useState('email') // 'email' | 'password'
   const [email, setEmail] = useState('')
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const role = readRole()
@@ -47,6 +48,10 @@ export default function SignUp() {
     if (!email || !password || !requireConfig()) return
     if (password.length < 6) {
       toast.error('Password must be at least 6 characters.')
+      return
+    }
+    if (!termsAccepted) {
+      toast.error('Please accept the Terms of Service and Privacy Policy.')
       return
     }
     setSubmitting(true)
@@ -166,9 +171,24 @@ export default function SignUp() {
                 placeholder="Password (at least 6 characters)"
                 className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
               />
+              <label className="flex items-start gap-3 p-3 rounded-lg border border-mist bg-white cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="mt-0.5 accent-teal shrink-0"
+                />
+                <span className="text-xs text-slate leading-relaxed">
+                  I agree to the{' '}
+                  <Link to="/terms" target="_blank" className="text-teal hover:underline">Terms of Service</Link>
+                  {' '}and{' '}
+                  <Link to="/privacy" target="_blank" className="text-teal hover:underline">Privacy Policy</Link>.
+                  I consent to receive delivery-related SMS at the phone number I verify.
+                </span>
+              </label>
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || !termsAccepted}
                 className="w-full px-4 py-3 rounded-lg bg-ink text-white font-medium hover:bg-teal-light transition-colors disabled:opacity-50"
               >
                 {submitting ? 'Creating…' : 'Create account'}

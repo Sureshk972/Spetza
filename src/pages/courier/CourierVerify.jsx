@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import EarnBackTracker from '../../components/EarnBackTracker.jsx'
+import CourierConnectSection from '../../components/CourierConnectSection.jsx'
 import { resizeImage } from '../../lib/resizeImage.js'
 
 const MAX_BYTES = 15 * 1024 * 1024 // raw camera photos can top 10 MB; we resize before upload
@@ -161,22 +162,25 @@ export default function CourierVerify() {
           </div>
         )}
         <label className={`${selfieUrl ? 'mt-2' : 'mt-3'} block px-4 py-3 rounded-lg border-2 border-dashed border-mist text-center text-sm text-slate hover:border-teal hover:text-ink cursor-pointer`}>
-          {uploading ? 'Uploading…' : selfiePath ? 'Replace selfie' : 'Tap to upload (up to 5 MB)'}
+          {uploading ? 'Uploading…' : selfiePath ? 'Replace selfie' : 'Tap to upload a photo of yourself'}
           <input type="file" accept="image/*" onChange={onSelfie} disabled={uploading} className="hidden" />
         </label>
       </section>
 
-      {/* Step 2: payouts (link to profile where CourierConnectSection lives) */}
+      {/* Step 2: payouts (embedded so user doesn't lose the wizard context) */}
       <section className="mt-4 p-4 rounded-xl border border-mist bg-white">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-ink text-sm">2 · Payout account</div>
+            <div className="text-ink text-sm">2 · Stripe payout account</div>
             <div className="text-slate text-xs mt-0.5">Set up Stripe to get paid. This also verifies your identity.</div>
           </div>
-          {payoutsReady
-            ? <span className="text-xs text-green">Connected ✓</span>
-            : <button onClick={() => navigate('/courier/profile')} className="text-xs text-teal hover:underline">Set up →</button>}
+          {payoutsReady && <span className="text-xs text-green">Connected ✓</span>}
         </div>
+        {!payoutsReady && (
+          <div className="mt-3 -mx-1">
+            <CourierConnectSection />
+          </div>
+        )}
       </section>
 
       {/* Step 3: background check */}
@@ -189,16 +193,31 @@ export default function CourierVerify() {
           </>
         ) : bg === 'pending' ? (
           <>
-            <div className="mt-2 p-3 rounded-lg bg-teal/10 text-teal text-sm">In progress. We'll update this when it's done.</div>
+            <div className="mt-2 p-3 rounded-lg bg-teal/10 text-teal text-sm">
+              In progress. Most checks clear within 1–3 business days.
+              We'll email you the moment it's done.
+            </div>
             <EarnBackTracker creditedCents={profile?.earnback_credited_cents ?? 0} variant="signup" />
           </>
         ) : bg === 'consider' ? (
           <>
-            <div className="mt-2 p-3 rounded-lg bg-teal/10 text-teal text-sm">Under review. We'll be in touch.</div>
+            <div className="mt-2 p-3 rounded-lg bg-teal/10 text-teal text-sm">
+              Under review by our team. This usually happens when Checkr surfaces
+              records that need a human decision. We'll get back to you within
+              2 business days.{' '}
+              <a href="mailto:contact@spetza.com" className="underline">Contact us</a>{' '}
+              if you have questions.
+            </div>
             <EarnBackTracker creditedCents={profile?.earnback_credited_cents ?? 0} variant="signup" />
           </>
         ) : bg === 'rejected' ? (
-          <div className="mt-2 p-3 rounded-lg bg-red-50 text-red-700 text-sm">Not approved. Check your email from Checkr for details.</div>
+          <div className="mt-2 p-3 rounded-lg bg-red-50 text-red-700 text-sm">
+            <strong>Not approved.</strong> Checkr emailed the details directly to you
+            (this is required by federal law). If you believe this is incorrect, you
+            have the right to dispute the report with Checkr, and to reach out to us
+            at{' '}
+            <a href="mailto:contact@spetza.com" className="underline font-semibold">contact@spetza.com</a>.
+          </div>
         ) : (
           <>
             <div className="text-slate text-xs mt-0.5">Runs through Checkr · one-time $40 fee.</div>

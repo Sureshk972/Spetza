@@ -315,7 +315,7 @@ export default function CourierDelivery() {
                   <div className="text-sm text-ink font-medium">{request.pickup_address}</div>
                 </div>
                 <a
-                  href={`https://maps.apple.com/?daddr=${encodeURIComponent(request.pickup_address)}`}
+                  href={mapsUrl(request.pickup_address)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-3 inline-flex items-center gap-2 text-sm text-teal hover:underline"
@@ -382,13 +382,32 @@ export default function CourierDelivery() {
             </div>
           )}
           {request.status === 'picked_up' && (
-            <button
-              onClick={handleDelivered}
-              disabled={acting}
-              className="px-4 py-1.5 rounded-lg bg-green text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
-            >
-              {acting ? 'Capturing…' : 'Mark delivered'}
-            </button>
+            <div className="w-full space-y-3">
+              <div className="p-4 rounded-xl border border-green/30 bg-green/5">
+                <div className="text-xs uppercase tracking-widest text-green font-bold mb-2">Head to dropoff</div>
+                <div className="mt-2 p-3 rounded-lg bg-white border border-mist">
+                  <div className="text-sm text-ink font-medium">{request.dropoff_address}</div>
+                </div>
+                <a
+                  href={mapsUrl(request.dropoff_address)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-2 text-sm text-green hover:underline"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="3 11 22 2 13 21 11 13 3 11" />
+                  </svg>
+                  Open in Maps
+                </a>
+                <button
+                  onClick={handleDelivered}
+                  disabled={acting}
+                  className="mt-4 w-full py-3 rounded-lg bg-green text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity"
+                >
+                  {acting ? 'Capturing payment…' : 'Mark delivered'}
+                </button>
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -396,11 +415,9 @@ export default function CourierDelivery() {
   )
 }
 
-function Row({ label, value }) {
-  return (
-    <div className="flex justify-between text-sm text-slate">
-      <span>{label}</span>
-      <span className="text-ink">{value}</span>
-    </div>
-  )
+// google.com/maps works on iOS (redirects to Apple Maps if you have it),
+// Android (opens Google Maps), and desktop — universal fallback rather
+// than the Apple-only maps.apple.com URL we had before.
+function mapsUrl(address) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`
 }

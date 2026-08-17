@@ -98,7 +98,7 @@ export default function PackagePhotoInput({ path, onChange, disabled }) {
               : 'border-mist text-slate hover:border-teal hover:text-ink cursor-pointer')
           }
         >
-          {uploading ? 'Uploading…' : 'Tap to add a photo (up to 5 MB)'}
+          {uploading ? 'Uploading…' : 'Tap to add a photo of the package'}
           <input
             type="file"
             accept="image/*"

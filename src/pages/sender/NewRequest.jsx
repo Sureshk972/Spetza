@@ -8,6 +8,7 @@ import StructuredAddressInput from '../../components/StructuredAddressInput.jsx'
 import RouteMap from '../../components/RouteMap.jsx'
 import PricingTable from '../../components/PricingTable.jsx'
 import { MAX_DISTANCE_MILES, priceForDistance, feeFor, totalFor } from '../../lib/pricing.js'
+import { PACKAGE_SIZES } from '../../lib/packageSizes.js'
 import { geocodeAddress, haversineMiles } from '../../lib/geocode.js'
 import { trackEvent } from '../../lib/analytics.js'
 
@@ -88,8 +89,8 @@ export default function NewRequest() {
       toast.error('Distance is out of supported range.')
       return
     }
-    if (!size.trim()) {
-      toast.error('Add a size description.')
+    if (!size) {
+      toast.error('Pick a package size.')
       return
     }
     if (!photoPath) {
@@ -215,15 +216,27 @@ export default function NewRequest() {
             className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
           />
         </Field>
-        <Field label="Approx. size">
-          <input
-            type="text"
-            required
-            value={size}
-            onChange={(e) => setSize(e.target.value)}
-            placeholder="Shoebox, envelope, etc."
-            className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
-          />
+        <Field label="Package size">
+          <div className="grid grid-cols-2 gap-2">
+            {PACKAGE_SIZES.map((s) => {
+              const active = size === s.value
+              return (
+                <button
+                  key={s.value}
+                  type="button"
+                  onClick={() => setSize(s.value)}
+                  className={`text-left px-4 py-3 rounded-lg border-2 transition-colors ${
+                    active
+                      ? 'border-teal bg-teal/5'
+                      : 'border-mist bg-white hover:border-teal/40'
+                  }`}
+                >
+                  <div className={`text-sm font-semibold ${active ? 'text-teal' : 'text-ink'}`}>{s.label}</div>
+                  <div className="text-xs text-slate mt-0.5">{s.hint}</div>
+                </button>
+              )
+            })}
+          </div>
         </Field>
         <Field label="Photo of the package">
           <PackagePhotoInput path={photoPath} onChange={setPhotoPath} />
@@ -239,7 +252,7 @@ export default function NewRequest() {
             <span className="font-display text-xl text-ink">{money(totalCents)}</span>
           </div>
           {overMax && (
-            <div className="text-xs text-teal pt-1">
+            <div className="text-xs text-red-600 pt-1">
               Over the {MAX_DISTANCE_MILES} mi limit.
             </div>
           )}
@@ -280,7 +293,7 @@ function GeoCaption({ geo }) {
     return <div className="text-xs text-slate mt-1.5">Looking up address…</div>
   }
   if (geo.status === 'error') {
-    return <div className="text-xs text-teal mt-1.5">{geo.error}</div>
+    return <div className="text-xs text-red-600 mt-1.5">{geo.error}</div>
   }
   return (
     <div className="text-xs text-slate mt-1.5 truncate">

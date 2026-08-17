@@ -103,7 +103,7 @@ export default function PhoneVerify() {
             />
           </label>
           {status === 'send_error' && (
-            <p className="text-xs text-teal">
+            <p className="text-xs text-red-600">
               {SEND_ERROR_COPY[error] || 'Something went wrong. Try again.'}
             </p>
           )}
@@ -134,14 +134,11 @@ export default function PhoneVerify() {
             />
           </label>
           {error === 'phone_in_use' ? (
-            <p className="text-xs text-teal">
-              This phone is already linked to another account.{' '}
-              <Link to="/signin" className="underline">
-                Sign in instead?
-              </Link>
+            <p className="text-xs text-red-600">
+              This phone is already linked to another account. Sign out and sign back in with that email.
             </p>
           ) : error ? (
-            <p className="text-xs text-teal">
+            <p className="text-xs text-red-600">
               {VERIFY_ERROR_COPY[error] || 'Something went wrong. Try again.'}
             </p>
           ) : null}
