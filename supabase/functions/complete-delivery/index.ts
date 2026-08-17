@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
 
   const { data: request, error: requestErr } = await supabase
     .from("delivery_requests")
-    .select("id, courier_id, sender_id, order_number, status, stripe_payment_intent_id")
+    .select("id, courier_id, sender_id, order_number, status, stripe_payment_intent_id, platform_fee_cents")
     .eq("id", delivery_request_id)
     .single();
   if (requestErr || !request) return json({ error: "request not found" }, 404);
@@ -48,14 +48,52 @@ Deno.serve(async (req) => {
     return json({ error: "no payment intent on record" }, 409);
   }
 
+  // Apply earnback credit BEFORE capture. Before this fix, we recorded
+  // the credit but never reduced Stripe's application_fee, so the money
+  // never actually reached the courier's Connect account. Now the
+  // sequence is credit → capture (with reduced fee) → update. If capture
+  // fails, we reverse the credit so the courier's balance stays honest.
+  let earnbackApplied = 0;
+  try {
+    const { data: credit } = await supabase.rpc("apply_earnback_credit", {
+      p_courier_id: user.id,
+      p_delivery_id: delivery_request_id,
+    });
+    earnbackApplied = credit ?? 0;
+  } catch {
+    // Non-fatal — capture at the full fee if the RPC errors.
+  }
+
+  // Original application_fee_amount at accept was (platform_fee_cents * 2)
+  // per accept-delivery-request. The apply_earnback_credit RPC just
+  // decremented platform_fee_cents by earnbackApplied, so reconstruct
+  // the original by adding it back. Reduce by the credit for capture.
+  const originalFeeCents = (request.platform_fee_cents ?? 0) * 2 + earnbackApplied;
+  const reducedFeeCents = Math.max(0, originalFeeCents - earnbackApplied);
+
   let pi;
   try {
     pi = await stripe.paymentIntents.capture(
       request.stripe_payment_intent_id,
-      {},
-      { idempotencyKey: `capture:${delivery_request_id}` }
+      { application_fee_amount: reducedFeeCents },
+      // Key includes earnbackApplied so a retry after we adjusted the
+      // credit doesn't hit a stale idempotent response with the wrong fee.
+      { idempotencyKey: `capture:${delivery_request_id}:${earnbackApplied}` }
     );
   } catch (e) {
+    // Capture failed — reverse the credit so the courier isn't shown
+    // progress toward the $40 payback that didn't happen.
+    if (earnbackApplied > 0) {
+      try {
+        await supabase.rpc("reverse_earnback_credit", {
+          p_courier_id: user.id,
+          p_delivery_id: delivery_request_id,
+          p_credit_cents: earnbackApplied,
+        });
+      } catch (revErr) {
+        console.error("complete-delivery: failed to reverse earnback after capture failure", revErr);
+      }
+    }
     return json({ error: e?.message || "stripe capture failed" }, 402);
   }
 
@@ -75,18 +113,6 @@ Deno.serve(async (req) => {
   if (updateErr) {
     // PI already captured; surface a clear error but funds are collected.
     return json({ error: "payment captured but request update failed", detail: updateErr.message }, 500);
-  }
-
-  // Earn-back: credit $1 from platform fee toward courier's bg check fee
-  let earnbackApplied = 0;
-  try {
-    const { data: credit } = await supabase.rpc("apply_earnback_credit", {
-      p_courier_id: user.id,
-      p_delivery_id: delivery_request_id,
-    });
-    earnbackApplied = credit ?? 0;
-  } catch {
-    // Non-fatal — delivery is complete regardless of earn-back
   }
 
   // Push: payment captured notification to sender
