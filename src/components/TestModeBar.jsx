@@ -1,6 +1,8 @@
-// Persistent visual reminder that the site is running with background
-// checks bypassed. Never render in production once Checkr is wired.
-// Toggled by VITE_TEST_MODE=true in .env.
+// Persistent visual reminder that the site is running against staging
+// keys — Stripe test mode + Checkr staging. No real money moves, no
+// real background checks are executed. Once we cut over to production
+// Stripe live keys + Checkr production, set VITE_TEST_MODE=false (or
+// remove the env var) and this bar disappears.
 //
 // Height is 24px. When on, layouts and pages need to sit below it.
 
@@ -17,7 +19,7 @@ export default function TestModeBar() {
       className="fixed top-0 left-0 right-0 z-[100] h-6 bg-amber-500 text-white text-[11px] font-bold uppercase tracking-widest flex items-center justify-center"
       style={{ letterSpacing: '0.1em' }}
     >
-      ⚠ Test Mode · Background checks bypassed
+      ⚠ Test Mode · Staging keys — no real money
     </div>
   )
 }
