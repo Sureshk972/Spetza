@@ -134,7 +134,18 @@ export async function sendSmsToUser(
 ): Promise<{ ok: boolean; sent: boolean; error?: string }> {
   const body = buildSmsBody(ctx);
   if (!body) return { ok: true, sent: false }; // no template for this event/role
+  return sendSmsBodyToUser(supabase, userId, body);
+}
 
+// Send an arbitrary SMS body to a user, applying the same consent rules
+// as sendSmsToUser (verified phone + not opted out). Exists so account-level
+// notifications (background check, payout status) can reuse the opt-in
+// logic without inheriting the delivery-shaped SmsContext.
+export async function sendSmsBodyToUser(
+  supabase: any,
+  userId: string,
+  body: string,
+): Promise<{ ok: boolean; sent: boolean; error?: string }> {
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("phone_number, phone_verified_at, sms_notifications_enabled")

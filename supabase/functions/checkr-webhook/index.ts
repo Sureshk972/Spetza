@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifySignature, statusForEvent } from "../_shared/checkr.ts";
-import { sendPushToUsers } from "../_shared/fcm.ts";
+import { notifyAccount } from "../_shared/accountNotify.ts";
 
 // Terminal states an admin owns — a late/duplicate webhook must never
 // overwrite them.
@@ -94,26 +94,22 @@ Deno.serve(async (req) => {
   }
   console.log(`checkr-webhook: profile ${profile.id} -> ${nextStatus}`);
 
-  // Push notification for background check status changes
-  if (nextStatus === "clear") {
-    await sendPushToUsers(supabase, [profile.id], {
-      title: "You're approved!",
-      body: "Your background check cleared. You can now accept deliveries.",
-      data: { event: "background_check_clear", deep_link: "/courier/verify" },
-    });
-  } else if (nextStatus === "consider") {
-    await sendPushToUsers(supabase, [profile.id], {
-      title: "Background check update",
-      body: "Your background check needs review. We'll be in touch.",
-      data: { event: "background_check_consider", deep_link: "/courier/verify" },
-    });
-  } else if (nextStatus === "not_started") {
-    // Invitation expired — courier can re-request.
-    await sendPushToUsers(supabase, [profile.id], {
-      title: "Background check expired",
-      body: "Your invitation expired. Tap to start a new one.",
-      data: { event: "background_check_expired", deep_link: "/courier/verify" },
-    });
+  // Notify across every channel that applies. Previously this was push-only,
+  // which is invisible on the iOS Safari PWA most couriers use — so in
+  // practice a courier was never told their check finished.
+  const accountEvent =
+    nextStatus === "clear"
+      ? "bgcheck_clear"
+      : nextStatus === "consider"
+      ? "bgcheck_consider"
+      : nextStatus === "rejected"
+      ? "bgcheck_rejected"
+      : nextStatus === "not_started"
+      ? "bgcheck_expired"
+      : null;
+
+  if (accountEvent) {
+    await notifyAccount(supabase, profile.id, accountEvent);
   }
 
   return new Response("ok", { status: 200 });
