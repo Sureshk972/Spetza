@@ -193,9 +193,25 @@ export default function CourierVerify() {
           </>
         ) : bg === 'pending' ? (
           <>
+            <div className="mt-2 p-4 rounded-lg bg-amber-50 border border-amber-200 text-sm">
+              <div className="flex items-start gap-2">
+                <span className="text-lg leading-none">📧</span>
+                <div>
+                  <div className="font-bold text-amber-900 mb-1">
+                    Check your email — action required
+                  </div>
+                  <div className="text-amber-800 leading-relaxed">
+                    Checkr just emailed you a link to complete your background
+                    check form. Open it and fill in your details — the check
+                    won't start until you do. Look for a message from{' '}
+                    <strong className="text-amber-900">Checkr Background Service</strong>.
+                  </div>
+                </div>
+              </div>
+            </div>
             <div className="mt-2 p-3 rounded-lg bg-teal/10 text-teal text-sm">
-              In progress. Most checks clear within 1–3 business days.
-              We'll email you the moment it's done.
+              Once you've submitted the Checkr form, most checks clear within
+              1–3 business days. We'll email you when it's done.
             </div>
             <EarnBackTracker creditedCents={profile?.earnback_credited_cents ?? 0} variant="signup" />
           </>
