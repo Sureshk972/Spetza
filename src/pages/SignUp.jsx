@@ -183,7 +183,9 @@ export default function SignUp() {
                   <Link to="/terms" target="_blank" className="text-teal hover:underline">Terms of Service</Link>
                   {' '}and{' '}
                   <Link to="/privacy" target="_blank" className="text-teal hover:underline">Privacy Policy</Link>.
-                  I consent to receive delivery-related SMS at the phone number I verify.
+                  I consent to receive transactional delivery SMS from Spetza at the phone number I verify.
+                  Message frequency varies. Message and data rates may apply.
+                  Reply <strong className="text-ink">STOP</strong> to unsubscribe or <strong className="text-ink">HELP</strong> for help.
                 </span>
               </label>
               <button
