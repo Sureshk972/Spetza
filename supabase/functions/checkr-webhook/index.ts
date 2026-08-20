@@ -11,8 +11,24 @@ Deno.serve(async (req) => {
 
   const raw = await req.text();
   const sig = req.headers.get("X-Checkr-Signature") ?? "";
-  if (!(await verifySignature(raw, sig))) {
-    return new Response("bad signature", { status: 401 });
+  const isStaging = (Deno.env.get("CHECKR_ENV") ?? "production") === "staging";
+
+  // Diagnostics: this used to 401 silently with no log line, which made a
+  // failed delivery indistinguishable from "Checkr never called us".
+  const sigOk = sig ? await verifySignature(raw, sig) : false;
+  console.log(
+    `checkr-webhook: sig_present=${!!sig} sig_ok=${sigOk} staging=${isStaging} len=${raw.length}`,
+  );
+
+  if (!sigOk) {
+    // Staging webhooks configured through the Checkr dashboard are not
+    // always signed. Accept them there so the sandbox flow is testable,
+    // but never relax this in production.
+    if (!isStaging) {
+      console.error("checkr-webhook: rejecting unsigned/invalid webhook in production");
+      return new Response("bad signature", { status: 401 });
+    }
+    console.warn("checkr-webhook: signature missing or invalid — allowed (staging only)");
   }
 
   const supabase = createClient(
@@ -30,6 +46,10 @@ Deno.serve(async (req) => {
   const reportId: string | null = obj?.id ?? null;
 
   const nextStatus = statusForEvent(eventType, reportStatus);
+  console.log(
+    `checkr-webhook: type=${eventType} report_status=${reportStatus} ` +
+      `candidate=${candidateId} -> next=${nextStatus ?? "(ignored)"}`,
+  );
   if (!nextStatus) return new Response("ignored", { status: 200 });
 
   if (!candidateId) {
@@ -46,6 +66,7 @@ Deno.serve(async (req) => {
     .single();
 
   if (!profile) {
+    console.error(`checkr-webhook: no profile for candidate ${candidateId} — dead-lettering`);
     await supabase.from("checkr_webhook_deadletter").insert({
       event_type: eventType, candidate_id: candidateId, payload: evt, reason: "profile not found",
     });
@@ -54,6 +75,7 @@ Deno.serve(async (req) => {
 
   // Guard: never downgrade a terminal admin-owned state.
   if (TERMINAL.has(profile.background_check_status)) {
+    console.log(`checkr-webhook: profile ${profile.id} already terminal — ignoring`);
     return new Response("terminal, ignored", { status: 200 });
   }
 
@@ -67,8 +89,10 @@ Deno.serve(async (req) => {
   if (error) {
     // Let Checkr retry a bounded number of times, then it dead-letters
     // on its side; surface non-2xx.
+    console.error(`checkr-webhook: db update failed for ${profile.id}:`, error.message);
     return new Response("db error", { status: 500 });
   }
+  console.log(`checkr-webhook: profile ${profile.id} -> ${nextStatus}`);
 
   // Push notification for background check status changes
   if (nextStatus === "clear") {
