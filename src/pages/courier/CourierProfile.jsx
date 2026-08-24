@@ -9,6 +9,7 @@ import RatingBadge from '../../components/RatingBadge.jsx'
 import EarnBackTracker from '../../components/EarnBackTracker.jsx'
 import ProfileFooterActions from '../../components/ProfileFooterActions.jsx'
 import MyRatingSummary from '../../components/MyRatingSummary.jsx'
+import SmsPreferenceSection from '../../components/SmsPreferenceSection.jsx'
 
 function dollars(cents) {
   return `$${(cents / 100).toFixed(2)}`
@@ -297,6 +298,8 @@ export default function CourierProfile() {
         )}
 
         <MyRatingSummary />
+
+        <SmsPreferenceSection />
 
         {/* ── Basics ── */}
         <section className="space-y-3">

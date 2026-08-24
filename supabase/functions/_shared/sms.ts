@@ -126,7 +126,7 @@ async function sendSms(
 }
 
 // Send an SMS to a single user by looking up their phone number.
-// Checks sms_notifications_enabled and phone_verified_at.
+// Requires an affirmative sms_notifications_enabled plus phone_verified_at.
 export async function sendSmsToUser(
   supabase: any,
   userId: string,
@@ -138,7 +138,7 @@ export async function sendSmsToUser(
 }
 
 // Send an arbitrary SMS body to a user, applying the same consent rules
-// as sendSmsToUser (verified phone + not opted out). Exists so account-level
+// as sendSmsToUser (verified phone + express opt-in). Exists so account-level
 // notifications (background check, payout status) can reuse the opt-in
 // logic without inheriting the delivery-shaped SmsContext.
 export async function sendSmsBodyToUser(
@@ -161,8 +161,10 @@ export async function sendSmsBodyToUser(
     return { ok: true, sent: false }; // no verified phone — skip silently
   }
 
-  if (profile.sms_notifications_enabled === false) {
-    return { ok: true, sent: false }; // user opted out
+  // Express opt-in only: null (never asked) must not send. A2P 10DLC
+  // reviewers treat a default-on column as forced consent.
+  if (profile.sms_notifications_enabled !== true) {
+    return { ok: true, sent: false }; // no affirmative consent on file
   }
 
   const result = await sendSms(profile.phone_number, body);
@@ -195,7 +197,7 @@ export async function sendSmsToCouriers(
     (p: any) =>
       p.phone_number &&
       p.phone_verified_at &&
-      p.sms_notifications_enabled !== false,
+      p.sms_notifications_enabled === true,
   );
 
   const results = await Promise.allSettled(

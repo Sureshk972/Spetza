@@ -26,6 +26,10 @@ export default function SignUp() {
   }, [user, navigate])
   const [step, setStep] = useState('email') // 'email' | 'password'
   const [email, setEmail] = useState('')
+  // Terms/Privacy acceptance only. SMS consent deliberately does NOT live on
+  // this page: A2P 10DLC forbids making it a condition of account creation,
+  // and reviewers require the consent to sit beside a phone number field.
+  // It is collected as an optional opt-in on /verify-phone instead.
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -183,9 +187,6 @@ export default function SignUp() {
                   <Link to="/terms" target="_blank" className="text-teal hover:underline">Terms of Service</Link>
                   {' '}and{' '}
                   <Link to="/privacy" target="_blank" className="text-teal hover:underline">Privacy Policy</Link>.
-                  I consent to receive transactional delivery SMS from Spetza at the phone number I verify.
-                  Message frequency varies. Message and data rates may apply.
-                  Reply <strong className="text-ink">STOP</strong> to unsubscribe or <strong className="text-ink">HELP</strong> for help.
                 </span>
               </label>
               <button

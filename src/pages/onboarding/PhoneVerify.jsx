@@ -5,9 +5,24 @@
 // refresh the profile so RequireAuth sees is_phone_verified=true,
 // then route to /choose-role (no account_type yet) or to the role
 // home.
+//
+// This is also the A2P 10DLC opt-in page — the one carriers review. Two
+// rules govern everything below and must not be quietly relaxed:
+//
+//   1. The consent checkbox is OPTIONAL. "Send code" and "Verify" work
+//      whether or not it is ticked, and it starts unticked. Gating the
+//      form on it is the "forced consent" violation (error 30923) that
+//      got the campaign rejected on 2026-08-24.
+//   2. The consent language sits beside the phone number field, on the
+//      same screen, with the mandatory carrier disclosures (brand, message
+//      types, frequency, data rates, STOP/HELP, policy links).
+//
+// The one-time verification code is a separate, user-initiated message —
+// tapping "Send code" is its own opt-in — so it sends regardless.
 
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { usePhoneVerification } from '../../hooks/usePhoneVerification.js'
 import { normalizePhone } from '../../lib/phone.js'
@@ -27,10 +42,12 @@ const VERIFY_ERROR_COPY = {
 
 export default function PhoneVerify() {
   const navigate = useNavigate()
-  const { profile, refreshProfile, signOut } = useAuth()
+  const { user, profile, refreshProfile, signOut } = useAuth()
   const { status, error, sendCode, verifyCode } = usePhoneVerification()
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
+  // Starts false and stays optional — see the rules in the header comment.
+  const [smsConsent, setSmsConsent] = useState(false)
 
   async function onCancel() {
     // Explicit confirm — the only way out of this screen is signing
@@ -55,6 +72,22 @@ export default function PhoneVerify() {
     if (err) return
 
     trackEvent('phone_verification_completed', { phone_provider: 'twilio' })
+
+    // Record the consent decision either way. Writing false explicitly (not
+    // leaving it null) keeps the audit trail honest: the user was asked and
+    // declined. sms_consent_at is only stamped on an actual opt-in.
+    if (hasSupabaseConfig && user?.id) {
+      const { error: consentErr } = await supabase
+        .from('profiles')
+        .update({
+          sms_notifications_enabled: smsConsent,
+          sms_consent_at: smsConsent ? new Date().toISOString() : null,
+        })
+        .eq('id', user.id)
+      // Non-fatal: a failed preference write must not strand a verified user.
+      if (consentErr) console.error('Failed to save SMS consent', consentErr)
+    }
+    trackEvent('sms_consent_recorded', { opted_in: smsConsent })
 
     // Refresh so RequireAuth picks up is_phone_verified before we
     // navigate. Route off the FRESHLY-fetched profile — reading the
@@ -107,6 +140,37 @@ export default function PhoneVerify() {
               {SEND_ERROR_COPY[error] || 'Something went wrong. Try again.'}
             </p>
           )}
+
+          {/* A2P 10DLC opt-in. Optional by design — nothing below is gated
+              on it, and the "Optional" chip says so in plain sight. */}
+          <label className="flex items-start gap-3 p-4 rounded-lg border border-mist bg-white cursor-pointer">
+            <input
+              type="checkbox"
+              checked={smsConsent}
+              onChange={(e) => setSmsConsent(e.target.checked)}
+              className="mt-0.5 accent-teal shrink-0"
+            />
+            <span className="text-xs text-slate leading-relaxed">
+              <span className="inline-block text-[10px] uppercase tracking-widest text-slate/70 border border-mist rounded px-1.5 py-0.5 mb-1.5">
+                Optional
+              </span>
+              <br />
+              I agree to receive text messages from <strong className="text-ink">Spetza</strong> about
+              my deliveries — when a courier accepts, arrives, picks up, and drops off — at the
+              number above. Message frequency varies. Message and data rates may apply.
+              Reply <strong className="text-ink">STOP</strong> to unsubscribe or{' '}
+              <strong className="text-ink">HELP</strong> for help. See our{' '}
+              <Link to="/privacy" target="_blank" className="text-teal hover:underline">Privacy Policy</Link>
+              {' '}and{' '}
+              <Link to="/terms" target="_blank" className="text-teal hover:underline">Terms of Service</Link>.
+            </span>
+          </label>
+          <p className="text-xs text-slate/80 -mt-1">
+            {profile?.account_type === 'courier'
+              ? 'Recommended — texts are the fastest way to hear about nearby jobs. You can skip this and still deliver; we\u2019ll send push notifications instead.'
+              : 'You can skip this and still use Spetza. We\u2019ll email you and send push notifications either way.'}
+          </p>
+
           <button
             type="submit"
             disabled={status === 'sending'}
@@ -114,6 +178,10 @@ export default function PhoneVerify() {
           >
             {status === 'sending' ? 'Sending…' : 'Send code'}
           </button>
+          <p className="text-xs text-slate/70 text-center">
+            Tapping &ldquo;Send code&rdquo; sends one verification text to the number above,
+            whether or not you check the box. Message and data rates may apply.
+          </p>
         </form>
       )}
 
