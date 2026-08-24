@@ -31,6 +31,14 @@ dev server.
 > Privacy Policy: https://spetza.com/privacy
 > Terms of Service: https://spetza.com/terms
 
+## Screenshots (hosted, live)
+
+- https://spetza.com/a2p/optin-verify-phone.jpg
+- https://spetza.com/a2p/signup-terms.jpg
+
+Note: `VITE_TEST_MODE` was set to `false` on 2026-08-24 and deliberately left
+off, so the live site matches these images. Revisit after approval.
+
 ## Screenshots to attach
 
 1. `https://spetza.com/verify-phone` — full page, checkbox visibly **unchecked**,
