@@ -19,3 +19,6 @@ android/.gradle/
 android/app/build/
 android/build/
 android/local.properties
+
+# Local Netlify folder
+.netlify
