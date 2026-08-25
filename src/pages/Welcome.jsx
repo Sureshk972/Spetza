@@ -226,6 +226,8 @@ export default function Welcome() {
         </p>
         <p className="text-slate text-xs mt-3">
           <Link to="/trust" className="hover:text-ink underline">How we vet every courier</Link>
+          {' · '}
+          <Link to="/faq" className="hover:text-ink underline">Questions</Link>
         </p>
 
         {/* Reviews */}
