@@ -12,21 +12,42 @@ dev server.
 
 ## Message flow / opt-in description
 
-> End users opt in on Spetza's phone verification page at
-> https://spetza.com/verify-phone, reached after creating an account at
-> https://spetza.com/signup. The page contains a mobile number input field
-> and, directly beneath it, a separate checkbox — labeled "Optional" and
-> unchecked by default — reading: "I agree to receive text messages from
-> Spetza about my deliveries — when a courier accepts, arrives, picks up,
-> and drops off — at the number above. Message frequency varies. Message
-> and data rates may apply. Reply STOP to unsubscribe or HELP for help. See
-> our Privacy Policy and Terms of Service."
+Rewritten 2026-08-25 after error 30909. The only substantive change from the
+previous version: the hosted screenshot links now lead the text. They were
+previously recorded only in the section below, which is a note to self and
+never reached Twilio — which is exactly what the reviewer said was missing
+("there is no screenshot mentioned to validate the opt in").
+
+Paste this verbatim into the campaign's **Message Flow** field.
+
+> The SMS opt-in is on a page that requires an account, so hosted screenshots
+> of the exact opt-in screen are provided for review:
+> Opt-in screen, consent checkbox unchecked by default:
+> https://spetza.com/a2p/optin-verify-phone.jpg
+> Account creation screen: https://spetza.com/a2p/signup-terms.jpg
 >
-> The checkbox is not required to submit the form, create an account, or use
-> the service. Consent is not a condition of any purchase or service. Users
-> who leave it unchecked receive email and in-app push notifications only and
-> have full access to Spetza. Users may turn messaging on or off at any time
-> from their Profile page under "Text messages", in addition to replying STOP.
+> Step by step:
+> 1. The user goes to https://spetza.com/signup and creates an account with an
+> email address and password (second screenshot above).
+> 2. The user arrives at https://spetza.com/verify-phone (first screenshot
+> above).
+> 3. That page has a mobile number field and, directly beneath it, a separate
+> checkbox labeled "Optional" and UNCHECKED BY DEFAULT, reading: "I agree to
+> receive text messages from Spetza about my deliveries - when a courier
+> accepts, arrives, picks up, and drops off - at the number above. Message
+> frequency varies. Message and data rates may apply. Reply STOP to
+> unsubscribe or HELP for help. See our Privacy Policy and Terms of Service."
+> 4. The user must actively tick that box. It is never pre-checked.
+> 5. Ticking it is not required to submit the form, create an account, or use
+> the service. Consent is not a condition of any purchase or service. Users who
+> leave it unchecked get email and in-app push notifications only, with full
+> access to Spetza.
+> 6. Users can turn messaging off at any time from their Profile page under
+> "Text messages", in addition to replying STOP.
+>
+> Separately, tapping "Send code" sends one one-time verification code to the
+> number entered. That is user-initiated, is not marketing, and is not the
+> consent described above.
 >
 > Privacy Policy: https://spetza.com/privacy
 > Terms of Service: https://spetza.com/terms
