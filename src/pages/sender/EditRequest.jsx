@@ -7,6 +7,7 @@ import PackagePhotoInput from '../../components/PackagePhotoInput.jsx'
 import StructuredAddressInput from '../../components/StructuredAddressInput.jsx'
 import { MAX_DISTANCE_MILES, priceForDistance, feeFor, totalFor } from '../../lib/pricing.js'
 import { geocodeAddress, haversineMiles } from '../../lib/geocode.js'
+import { withApt } from '../../lib/address.js'
 
 const money = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
 
@@ -86,7 +87,9 @@ export default function EditRequest() {
   const feeCents = feeFor(priceCents)
   const totalCents = totalFor(priceCents)
 
-  const handleGeocode = async (address, setGeo) => {
+  // `apt` comes back from the address input because Google's formatted address
+  // drops the unit number, and the courier needs it.
+  const handleGeocode = async (address, setGeo, apt) => {
     if (!address.trim()) {
       setGeo(blankGeo)
       return
@@ -101,7 +104,7 @@ export default function EditRequest() {
       status: 'ok',
       lat: result.lat,
       lng: result.lng,
-      formatted: result.formattedAddress,
+      formatted: withApt(result.formattedAddress, apt),
       error: null,
     })
   }
@@ -235,7 +238,7 @@ export default function EditRequest() {
               setPickup(v)
               if (pickupGeo.status !== 'idle') setPickupGeo(blankGeo)
             }}
-            onBlur={() => handleGeocode(pickup, setPickupGeo)}
+            onBlur={(apt) => handleGeocode(pickup, setPickupGeo, apt)}
             onResolved={({ lat, lng, formattedAddress }) =>
               setPickupGeo({
                 status: 'ok',
@@ -256,7 +259,7 @@ export default function EditRequest() {
               setDropoff(v)
               if (dropoffGeo.status !== 'idle') setDropoffGeo(blankGeo)
             }}
-            onBlur={() => handleGeocode(dropoff, setDropoffGeo)}
+            onBlur={(apt) => handleGeocode(dropoff, setDropoffGeo, apt)}
             onResolved={({ lat, lng, formattedAddress }) =>
               setDropoffGeo({
                 status: 'ok',

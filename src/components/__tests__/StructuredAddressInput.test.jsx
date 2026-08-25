@@ -104,11 +104,54 @@ describe('StructuredAddressInput autocomplete', () => {
       target: { value: 'Apt 3R' },
     })
 
-    expect(onResolved).toHaveBeenCalledWith({
+    expect(onResolved.mock.calls.at(-1)[0]).toMatchObject({
       lat: DETAILS.lat,
       lng: DETAILS.lng,
-      formattedAddress: DETAILS.formattedAddress,
     })
+  })
+
+  // The courier reads pickupGeo.formatted off a doorstep. Google's formatted
+  // address describes the building and has never heard of "Apt 3R", so losing
+  // the unit number strands a courier in a lobby.
+  it('keeps a previously typed apt in the address it reports', async () => {
+    const onResolved = vi.fn()
+    render(<StructuredAddressInput onChange={() => {}} onResolved={onResolved} />)
+
+    fireEvent.change(screen.getByPlaceholderText('Apt, suite, unit (optional)'), {
+      target: { value: 'Apt 3R' },
+    })
+    await pickSuggestion()
+
+    expect(onResolved.mock.calls.at(-1)[0].formattedAddress).toContain('Apt 3R')
+  })
+
+  it('keeps an apt typed after the pick in the address it reports', async () => {
+    const onResolved = vi.fn()
+    render(<StructuredAddressInput onChange={() => {}} onResolved={onResolved} />)
+
+    await pickSuggestion()
+    fireEvent.change(screen.getByPlaceholderText('Apt, suite, unit (optional)'), {
+      target: { value: 'Apt 3R' },
+    })
+
+    expect(onResolved.mock.calls.at(-1)[0].formattedAddress).toContain('Apt 3R')
+  })
+
+  it('does not duplicate a unit the formatted address already carries', async () => {
+    fetchPlaceDetails.mockResolvedValue({
+      ...DETAILS,
+      formattedAddress: '1234 W Foster Ave #3R, Chicago, IL 60640, USA',
+    })
+    const onResolved = vi.fn()
+    render(<StructuredAddressInput onChange={() => {}} onResolved={onResolved} />)
+
+    fireEvent.change(screen.getByPlaceholderText('Apt, suite, unit (optional)'), {
+      target: { value: '#3R' },
+    })
+    await pickSuggestion()
+
+    const reported = onResolved.mock.calls.at(-1)[0].formattedAddress
+    expect(reported.match(/3R/g)).toHaveLength(1)
   })
 
   // Places already gave us coordinates. Re-geocoding costs a call and can only

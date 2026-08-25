@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useId } from 'react'
 import { fetchSuggestions, fetchPlaceDetails, newSessionToken } from '../lib/places.js'
+import { withApt } from '../lib/address.js'
 
 const US_STATES = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
@@ -144,7 +145,13 @@ export default function StructuredAddressInput({
       // touch the parts the coordinates came from — an apt number, typically —
       // re-assert them, or a resolved address quietly becomes unsubmittable.
       const held = resolvedRef.current
-      if (held && held.key === geoKey(next)) onResolved?.(held.coords)
+      if (held && held.key === geoKey(next)) {
+        onResolved?.({
+          lat: held.lat,
+          lng: held.lng,
+          formattedAddress: withApt(held.baseFormatted, next.apt),
+        })
+      }
     },
     [parts, onChange, onResolved],
   )
@@ -214,13 +221,17 @@ export default function StructuredAddressInput({
     onChange?.(concat(next))
 
     if (Number.isFinite(details.lat) && Number.isFinite(details.lng)) {
-      const coords = {
+      resolvedRef.current = {
+        key: geoKey(next),
         lat: details.lat,
         lng: details.lng,
-        formattedAddress: details.formattedAddress,
+        baseFormatted: details.formattedAddress,
       }
-      resolvedRef.current = { key: geoKey(next), coords }
-      onResolved?.(coords)
+      onResolved?.({
+        lat: details.lat,
+        lng: details.lng,
+        formattedAddress: withApt(details.formattedAddress, next.apt),
+      })
     }
   }
 
@@ -365,7 +376,7 @@ export default function StructuredAddressInput({
             // fails, a perfectly good address flips into an error state.
             const held = resolvedRef.current
             if (held && held.key === geoKey(parts)) return
-            onBlur?.()
+            onBlur?.(parts.apt)
           }}
           placeholder="Zip"
           maxLength={10}
