@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 
@@ -32,7 +32,16 @@ function SidebarLink({ to, label, end }) {
 
 export default function AdminLayout() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
+
+  // Where "back to app" goes. An admin with no role has nowhere to return to,
+  // so the link is hidden rather than pointing at /choose-role.
+  const appHome =
+    profile?.account_type === 'courier'
+      ? '/courier'
+      : profile?.account_type === 'sender'
+        ? '/sender'
+        : null
 
   const signOut = async () => {
     await supabase.auth.signOut()
@@ -53,6 +62,18 @@ export default function AdminLayout() {
           ))}
         </nav>
         <div className="mt-auto pt-4 border-t border-mist">
+          {appHome && (
+            <Link
+              to={appHome}
+              className="flex items-center gap-2 px-3 py-2 mb-2 rounded-lg text-sm text-slate hover:text-ink hover:bg-mist/50 transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+              </svg>
+              Back to app
+            </Link>
+          )}
           <div className="px-3 text-xs text-slate truncate">{user?.email}</div>
           <button
             onClick={signOut}
