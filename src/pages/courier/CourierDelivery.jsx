@@ -7,6 +7,7 @@ import RouteMap from '../../components/RouteMap.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
 import PackagePhoto from '../../components/PackagePhoto.jsx'
+import { resizeImage } from '../../lib/resizeImage.js'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 
 const dollars = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
@@ -42,6 +43,11 @@ export default function CourierDelivery() {
   const [rated, setRated] = useState(false)
   const [loading, setLoading] = useState(true)
   const [acting, setActing] = useState(false)
+  // Proof of delivery. The courier must attach a photo of the drop before
+  // the delivery can be closed -- complete-delivery rejects the call
+  // without one, so this is a mirror of the server rule, not the rule.
+  const [proofPath, setProofPath] = useState(null)
+  const [uploadingProof, setUploadingProof] = useState(false)
   const [pin, setPin] = useState('')
   const [pinError, setPinError] = useState('')
 
@@ -129,14 +135,49 @@ export default function CourierDelivery() {
     load()
   }
 
+  const PROOF_BUCKET = 'delivery-proof'
+  const MAX_PROOF_BYTES = 15 * 1024 * 1024
+
+  const onProofPhoto = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { toast.error('Pick an image file.'); return }
+    if (file.size > MAX_PROOF_BYTES) { toast.error('Image must be under 15 MB.'); return }
+    setUploadingProof(true)
+    let uploadFile = file
+    try {
+      uploadFile = await resizeImage(file)
+    } catch {
+      // Resize failed — upload the original rather than block a courier
+      // who is standing on a doorstep.
+    }
+    const ext = uploadFile.type === 'image/jpeg' ? 'jpg' : (uploadFile.name.split('.').pop() || 'jpg')
+    // Path must start with the delivery id: storage RLS and complete-delivery
+    // both key off that first segment.
+    const objectPath = `${request.id}/${crypto.randomUUID()}.${ext}`
+    const { error: upErr } = await supabase.storage
+      .from(PROOF_BUCKET)
+      .upload(objectPath, uploadFile, { contentType: uploadFile.type })
+    setUploadingProof(false)
+    if (upErr) {
+      toast.error("Couldn't upload that photo. Check your signal and try again.")
+      return
+    }
+    setProofPath(objectPath)
+  }
+
   const handleDelivered = async () => {
+    if (!proofPath) {
+      toast.error('Add a photo of the drop-off first.')
+      return
+    }
     const ok = window.confirm(
       `Confirm delivered? You'll earn ${dollars(courierTake)}.`,
     )
     if (!ok) return
     setActing(true)
     const { error } = await supabase.functions.invoke('complete-delivery', {
-      body: { delivery_request_id: request.id },
+      body: { delivery_request_id: request.id, delivery_photo_path: proofPath },
     })
     setActing(false)
     if (error) {
@@ -399,12 +440,46 @@ export default function CourierDelivery() {
                   </svg>
                   Open in Maps
                 </a>
+                {/* Proof of delivery. `capture="environment"` opens the rear
+                    camera on a phone; on a denied permission or a desktop the
+                    same input still falls back to the photo library, so a
+                    courier is never locked out of finishing the job. */}
+                <div className="mt-4 p-3 rounded-lg bg-white border border-mist">
+                  <div className="text-xs uppercase tracking-widest text-slate mb-1">
+                    Photo of the drop
+                  </div>
+                  <p className="text-xs text-slate/80 leading-relaxed">
+                    {proofPath
+                      ? 'Photo attached. Your sender will see this.'
+                      : 'Required. Show the package where you left it, or in the recipient\u2019s hands.'}
+                  </p>
+                  <label className="mt-3 block">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={onProofPhoto}
+                      disabled={uploadingProof || acting}
+                      className="hidden"
+                    />
+                    <span className={`block w-full py-2.5 rounded-lg border text-center text-sm font-medium cursor-pointer transition-colors ${
+                      proofPath
+                        ? 'border-green/40 text-green hover:bg-green/5'
+                        : 'border-ink/20 text-ink hover:bg-mist'
+                    }`}>
+                      {uploadingProof
+                        ? 'Uploading\u2026'
+                        : proofPath ? 'Retake photo' : 'Take photo'}
+                    </span>
+                  </label>
+                </div>
+
                 <button
                   onClick={handleDelivered}
-                  disabled={acting}
-                  className="mt-4 w-full py-3 rounded-lg bg-green text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  disabled={acting || uploadingProof || !proofPath}
+                  className="mt-3 w-full py-3 rounded-lg bg-green text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
-                  {acting ? 'Capturing payment…' : 'Mark delivered'}
+                  {acting ? 'Capturing payment\u2026' : 'Mark delivered'}
                 </button>
               </div>
             </div>

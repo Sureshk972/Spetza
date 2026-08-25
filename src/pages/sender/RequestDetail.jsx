@@ -8,6 +8,7 @@ import RouteMap from '../../components/RouteMap.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
 import PackagePhoto from '../../components/PackagePhoto.jsx'
+import DeliveryProofPhoto from '../../components/DeliveryProofPhoto.jsx'
 import TipPrompt from '../../components/TipPrompt.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 import { chime } from '../../lib/chime.js'
@@ -229,6 +230,13 @@ export default function RequestDetail() {
             <div className="text-sm text-slate">{request.package_description}</div>
           </div>
         </div>
+
+        {request.delivery_photo_path && (
+          <div className="p-4 rounded-xl border border-green/30 bg-green/5">
+            <div className="text-xs uppercase tracking-widest text-green font-bold">Delivered</div>
+            <DeliveryProofPhoto path={request.delivery_photo_path} />
+          </div>
+        )}
 
         <div className="p-4 rounded-xl border border-mist bg-white">
           <div className="text-xs uppercase tracking-widest text-slate">Courier</div>

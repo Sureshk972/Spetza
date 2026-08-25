@@ -31,12 +31,15 @@ Deno.serve(async (req) => {
   const { data: { user }, error: userErr } = await supabase.auth.getUser(token);
   if (userErr || !user) return json({ error: "unauthenticated" }, 401);
 
-  const { delivery_request_id } = await req.json().catch(() => ({}));
+  const { delivery_request_id, delivery_photo_path } = await req.json().catch(() => ({}));
   if (!delivery_request_id) return json({ error: "missing delivery_request_id" }, 400);
 
   const { data: request, error: requestErr } = await supabase
     .from("delivery_requests")
-    .select("id, courier_id, sender_id, order_number, status, stripe_payment_intent_id, platform_fee_cents")
+    .select(
+      "id, courier_id, sender_id, order_number, status, stripe_payment_intent_id, " +
+        "platform_fee_cents, delivery_photo_path, delivery_photo_required",
+    )
     .eq("id", delivery_request_id)
     .single();
   if (requestErr || !request) return json({ error: "request not found" }, 404);
@@ -46,6 +49,23 @@ Deno.serve(async (req) => {
   }
   if (!request.stripe_payment_intent_id) {
     return json({ error: "no payment intent on record" }, 409);
+  }
+
+  // Proof of delivery. Enforced here rather than in the client because this
+  // photo is the whole basis for treating a completed delivery as settled --
+  // a client-side-only check would be one devtools call away from useless.
+  const proofPath: string | null =
+    delivery_photo_path ?? request.delivery_photo_path ?? null;
+
+  if (request.delivery_photo_required && !proofPath) {
+    return json({ error: "delivery photo required", code: "photo_required" }, 409);
+  }
+
+  // A courier may only attach a photo filed under this delivery's own id.
+  // Without this check the path is caller-controlled and could point at
+  // another delivery's proof.
+  if (proofPath && !proofPath.startsWith(`${delivery_request_id}/`)) {
+    return json({ error: "photo does not belong to this delivery" }, 400);
   }
 
   // Apply earnback credit BEFORE capture. Before this fix, we recorded
@@ -106,6 +126,7 @@ Deno.serve(async (req) => {
     .update({
       status: "delivered",
       delivered_at: new Date().toISOString(),
+      ...(proofPath ? { delivery_photo_path: proofPath } : {}),
     })
     .eq("id", delivery_request_id)
     .eq("courier_id", user.id);
