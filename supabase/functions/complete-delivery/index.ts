@@ -31,14 +31,25 @@ Deno.serve(async (req) => {
   const { data: { user }, error: userErr } = await supabase.auth.getUser(token);
   if (userErr || !user) return json({ error: "unauthenticated" }, 401);
 
-  const { delivery_request_id, delivery_photo_path } = await req.json().catch(() => ({}));
+  const { delivery_request_id, delivery_photo_path, outcome, return_pin } =
+    await req.json().catch(() => ({}));
   if (!delivery_request_id) return json({ error: "missing delivery_request_id" }, 400);
+
+  // 'delivered' is the default so existing callers keep working. 'returned'
+  // means nobody was at the dropoff and the sender asked for the package
+  // back -- the courier is paid the same either way, so the two outcomes
+  // share this entire capture path and differ only in their proof and their
+  // terminal status.
+  const isReturn = outcome === "returned";
+  if (outcome && outcome !== "delivered" && outcome !== "returned") {
+    return json({ error: `unknown outcome: ${outcome}` }, 400);
+  }
 
   const { data: request, error: requestErr } = await supabase
     .from("delivery_requests")
     .select(
       "id, courier_id, sender_id, order_number, status, stripe_payment_intent_id, " +
-        "platform_fee_cents, delivery_photo_path, delivery_photo_required",
+        "platform_fee_cents, delivery_photo_path, delivery_photo_required, no_answer_policy",
     )
     .eq("id", delivery_request_id)
     .single();
@@ -57,8 +68,22 @@ Deno.serve(async (req) => {
   const proofPath: string | null =
     delivery_photo_path ?? request.delivery_photo_path ?? null;
 
-  if (request.delivery_photo_required && !proofPath) {
+  // A delivery is proved by the photo of the drop. A return is proved by the
+  // sender's handback code -- a photo would only show a package on a porch,
+  // which is exactly the thing a dishonest return would fake.
+  if (!isReturn && request.delivery_photo_required && !proofPath) {
     return json({ error: "delivery photo required", code: "photo_required" }, 409);
+  }
+
+  if (isReturn) {
+    if (request.no_answer_policy !== "return_to_sender") {
+      return json(
+        { error: "this delivery is not set to return to sender", code: "policy_mismatch" },
+        409,
+      );
+    }
+    const gate = await checkReturnPin(supabase, delivery_request_id, return_pin);
+    if (!gate.ok) return json({ error: gate.error, code: gate.code }, gate.status);
   }
 
   // A courier may only attach a photo filed under this delivery's own id.
@@ -124,8 +149,10 @@ Deno.serve(async (req) => {
   const { error: updateErr } = await supabase
     .from("delivery_requests")
     .update({
-      status: "delivered",
-      delivered_at: new Date().toISOString(),
+      status: isReturn ? "returned" : "delivered",
+      ...(isReturn
+        ? { returned_at: new Date().toISOString() }
+        : { delivered_at: new Date().toISOString() }),
       ...(proofPath ? { delivery_photo_path: proofPath } : {}),
     })
     .eq("id", delivery_request_id)
@@ -138,7 +165,9 @@ Deno.serve(async (req) => {
 
   // Push: payment captured notification to sender
   await sendPushToUsers(supabase, [request.sender_id], {
-    title: `${request.order_number} — Payment processed`,
+    title: isReturn
+      ? `${request.order_number} — Returned to you`
+      : `${request.order_number} — Payment processed`,
     body: `$${(pi.amount / 100).toFixed(2)} has been charged for your delivery.`,
     data: {
       event: "payment_captured",
@@ -147,7 +176,7 @@ Deno.serve(async (req) => {
     },
   });
 
-  await safeTrackEvent(supabase, user.id, "delivery_completed", {
+  await safeTrackEvent(supabase, user.id, isReturn ? "delivery_returned" : "delivery_completed", {
     delivery_request_id,
     earnback_credit_cents: earnbackApplied,
   });
@@ -157,5 +186,65 @@ Deno.serve(async (req) => {
     status: "succeeded",
   });
 
-  return json({ delivery_request_id, payment_intent_id: pi.id });
+  return json({
+    delivery_request_id,
+    payment_intent_id: pi.id,
+    outcome: isReturn ? "returned" : "delivered",
+  });
 });
+
+// Handback-code check for returns. Mirrors verify-pickup-pin's brute-force
+// rules -- five tries, then a fifteen-minute lockout -- because this code
+// stands between a courier and a full fee for a package they still hold.
+const MAX_RETURN_ATTEMPTS = 5;
+const RETURN_LOCKOUT_MINUTES = 15;
+
+async function checkReturnPin(
+  supabase: any,
+  deliveryRequestId: string,
+  submitted: unknown,
+): Promise<{ ok: true } | { ok: false; error: string; code: string; status: number }> {
+  if (typeof submitted !== "string" || !/^\d{4}$/.test(submitted)) {
+    return { ok: false, error: "return code required", code: "return_pin_required", status: 400 };
+  }
+
+  const { data: row } = await supabase
+    .from("delivery_pins")
+    .select("return_pin, return_attempts, return_locked_until")
+    .eq("delivery_request_id", deliveryRequestId)
+    .maybeSingle();
+
+  if (!row?.return_pin) {
+    return { ok: false, error: "no return code on record", code: "no_return_pin", status: 409 };
+  }
+
+  if (row.return_locked_until && new Date(row.return_locked_until) > new Date()) {
+    return { ok: false, error: "too many attempts", code: "return_locked", status: 429 };
+  }
+
+  if (row.return_pin !== submitted) {
+    const attempts = (row.return_attempts ?? 0) + 1;
+    const lock = attempts >= MAX_RETURN_ATTEMPTS
+      ? new Date(Date.now() + RETURN_LOCKOUT_MINUTES * 60_000).toISOString()
+      : null;
+    await supabase
+      .from("delivery_pins")
+      .update({
+        return_attempts: lock ? 0 : attempts,
+        return_locked_until: lock,
+      })
+      .eq("delivery_request_id", deliveryRequestId);
+    return {
+      ok: false,
+      error: lock ? "too many attempts" : "code doesn't match",
+      code: lock ? "return_locked" : "return_pin_mismatch",
+      status: lock ? 429 : 403,
+    };
+  }
+
+  await supabase
+    .from("delivery_pins")
+    .update({ return_attempts: 0, return_locked_until: null })
+    .eq("delivery_request_id", deliveryRequestId);
+  return { ok: true };
+}

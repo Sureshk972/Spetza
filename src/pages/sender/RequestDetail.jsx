@@ -28,6 +28,7 @@ const statusStyles = {
   picked_up: 'bg-teal/10 text-teal',
   delivered: 'bg-green/10 text-green',
   cancelled: 'bg-mist text-slate',
+  returned: 'bg-teal/10 text-teal',
 }
 
 const statusLabel = {
@@ -36,6 +37,7 @@ const statusLabel = {
   picked_up: 'In transit',
   delivered: 'Delivered',
   cancelled: 'Cancelled',
+  returned: 'Returned to you',
 }
 
 export default function RequestDetail() {
@@ -46,6 +48,10 @@ export default function RequestDetail() {
   const [courier, setCourier] = useState(null)
   const [courierPhotoUrl, setCourierPhotoUrl] = useState(null)
   const [pickupPin, setPickupPin] = useState(null)
+  // Handback code, only relevant while a return_to_sender delivery is in
+  // transit -- that's the window where a courier might turn up with the
+  // package instead of a delivery.
+  const [returnPin, setReturnPin] = useState(null)
   const [rated, setRated] = useState(false)
   const [loading, setLoading] = useState(true)
   const [cancelling, setCancelling] = useState(false)
@@ -64,16 +70,23 @@ export default function RequestDetail() {
       .maybeSingle()
     setRequest(req ?? null)
 
-    // Fetch pickup PIN from the sender-only table
-    if (req?.status === 'accepted') {
+    // Fetch codes from the sender-only table. Both live on the same row;
+    // which one we surface depends on where the delivery is.
+    if (req?.status === 'accepted' || req?.status === 'picked_up') {
       const { data: pinRow } = await supabase
         .from('delivery_pins')
-        .select('pin')
+        .select('pin, return_pin')
         .eq('delivery_request_id', req.id)
         .maybeSingle()
-      setPickupPin(pinRow?.pin ?? null)
+      setPickupPin(req.status === 'accepted' ? (pinRow?.pin ?? null) : null)
+      setReturnPin(
+        req.status === 'picked_up' && req.no_answer_policy === 'return_to_sender'
+          ? (pinRow?.return_pin ?? null)
+          : null,
+      )
     } else {
       setPickupPin(null)
+      setReturnPin(null)
     }
 
     if (req?.courier_id) {
@@ -222,6 +235,19 @@ export default function RequestDetail() {
             </div>
           )}
         </div>
+
+        {returnPin && (
+          <div className="p-4 rounded-xl border border-teal/30 bg-teal/5">
+            <div className="text-xs uppercase tracking-widest text-teal font-bold">Return code</div>
+            <div className="mt-2 text-4xl font-bold tracking-[0.3em] text-ink text-center py-2">
+              {returnPin}
+            </div>
+            <p className="text-sm text-slate text-center mt-1 leading-relaxed">
+              You asked for this package back if nobody's there. If your courier returns it,
+              give them this code.
+            </p>
+          </div>
+        )}
 
         <div className="p-4 rounded-xl border border-mist bg-white">
           <div className="text-xs uppercase tracking-widest text-slate">Package</div>

@@ -115,6 +115,10 @@ Deno.serve(async (req) => {
 
   // Generate a 4-digit pickup PIN for the sender→courier handshake.
   const pickupPin = String(Math.floor(1000 + Math.random() * 9000));
+  // Minted alongside the pickup PIN so it exists before it is ever needed.
+  // The sender only sees it if their request is return_to_sender and the
+  // courier actually comes back.
+  const returnPin = String(Math.floor(1000 + Math.random() * 9000));
 
   // Atomic claim: only update if still open and unclaimed.
   const { data: updated, error: claimErr } = await supabase
@@ -146,6 +150,9 @@ Deno.serve(async (req) => {
     pin: pickupPin,
     attempts: 0,
     locked_until: null,
+    return_pin: returnPin,
+    return_attempts: 0,
+    return_locked_until: null,
   });
 
   await safeTrackEvent(supabase, user.id, "delivery_accepted", {

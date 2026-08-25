@@ -25,6 +25,7 @@ const statusStyles = {
   picked_up: 'bg-teal/10 text-teal',
   delivered: 'bg-green/10 text-green',
   cancelled: 'bg-mist text-slate',
+  returned: 'bg-teal/10 text-teal',
 }
 
 const statusLabel = {
@@ -33,6 +34,7 @@ const statusLabel = {
   picked_up: 'In transit',
   delivered: 'Delivered',
   cancelled: 'Cancelled',
+  returned: 'Returned to sender',
 }
 
 export default function CourierDelivery() {
@@ -47,6 +49,11 @@ export default function CourierDelivery() {
   // the delivery can be closed -- complete-delivery rejects the call
   // without one, so this is a mirror of the server rule, not the rule.
   const [proofPath, setProofPath] = useState(null)
+  // Return-to-sender: courier flips into handback mode and enters the code
+  // the sender gives them at the door.
+  const [returning, setReturning] = useState(false)
+  const [returnPin, setReturnPin] = useState('')
+  const [returnError, setReturnError] = useState('')
   const [uploadingProof, setUploadingProof] = useState(false)
   const [pin, setPin] = useState('')
   const [pinError, setPinError] = useState('')
@@ -184,6 +191,42 @@ export default function CourierDelivery() {
       toast.error(error.message)
       return
     }
+    load()
+  }
+
+  const RETURN_ERROR_COPY = {
+    return_pin_mismatch: "That code doesn't match. Ask your sender to read it again.",
+    return_locked: 'Too many tries. Wait 15 minutes and try again.',
+    no_return_pin: 'No return code on this delivery. Contact support.',
+    policy_mismatch: 'This delivery is set to leave at the door, not return.',
+  }
+
+  const handleReturned = async () => {
+    setReturnError('')
+    if (!/^\d{4}$/.test(returnPin)) {
+      setReturnError('Enter the 4-digit code from your sender.')
+      return
+    }
+    const ok = window.confirm(
+      `Confirm returned to sender? You'll earn ${dollars(courierTake)}.`,
+    )
+    if (!ok) return
+    setActing(true)
+    const { data, error } = await supabase.functions.invoke('complete-delivery', {
+      body: {
+        delivery_request_id: request.id,
+        outcome: 'returned',
+        return_pin: returnPin,
+        ...(proofPath ? { delivery_photo_path: proofPath } : {}),
+      },
+    })
+    setActing(false)
+    if (error || data?.error) {
+      const code = data?.code
+      setReturnError(RETURN_ERROR_COPY[code] || data?.error || error?.message || 'Something went wrong.')
+      return
+    }
+    setReturnPin('')
     load()
   }
 
@@ -440,11 +483,85 @@ export default function CourierDelivery() {
                   </svg>
                   Open in Maps
                 </a>
+                {/* The sender's standing instruction. Shown before the
+                    photo control so a courier reads it while deciding what
+                    to do, not after they've already left the package. */}
+                <div className={`mt-3 p-3 rounded-lg border text-xs leading-relaxed ${
+                  request.no_answer_policy === 'return_to_sender'
+                    ? 'border-teal/30 bg-teal/5 text-ink'
+                    : 'border-mist bg-white text-slate'
+                }`}>
+                  <span className="uppercase tracking-widest text-[10px] text-slate">
+                    If nobody's there
+                  </span>
+                  <div className="mt-1">
+                    {request.no_answer_policy === 'return_to_sender'
+                      ? 'Bring it back to the sender. They\u2019ll give you a 4-digit code at handback \u2014 you earn the same as a delivery.'
+                      : 'You can leave it in a safe spot. Photograph exactly where you left it.'}
+                  </div>
+                </div>
+
+                {request.no_answer_policy === 'return_to_sender' && !returning && (
+                  <button
+                    onClick={() => setReturning(true)}
+                    disabled={acting}
+                    className="mt-3 w-full py-2.5 rounded-lg border border-teal/40 text-teal text-sm font-medium hover:bg-teal/5 transition-colors disabled:opacity-50"
+                  >
+                    Nobody's here — return to sender
+                  </button>
+                )}
+
+                {returning && (
+                  <div className="mt-3 p-4 rounded-lg border border-teal/40 bg-white">
+                    <div className="text-xs uppercase tracking-widest text-teal font-bold">
+                      Returning to sender
+                    </div>
+                    <div className="mt-2 p-3 rounded-lg bg-mist">
+                      <div className="text-sm text-ink font-medium">{request.pickup_address}</div>
+                    </div>
+                    <a
+                      href={mapsUrl(request.pickup_address)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-flex items-center gap-2 text-sm text-teal hover:underline"
+                    >
+                      Open in Maps
+                    </a>
+                    <p className="mt-3 text-xs text-slate leading-relaxed">
+                      Ask your sender for their 4-digit return code when you hand the package back.
+                    </p>
+                    <input
+                      inputMode="numeric"
+                      pattern="\d{4}"
+                      maxLength={4}
+                      value={returnPin}
+                      onChange={(e) => { setReturnPin(e.target.value.replace(/\D/g, '')); setReturnError('') }}
+                      placeholder="0000"
+                      className="mt-2 w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none text-center text-2xl tracking-widest"
+                    />
+                    {returnError && <p className="mt-2 text-xs text-red-600">{returnError}</p>}
+                    <button
+                      onClick={handleReturned}
+                      disabled={acting || returnPin.length !== 4}
+                      className="mt-3 w-full py-3 rounded-lg bg-teal text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity"
+                    >
+                      {acting ? 'Confirming\u2026' : 'Confirm returned'}
+                    </button>
+                    <button
+                      onClick={() => { setReturning(false); setReturnPin(''); setReturnError('') }}
+                      disabled={acting}
+                      className="mt-2 w-full py-2 text-xs text-slate hover:text-ink transition-colors"
+                    >
+                      Cancel — I can still deliver it
+                    </button>
+                  </div>
+                )}
+
                 {/* Proof of delivery. `capture="environment"` opens the rear
                     camera on a phone; on a denied permission or a desktop the
                     same input still falls back to the photo library, so a
                     courier is never locked out of finishing the job. */}
-                <div className="mt-4 p-3 rounded-lg bg-white border border-mist">
+                <div className={`mt-4 p-3 rounded-lg bg-white border border-mist ${returning ? 'hidden' : ''}`}>
                   <div className="text-xs uppercase tracking-widest text-slate mb-1">
                     Photo of the drop
                   </div>
@@ -477,7 +594,7 @@ export default function CourierDelivery() {
                 <button
                   onClick={handleDelivered}
                   disabled={acting || uploadingProof || !proofPath}
-                  className="mt-3 w-full py-3 rounded-lg bg-green text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  className={`mt-3 w-full py-3 rounded-lg bg-green text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity ${returning ? 'hidden' : ''}`}
                 >
                   {acting ? 'Capturing payment\u2026' : 'Mark delivered'}
                 </button>

@@ -122,6 +122,7 @@ const statusStyles = {
   picked_up: 'bg-teal/10 text-teal',
   delivered: 'bg-green/10 text-green',
   cancelled: 'bg-mist text-slate line-through',
+  returned: 'bg-teal/10 text-teal',
 }
 
 function dollars(cents) {

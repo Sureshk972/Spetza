@@ -35,6 +35,9 @@ export default function NewRequest() {
   const [size, setSize] = useState('')
   const [photoPath, setPhotoPath] = useState(null)
   const [liabilityAccepted, setLiabilityAccepted] = useState(false)
+  // What happens if nobody answers at the dropoff. Decided here, before
+  // pickup, so the courier never has to improvise on a doorstep.
+  const [noAnswerPolicy, setNoAnswerPolicy] = useState('leave_at_door')
   const [submitting, setSubmitting] = useState(false)
 
   const distance = useMemo(() => {
@@ -124,6 +127,7 @@ export default function NewRequest() {
         package_size: size.trim() || null,
         package_photo_path: photoPath,
         max_price_cents: priceCents,
+        no_answer_policy: noAnswerPolicy,
       })
       .select('id')
       .single()
@@ -259,6 +263,51 @@ export default function NewRequest() {
         </div>
 
         <PricingTable variant="sender" />
+
+        <div className="p-4 rounded-lg border border-mist bg-white">
+          <div className="text-xs uppercase tracking-widest text-slate">
+            If nobody's there
+          </div>
+          <p className="text-xs text-slate/80 mt-1 leading-relaxed">
+            Your courier follows this without calling you.
+          </p>
+          <div className="mt-3 space-y-2">
+            {[
+              {
+                value: 'leave_at_door',
+                title: 'Leave it at the door',
+                detail: 'Your courier photographs where they left it. Once it\u2019s down, it\u2019s on you.',
+              },
+              {
+                value: 'return_to_sender',
+                title: 'Bring it back to me',
+                detail: 'You\u2019ll get a code to hand over when they return it. Costs the same either way.',
+              },
+            ].map((opt) => (
+              <label
+                key={opt.value}
+                className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                  noAnswerPolicy === opt.value
+                    ? 'border-teal bg-teal/5'
+                    : 'border-mist bg-white hover:border-slate/30'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="no_answer_policy"
+                  value={opt.value}
+                  checked={noAnswerPolicy === opt.value}
+                  onChange={(e) => setNoAnswerPolicy(e.target.value)}
+                  className="mt-0.5 accent-teal shrink-0"
+                />
+                <span>
+                  <span className="block text-sm text-ink font-medium">{opt.title}</span>
+                  <span className="block text-xs text-slate leading-relaxed mt-0.5">{opt.detail}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
 
         <label className="flex items-start gap-3 p-4 rounded-lg border border-mist bg-white cursor-pointer">
           <input
