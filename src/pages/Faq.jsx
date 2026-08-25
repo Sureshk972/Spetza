@@ -8,6 +8,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Footer from '../components/Footer.jsx'
+import PricingTable from '../components/PricingTable.jsx'
 
 const SENDER_FAQS = [
   {
@@ -24,7 +25,7 @@ const SENDER_FAQS = [
     q: 'What can I send?',
     a: (
       <>
-        Anything legal that one person can carry and that weighs under 50 lb. Not allowed:
+        Anything legal that one person can carry and that weighs under 20 lb. Not allowed:
         hazardous materials, illegal goods, food that needs refrigeration, live animals, or firearms.
         Full list in the{' '}
         <Link to="/terms" className="text-teal hover:underline">Terms of Service</Link>.
@@ -35,8 +36,12 @@ const SENDER_FAQS = [
     q: 'How much does it cost?',
     a: (
       <>
-        You set your own price when you post. You'll see the full total, including our service fee,
-        before you confirm — nothing is added afterwards.
+        Price is set by distance, so you know it before you post — no surge, no bidding, no
+        haggling with a courier. A service fee is added on top, shown below and again on the
+        posting screen before you confirm.
+        <div className="mt-3">
+          <PricingTable variant="sender" />
+        </div>
       </>
     ),
   },
@@ -143,6 +148,18 @@ const COURIER_FAQS = [
       <>
         No. Bike, car, on foot — whatever gets the package there. Deliveries show their distance so
         you can judge what's realistic for how you're travelling.
+      </>
+    ),
+  },
+  {
+    q: 'How much does a delivery pay?',
+    a: (
+      <>
+        By distance, and you see the figure before you accept anything. A platform fee comes out
+        of each delivery — the rates below are what reaches you.
+        <div className="mt-3">
+          <PricingTable variant="courier" />
+        </div>
       </>
     ),
   },

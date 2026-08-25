@@ -22,3 +22,4 @@ android/local.properties
 
 # Local Netlify folder
 .netlify
+public/version.json

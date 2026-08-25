@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { onBackButton } from './lib/capacitor.js'
 import TestModeBar from './components/TestModeBar.jsx'
+import UpdateBadge from './components/UpdateBadge.jsx'
 import RequireAuth from './components/auth/RequireAuth.jsx'
 import RequireRole from './components/auth/RequireRole.jsx'
 import SenderLayout from './components/SenderLayout.jsx'
@@ -87,6 +88,7 @@ export default function App() {
   return (
     <>
     <TestModeBar />
+    <UpdateBadge />
     <Routes>
       <Route path="/welcome" element={<Welcome />} />
       <Route path="/signin" element={<SignIn />} />
