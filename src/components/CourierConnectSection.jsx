@@ -89,6 +89,15 @@ export default function CourierConnectSection({ profile }) {
           ? "You started setting up payouts but didn't finish. Stripe still needs your bank details so we can pay you after each delivery."
           : "Connect a bank account through Stripe so we can pay you after each delivery. Stripe also handles identity verification."}
       </p>
+      {/* Say this before they sign up, not after their first delivery.
+          Stripe holds a new connected account's first payout for 7-14 days
+          and pays out on a ~2-business-day delay after that. */}
+      <div className="p-3 rounded-lg bg-mist border border-mist text-xs text-slate leading-relaxed">
+        <span className="text-ink font-medium">When you get paid:</span> earnings land in
+        your Stripe balance as soon as a delivery closes. Stripe moves them to your bank
+        about 2 business days later. Your very first payout takes longer — up to 14 days —
+        while Stripe finishes verifying your account.
+      </div>
       {syncing && (
         <p className="text-sm text-slate">Checking your bank connection…</p>
       )}

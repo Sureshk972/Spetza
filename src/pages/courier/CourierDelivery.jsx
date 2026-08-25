@@ -367,11 +367,15 @@ export default function CourierDelivery() {
             <span className="font-display text-xl text-ink">{dollars(courierTake)}</span>
           </div>
           <div className="text-xs text-slate pt-1">
-            {request.status === 'delivered'
-              ? 'Paid out to your Connect account.'
+            {/* "Paid out" used to appear here the moment a delivery closed,
+                which reads as "it's in my bank". It isn't: capture moves the
+                money to the courier's Stripe balance, and Stripe pays out on
+                its own schedule. */}
+            {request.status === 'delivered' || request.status === 'returned'
+              ? 'In your Stripe balance. Reaches your bank in about 2 business days — your first payout can take up to 14.'
               : request.status === 'cancelled'
               ? 'No payout — the hold was released.'
-              : 'Paid when you mark delivered.'}
+              : 'Paid when you close this delivery.'}
           </div>
         </div>
 

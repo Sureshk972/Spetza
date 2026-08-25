@@ -46,7 +46,11 @@ const SMS_TEMPLATES: Record<SmsEvent, Record<SmsRole, string>> = {
   },
   delivered: {
     sender: "🎉 {order} — Your package has been delivered by {name}. Thanks for using Spetza!",
-    courier: "💰 {order} — Delivery complete! {price} earned. Payout hits your bank next business day.",
+    // Never promise "next business day" here. Stripe Express pays out on a
+    // rolling ~2-business-day delay, and holds a connected account's FIRST
+    // payout for 7-14 days. Couriers plan around this number.
+    courier:
+      "💰 {order} — Delivery complete! {price} earned, in your Stripe balance now. Reaches your bank in ~2 business days (first payout up to 14).",
   },
   cancelled: {
     sender: "❌ {order} — Your delivery has been cancelled. Any payment hold has been released.",

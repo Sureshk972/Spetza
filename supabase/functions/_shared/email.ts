@@ -96,7 +96,10 @@ const BODIES: Record<DeliveryEvent, Record<Role, string>> = {
   },
   delivered: {
     sender: "Your package has been delivered by {name}. Thank you for using Spetza!",
-    courier: "Delivery complete! Your earnings for this delivery are on the way to your account.",
+    courier:
+      "Delivery complete! Your earnings are in your Stripe balance now. Stripe " +
+      "sends them to your bank in about 2 business days — if this is your first " +
+      "payout, allow up to 14 days while Stripe finishes verifying your account.",
   },
   cancelled: {
     sender: "This delivery has been cancelled. If payment was authorized, it has been released.",
@@ -300,7 +303,7 @@ export const PUSH_BODIES: Record<DeliveryEvent, Record<Role, string>> = {
   },
   delivered: {
     sender: "Delivered by {name}. Thank you for using Spetza!",
-    courier: "Earnings on the way to your account.",
+    courier: "Earnings in your Stripe balance — bank transfer follows.",
   },
   cancelled: {
     sender: "Payment hold has been released.",
