@@ -42,9 +42,13 @@ import AdminDemandMap from './pages/admin/AdminDemandMap.jsx'
 
 function RootRedirect() {
   const { profile } = useAuth()
-  if (profile?.is_admin) return <Navigate to="/admin" replace />
+  // Role before admin. Admins are users too -- and in practice the admin is
+  // also the person testing sender and courier flows, so sending them to the
+  // panel from '/' made the app unreachable without typing a URL. A role-less
+  // admin still lands in the panel rather than being asked to pick a role.
   if (profile?.account_type === 'sender') return <Navigate to="/sender" replace />
   if (profile?.account_type === 'courier') return <Navigate to="/courier" replace />
+  if (profile?.is_admin) return <Navigate to="/admin" replace />
   return <Navigate to="/choose-role" replace />
 }
 

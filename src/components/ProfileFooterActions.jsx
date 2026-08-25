@@ -15,7 +15,7 @@ const SHOW_ROLE_SWITCHER = false
 
 export default function ProfileFooterActions({ currentRole }) {
   const navigate = useNavigate()
-  const { user, refreshProfile } = useAuth()
+  const { user, profile, refreshProfile } = useAuth()
   const otherRole = currentRole === 'sender' ? 'courier' : 'sender'
   const otherLabel = otherRole === 'sender' ? 'Sender' : 'Courier'
 
@@ -62,6 +62,23 @@ export default function ProfileFooterActions({ currentRole }) {
           </span>
           <span className="text-slate">→</span>
         </button>
+      )}
+
+      {/* Admins route to their role home from '/' like everyone else, so this
+          is their only in-app way back to the panel. */}
+      {profile?.is_admin && (
+        <Link
+          to="/admin"
+          className="w-full flex items-center justify-between px-4 py-3 rounded-lg border border-mist bg-white hover:border-teal transition-colors text-sm text-ink"
+        >
+          <span className="flex items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            Admin panel
+          </span>
+          <span className="text-slate">→</span>
+        </Link>
       )}
 
       <button
