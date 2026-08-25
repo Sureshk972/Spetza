@@ -85,9 +85,14 @@ export default function Privacy() {
           </Section>
 
           <Section title="Your rights">
-            You may access, correct, or delete your personal information at any time through your
-            profile settings or by contacting us. California residents have additional rights under
-            the CCPA — contact us to exercise them.
+            You may access and correct your personal information at any time from your profile.
+            You may also delete your account from your profile, which removes your name, phone
+            number, photo and notification settings, and permanently closes your login.
+            <br /><br />
+            Records of deliveries and payments are kept after deletion, without your personal
+            details attached. We keep them because the other people on those deliveries need
+            their own history, and because tax and payment regulations require us to. California
+            residents have additional rights under the CCPA — contact us to exercise them.
           </Section>
 
           <Section title="Changes to this policy">

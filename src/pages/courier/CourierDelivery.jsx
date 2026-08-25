@@ -409,7 +409,7 @@ export default function CourierDelivery() {
           </div>
         </div>
 
-        {request.status === 'delivered' && !rated && (
+        {(request.status === 'delivered' || request.status === 'returned') && !rated && (
           <div className="p-4 rounded-xl border border-mist bg-white">
             <RatingPrompt
               request={request}

@@ -355,7 +355,7 @@ export default function RequestDetail() {
           </div>
         </div>
 
-        {request.status === 'delivered' && courier && !rated && (
+        {(request.status === 'delivered' || request.status === 'returned') && courier && !rated && (
           <div className="p-4 rounded-xl border border-mist bg-white">
             <RatingPrompt
               request={request}
@@ -367,7 +367,7 @@ export default function RequestDetail() {
           </div>
         )}
 
-        {request.status === 'delivered' && courier && (
+        {(request.status === 'delivered' || request.status === 'returned') && courier && (
           <div className="p-4 rounded-xl border border-green/20 bg-green/5">
             <TipPrompt
               request={request}

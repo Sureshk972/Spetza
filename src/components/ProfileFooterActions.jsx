@@ -5,6 +5,7 @@
 // - Sign out (replaces the old bottom-nav Sign-out tab)
 // - Legal links (Privacy / Terms / Trust)
 
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase.js'
@@ -16,6 +17,7 @@ const SHOW_ROLE_SWITCHER = false
 export default function ProfileFooterActions({ currentRole }) {
   const navigate = useNavigate()
   const { user, profile, refreshProfile } = useAuth()
+  const [deleting, setDeleting] = useState(false)
   const otherRole = currentRole === 'sender' ? 'courier' : 'sender'
   const otherLabel = otherRole === 'sender' ? 'Sender' : 'Courier'
 
@@ -34,6 +36,30 @@ export default function ProfileFooterActions({ currentRole }) {
     }
     await refreshProfile()
     navigate(otherRole === 'sender' ? '/sender' : '/courier', { replace: true })
+  }
+
+  const deleteAccount = async () => {
+    // Two gates on purpose: this is irreversible and the second one makes
+    // the person type the word rather than tap twice by reflex.
+    const ok = window.confirm(
+      'Delete your account? Your name, phone number, photo and notification ' +
+      'settings are removed and you will not be able to sign in again. ' +
+      'Past delivery and payment records are kept, without your details.',
+    )
+    if (!ok) return
+    const typed = window.prompt('Type DELETE to confirm.')
+    if (typed !== 'DELETE') return
+
+    setDeleting(true)
+    const { data, error } = await supabase.functions.invoke('delete-account', { body: {} })
+    setDeleting(false)
+    if (error || data?.error) {
+      toast.error(data?.error || error?.message || "Couldn't delete your account.")
+      return
+    }
+    await supabase.auth.signOut()
+    navigate('/welcome', { replace: true })
+    toast.success('Your account has been deleted.')
   }
 
   const signOut = async () => {
@@ -92,6 +118,15 @@ export default function ProfileFooterActions({ currentRole }) {
           <line x1="21" y1="12" x2="9" y2="12" />
         </svg>
         Sign out
+      </button>
+
+      <button
+        type="button"
+        onClick={deleteAccount}
+        disabled={deleting}
+        className="w-full px-4 py-3 rounded-lg border border-mist bg-white hover:border-red-300 transition-colors text-sm text-slate hover:text-red-600 disabled:opacity-50"
+      >
+        {deleting ? 'Deleting…' : 'Delete my account'}
       </button>
 
       <div className="mt-6 flex justify-center gap-3 text-[11px] text-slate/60">
