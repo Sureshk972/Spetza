@@ -19,7 +19,7 @@ function readRole() {
 }
 
 export default function SignUp() {
-  const { user } = useAuth()
+  const { user, refreshProfile } = useAuth()
   const navigate = useNavigate()
   useEffect(() => {
     if (user) navigate('/', { replace: true })
@@ -100,6 +100,12 @@ export default function SignUp() {
       if (profileErr) {
         console.error('Failed to create profile row after signup', profileErr)
       }
+
+      // Pull the row we just wrote into context. The onAuthStateChange
+      // fired by signUp() raced ahead of this upsert and cached a null
+      // profile; without this refetch the guards see "no profile" and let
+      // the dashboard render before bouncing to /verify-phone.
+      await refreshProfile()
 
       // Tie all subsequent events to this user and seed the profile.
       identifyUser(data.user.id, { email, role: role || 'unknown' })

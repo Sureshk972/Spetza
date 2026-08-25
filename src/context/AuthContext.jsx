@@ -6,6 +6,7 @@ const AuthContext = createContext({
   user: null,
   profile: null,
   loading: true,
+  profileLoading: false,
   refreshProfile: async () => {},
   signOut: async () => {},
 })
@@ -14,16 +15,27 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  // True while a profile fetch is in flight. RequireAuth uses this to hold
+  // the gate shut when we have a user but don't yet know their profile --
+  // otherwise sign-in renders the dashboard for a beat before the phone /
+  // name gates can fire. Only blocks when `profile` is still null, so a
+  // routine refreshProfile() mid-session never flashes a spinner.
+  const [profileLoading, setProfileLoading] = useState(false)
 
   const fetchProfile = useCallback(async (uid) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', uid)
-      .maybeSingle()
-    const next = data ?? null
-    setProfile(next)
-    return next
+    setProfileLoading(true)
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', uid)
+        .maybeSingle()
+      const next = data ?? null
+      setProfile(next)
+      return next
+    } finally {
+      setProfileLoading(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -51,7 +63,15 @@ export function AuthProvider({ children }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       const next = session?.user ?? null
       setUser(next)
-      if (next) fetchProfile(next.id)
+      if (next) {
+        // Mark the fetch as pending synchronously. fetchProfile sets this
+        // too, but it isn't awaited here -- without this line React can
+        // paint the post-sign-in route before the flag flips.
+        setProfileLoading(true)
+        fetchProfile(next.id).catch(() => setProfileLoading(false))
+      } else {
+        setProfile(null)
+      }
     })
 
     return () => {
@@ -73,7 +93,9 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, refreshProfile, signOut }}>
+    <AuthContext.Provider
+      value={{ user, profile, loading, profileLoading, refreshProfile, signOut }}
+    >
       {children}
     </AuthContext.Provider>
   )

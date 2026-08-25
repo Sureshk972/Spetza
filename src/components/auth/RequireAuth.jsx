@@ -12,10 +12,16 @@ const PHONE_VERIFY_EXEMPT = new Set(['/verify-phone'])
 const NAME_CAPTURE_EXEMPT = new Set(['/verify-phone', '/name'])
 
 export default function RequireAuth({ children }) {
-  const { user, profile, loading } = useAuth()
+  const { user, profile, loading, profileLoading } = useAuth()
   const location = useLocation()
 
-  if (loading) {
+  // Hold the gate shut while a profile fetch is still in flight for a user
+  // we know nothing about yet. Without this, sign-in and sign-up render the
+  // destination route for a beat before the phone/name gates below can fire
+  // -- a new courier would see the dashboard flash past on the way to
+  // /verify-phone. Once `profile` exists we never block again, so routine
+  // refreshes mid-session don't flash a spinner.
+  if (loading || (user && !profile && profileLoading)) {
     return (
       <div className="min-h-full flex items-center justify-center text-slate">
         Loading...
