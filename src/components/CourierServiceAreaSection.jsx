@@ -11,6 +11,9 @@ export default function CourierServiceAreaSection({ profile, onProfileChange }) 
   const { user } = useAuth()
   const [editing, setEditing] = useState(false)
   const [address, setAddress] = useState(profile?.home_address ?? '')
+  // Coordinates from a picked suggestion, so saving skips a second geocode.
+  // Cleared on any manual edit, since they'd no longer match what's typed.
+  const [resolved, setResolved] = useState(null)
   const [radius, setRadius] = useState(profile?.service_radius_miles ?? 10)
   const [saving, setSaving] = useState(false)
 
@@ -25,7 +28,9 @@ export default function CourierServiceAreaSection({ profile, onProfileChange }) 
       return
     }
     setSaving(true)
-    const geo = await geocodeAddress(address)
+    const geo = resolved
+      ? { lat: resolved.lat, lng: resolved.lng, formattedAddress: resolved.formattedAddress }
+      : await geocodeAddress(address)
     if (geo.error) {
       setSaving(false)
       toast.error(geo.error)
@@ -77,7 +82,11 @@ export default function CourierServiceAreaSection({ profile, onProfileChange }) 
       )}
       <StructuredAddressInput
         value={address}
-        onChange={setAddress}
+        onChange={(v) => {
+          setAddress(v)
+          setResolved(null)
+        }}
+        onResolved={setResolved}
       />
       <div>
         <div className="text-xs uppercase tracking-widest text-slate mb-2">Service radius</div>

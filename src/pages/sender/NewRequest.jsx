@@ -189,6 +189,15 @@ export default function NewRequest() {
               if (pickupGeo.status !== 'idle') setPickupGeo(blankGeo)
             }}
             onBlur={() => handleGeocode(pickup, setPickupGeo)}
+            onResolved={({ lat, lng, formattedAddress }) =>
+              setPickupGeo({
+                status: 'ok',
+                lat,
+                lng,
+                formatted: formattedAddress,
+                error: null,
+              })
+            }
           />
           <GeoCaption geo={pickupGeo} />
         </Field>
@@ -200,6 +209,15 @@ export default function NewRequest() {
               if (dropoffGeo.status !== 'idle') setDropoffGeo(blankGeo)
             }}
             onBlur={() => handleGeocode(dropoff, setDropoffGeo)}
+            onResolved={({ lat, lng, formattedAddress }) =>
+              setDropoffGeo({
+                status: 'ok',
+                lat,
+                lng,
+                formatted: formattedAddress,
+                error: null,
+              })
+            }
           />
           <GeoCaption geo={dropoffGeo} />
         </Field>

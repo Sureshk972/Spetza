@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef, useId } from 'react'
+import { fetchSuggestions, fetchPlaceDetails, newSessionToken } from '../lib/places.js'
 
 const US_STATES = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
@@ -7,6 +8,9 @@ const US_STATES = [
   'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
   'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC',
 ]
+
+const MIN_QUERY_CHARS = 3
+const DEBOUNCE_MS = 250
 
 /** Concatenate structured fields into a single address string. */
 function concat(parts) {
@@ -48,10 +52,19 @@ function parse(address) {
 /**
  * Structured address input: Street, Apt, City, State, Zip.
  *
+ * The street field doubles as a Google Places combobox. Picking a suggestion
+ * fills city/state/zip and hands coordinates straight to onResolved, which
+ * saves the caller a separate geocode round trip. Apt is never touched —
+ * Google doesn't know unit numbers.
+ *
+ * Autocomplete is an accelerator, not a gate: every failure closes the dropdown
+ * silently and leaves the manual typing + onBlur geocode path working.
+ *
  * Props:
  *  - value: full address string (for initial population)
  *  - onChange(fullAddress): called with concatenated address on every change
  *  - onBlur(): called when the last field loses focus (trigger geocode)
+ *  - onResolved({ lat, lng, formattedAddress }): called when a suggestion is picked
  *  - disabled: disable all fields
  *  - label: optional label shown above the group
  */
@@ -59,11 +72,21 @@ export default function StructuredAddressInput({
   value = '',
   onChange,
   onBlur,
+  onResolved,
   disabled = false,
   label,
 }) {
   const [parts, setParts] = useState(() => parse(value))
   const [initialized, setInitialized] = useState(false)
+
+  const [suggestions, setSuggestions] = useState([])
+  const [open, setOpen] = useState(false)
+  const [highlight, setHighlight] = useState(-1)
+
+  const sessionRef = useRef(null)
+  const abortRef = useRef(null)
+  const debounceRef = useRef(null)
+  const listboxId = useId()
 
   // Re-parse if value changes externally (e.g. EditRequest loading data)
   useEffect(() => {
@@ -72,6 +95,19 @@ export default function StructuredAddressInput({
       setInitialized(true)
     }
   }, [value, initialized])
+
+  // Drop any pending work if the field unmounts mid-flight.
+  useEffect(() => {
+    return () => {
+      clearTimeout(debounceRef.current)
+      abortRef.current?.abort()
+    }
+  }, [])
+
+  const closeList = useCallback(() => {
+    setOpen(false)
+    setHighlight(-1)
+  }, [])
 
   const update = useCallback(
     (field, val) => {
@@ -83,6 +119,98 @@ export default function StructuredAddressInput({
     },
     [onChange],
   )
+
+  const runQuery = useCallback((input) => {
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    if (!sessionRef.current) sessionRef.current = newSessionToken()
+
+    fetchSuggestions(input, sessionRef.current, { signal: controller.signal })
+      .then((res) => {
+        if (controller.signal.aborted) return
+        if (res.error || !res.suggestions?.length) {
+          setSuggestions([])
+          closeList()
+          return
+        }
+        setSuggestions(res.suggestions)
+        setOpen(true)
+        setHighlight(-1)
+      })
+      .catch(() => {
+        // Aborted or offline. Autocomplete stays quiet; manual entry still works.
+      })
+  }, [closeList])
+
+  const handleStreetChange = (val) => {
+    update('street', val)
+    clearTimeout(debounceRef.current)
+    if (val.trim().length < MIN_QUERY_CHARS) {
+      abortRef.current?.abort()
+      setSuggestions([])
+      closeList()
+      return
+    }
+    debounceRef.current = setTimeout(() => runQuery(val.trim()), DEBOUNCE_MS)
+  }
+
+  const selectSuggestion = async (s) => {
+    clearTimeout(debounceRef.current)
+    abortRef.current?.abort()
+    closeList()
+    setSuggestions([])
+
+    const token = sessionRef.current
+    // The session ends the moment details are fetched; the next edit starts a new one.
+    sessionRef.current = null
+
+    const details = await fetchPlaceDetails(s.placeId, token)
+    if (details.error) {
+      // Leave what the sender typed; the onBlur geocode path picks it up.
+      return
+    }
+
+    // Build the next parts synchronously rather than inside a setState updater:
+    // callers reset their geo state on every onChange, so onChange has to land
+    // before onResolved or the coordinates we just fetched get wiped.
+    const next = {
+      ...parts,
+      street: details.street || s.mainText,
+      city: details.city || parts.city,
+      state: details.state || parts.state,
+      zip: details.zip || parts.zip,
+    }
+    setParts(next)
+    onChange?.(concat(next))
+
+    if (Number.isFinite(details.lat) && Number.isFinite(details.lng)) {
+      onResolved?.({
+        lat: details.lat,
+        lng: details.lng,
+        formattedAddress: details.formattedAddress,
+      })
+    }
+  }
+
+  const handleKeyDown = (e) => {
+    if (!open || !suggestions.length) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setHighlight((h) => (h + 1) % suggestions.length)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setHighlight((h) => (h <= 0 ? suggestions.length - 1 : h - 1))
+    } else if (e.key === 'Enter') {
+      if (highlight >= 0) {
+        e.preventDefault()
+        selectSuggestion(suggestions[highlight])
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      closeList()
+    }
+  }
 
   const isComplete = parts.street && parts.city && parts.state && parts.zip
 
@@ -97,15 +225,63 @@ export default function StructuredAddressInput({
         </label>
       )}
 
-      <input
-        type="text"
-        required
-        disabled={disabled}
-        value={parts.street}
-        onChange={(e) => update('street', e.target.value)}
-        placeholder="Street address"
-        className={inputClass}
-      />
+      <div className="relative">
+        <input
+          type="text"
+          required
+          disabled={disabled}
+          value={parts.street}
+          onChange={(e) => handleStreetChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          // A click on an option fires mousedown first and keeps focus, so the
+          // list is still mounted when the click lands.
+          onBlur={closeList}
+          placeholder="Street address"
+          className={inputClass}
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={listboxId}
+          aria-autocomplete="list"
+          aria-activedescendant={
+            highlight >= 0 ? `${listboxId}-opt-${highlight}` : undefined
+          }
+          autoComplete="off"
+        />
+
+        {open && suggestions.length > 0 && (
+          <ul
+            id={listboxId}
+            role="listbox"
+            className="absolute z-20 left-0 right-0 mt-1 bg-white border border-mist rounded-lg shadow-lg overflow-hidden"
+          >
+            {suggestions.map((s, i) => (
+              <li
+                key={s.placeId}
+                id={`${listboxId}-opt-${i}`}
+                role="option"
+                aria-selected={i === highlight}
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  selectSuggestion(s)
+                }}
+                onMouseEnter={() => setHighlight(i)}
+                className={
+                  'px-3 py-2.5 cursor-pointer text-sm ' +
+                  (i === highlight ? 'bg-mist' : 'bg-white')
+                }
+              >
+                <span className="font-bold text-ink">{s.mainText}</span>
+                {s.secondaryText && (
+                  <span className="text-slate"> · {s.secondaryText}</span>
+                )}
+              </li>
+            ))}
+            <li className="px-3 py-1.5 text-[10px] uppercase tracking-widest text-slate/60 border-t border-mist">
+              Powered by Google
+            </li>
+          </ul>
+        )}
+      </div>
 
       <input
         type="text"
