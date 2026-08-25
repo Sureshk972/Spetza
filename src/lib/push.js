@@ -16,7 +16,6 @@ export async function initPush(userId) {
 
   // Listen for registration success
   PushNotifications.addListener('registration', async ({ value: token }) => {
-    console.log('Push token received:', token.slice(0, 20) + '…')
     await upsertToken(userId, token)
   })
 
@@ -27,7 +26,6 @@ export async function initPush(userId) {
 
   // Listen for incoming push while app is in foreground
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
-    console.log('Push received in foreground:', notification.title)
     // Could show an in-app toast here in the future
   })
 

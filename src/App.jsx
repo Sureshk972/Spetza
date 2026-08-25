@@ -118,6 +118,11 @@ export default function App() {
         <Route path="ratings" element={<AdminRatings />} />
         <Route path="demand" element={<AdminDemandMap />} />
       </Route>
+
+      {/* Unknown URL: bounce to the root, which routes signed-in users to
+          their role home and everyone else to /welcome. Prevents a typo'd
+          or stale link rendering a blank page. */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </>
   )

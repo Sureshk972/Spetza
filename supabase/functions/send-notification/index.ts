@@ -230,8 +230,6 @@ Deno.serve(async (req) => {
     });
   }
 
-  console.log(`send-notification: ${deliveryEvent} for ${delivery_request_id}`, results);
-
   return json({ ok: true, results }, 200);
 });
 
