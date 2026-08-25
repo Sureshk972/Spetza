@@ -12,6 +12,12 @@ const US_STATES = [
 const MIN_QUERY_CHARS = 3
 const DEBOUNCE_MS = 250
 
+/**
+ * The parts a set of coordinates belongs to. Apt is deliberately excluded —
+ * a unit number doesn't move the building.
+ */
+const geoKey = (p) => [p.street, p.city, p.state, p.zip].join('|').toLowerCase()
+
 /** Concatenate structured fields into a single address string. */
 function concat(parts) {
   const { street, apt, city, state, zip } = parts
@@ -86,6 +92,10 @@ export default function StructuredAddressInput({
   const sessionRef = useRef(null)
   const abortRef = useRef(null)
   const debounceRef = useRef(null)
+  const blurTimerRef = useRef(null)
+  // Coordinates from the last picked suggestion, tagged with the parts they
+  // describe, so we can tell whether they still apply to what's in the fields.
+  const resolvedRef = useRef(null)
   const listboxId = useId()
 
   // Re-parse if value changes externally (e.g. EditRequest loading data)
@@ -100,24 +110,43 @@ export default function StructuredAddressInput({
   useEffect(() => {
     return () => {
       clearTimeout(debounceRef.current)
+      clearTimeout(blurTimerRef.current)
       abortRef.current?.abort()
     }
   }, [])
 
   const closeList = useCallback(() => {
+    clearTimeout(blurTimerRef.current)
     setOpen(false)
     setHighlight(-1)
   }, [])
 
+  /**
+   * Close on blur, but a beat late. mousedown's preventDefault already keeps
+   * focus on desktop; touch keyboards are less predictable, and closing the
+   * list out from under a finger mid-tap is the difference between a working
+   * suggestion and one that silently does nothing.
+   */
+  const closeListSoon = useCallback(() => {
+    clearTimeout(blurTimerRef.current)
+    blurTimerRef.current = setTimeout(() => {
+      setOpen(false)
+      setHighlight(-1)
+    }, 150)
+  }, [])
+
   const update = useCallback(
     (field, val) => {
-      setParts((prev) => {
-        const next = { ...prev, [field]: val }
-        onChange?.(concat(next))
-        return next
-      })
+      const next = { ...parts, [field]: val }
+      setParts(next)
+      onChange?.(concat(next))
+      // Callers blank their geo state on every onChange. If this edit didn't
+      // touch the parts the coordinates came from — an apt number, typically —
+      // re-assert them, or a resolved address quietly becomes unsubmittable.
+      const held = resolvedRef.current
+      if (held && held.key === geoKey(next)) onResolved?.(held.coords)
     },
-    [onChange],
+    [parts, onChange, onResolved],
   )
 
   const runQuery = useCallback((input) => {
@@ -185,11 +214,13 @@ export default function StructuredAddressInput({
     onChange?.(concat(next))
 
     if (Number.isFinite(details.lat) && Number.isFinite(details.lng)) {
-      onResolved?.({
+      const coords = {
         lat: details.lat,
         lng: details.lng,
         formattedAddress: details.formattedAddress,
-      })
+      }
+      resolvedRef.current = { key: geoKey(next), coords }
+      onResolved?.(coords)
     }
   }
 
@@ -233,9 +264,7 @@ export default function StructuredAddressInput({
           value={parts.street}
           onChange={(e) => handleStreetChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          // A click on an option fires mousedown first and keeps focus, so the
-          // list is still mounted when the click lands.
-          onBlur={closeList}
+          onBlur={closeListSoon}
           placeholder="Street address"
           className={inputClass}
           role="combobox"
@@ -330,7 +359,13 @@ export default function StructuredAddressInput({
             update('zip', e.target.value.replace(/[^\d-]/g, '').slice(0, 10))
           }
           onBlur={() => {
-            if (isComplete) onBlur?.()
+            if (!isComplete) return
+            // Places already handed us coordinates for exactly these parts.
+            // Re-geocoding costs a call and can only make things worse: if it
+            // fails, a perfectly good address flips into an error state.
+            const held = resolvedRef.current
+            if (held && held.key === geoKey(parts)) return
+            onBlur?.()
           }}
           placeholder="Zip"
           maxLength={10}
