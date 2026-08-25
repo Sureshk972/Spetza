@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
@@ -39,6 +39,7 @@ const statusLabel = {
 
 export default function CourierDelivery() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [request, setRequest] = useState(null)
   const [sender, setSender] = useState(null)
@@ -54,6 +55,9 @@ export default function CourierDelivery() {
   const [returning, setReturning] = useState(false)
   const [returnPin, setReturnPin] = useState('')
   const [returnError, setReturnError] = useState('')
+  const [reporting, setReporting] = useState(false)
+  const [reportReason, setReportReason] = useState('')
+  const [reportNote, setReportNote] = useState('')
   const [uploadingProof, setUploadingProof] = useState(false)
   const [pin, setPin] = useState('')
   const [pinError, setPinError] = useState('')
@@ -228,6 +232,32 @@ export default function CourierDelivery() {
     }
     setReturnPin('')
     load()
+  }
+
+  const REPORT_REASONS = [
+    { value: 'too_heavy', label: 'Heavier than described' },
+    { value: 'wrong_size', label: 'Bigger than the size given' },
+    { value: 'prohibited_item', label: "Something we don't carry" },
+    { value: 'not_as_described', label: 'Not what was described' },
+  ]
+
+  const handleReport = async () => {
+    if (!reportReason) return
+    const ok = window.confirm(
+      "Report this package and end the delivery? The sender won't be charged, and we'll review it.",
+    )
+    if (!ok) return
+    setActing(true)
+    const { data, error } = await supabase.functions.invoke('report-delivery', {
+      body: { delivery_request_id: request.id, reason: reportReason, note: reportNote || null },
+    })
+    setActing(false)
+    if (error || data?.error) {
+      toast.error(data?.error || error?.message || "Couldn't file that report.")
+      return
+    }
+    toast.success('Reported. Thanks — we’ll take a look.')
+    navigate('/courier')
   }
 
   const handleAbandon = async () => {
@@ -430,6 +460,74 @@ export default function CourierDelivery() {
                   Abandon
                 </button>
               </div>
+
+              {/* Distinct from Abandon on purpose. Abandoning hands the
+                  package to the next courier; reporting says the listing
+                  itself is wrong, so the delivery ends here instead of
+                  sending someone else to the same doorstep. */}
+              {!reporting ? (
+                <button
+                  onClick={() => setReporting(true)}
+                  disabled={acting}
+                  className="mt-3 w-full py-2 text-xs text-slate hover:text-ink underline underline-offset-4 disabled:opacity-50 transition-colors"
+                >
+                  This package isn't as described
+                </button>
+              ) : (
+                <div className="mt-3 p-4 rounded-xl border border-red-200 bg-red-50/40">
+                  <div className="text-xs uppercase tracking-widest text-red-600 font-bold">
+                    Report this package
+                  </div>
+                  <p className="text-xs text-slate mt-1 leading-relaxed">
+                    This ends the delivery — it won't go to another courier. The sender isn't
+                    charged, and we review every report.
+                  </p>
+                  <div className="mt-3 space-y-1.5">
+                    {REPORT_REASONS.map((r) => (
+                      <label
+                        key={r.value}
+                        className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-sm transition-colors ${
+                          reportReason === r.value
+                            ? 'border-red-400 bg-white'
+                            : 'border-mist bg-white hover:border-slate/30'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="report_reason"
+                          value={r.value}
+                          checked={reportReason === r.value}
+                          onChange={(e) => setReportReason(e.target.value)}
+                          className="accent-red-500 shrink-0"
+                        />
+                        <span className="text-ink">{r.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <textarea
+                    value={reportNote}
+                    onChange={(e) => setReportNote(e.target.value)}
+                    rows={2}
+                    maxLength={1000}
+                    placeholder="Anything else we should know? (optional)"
+                    className="mt-3 w-full px-3 py-2 rounded-lg bg-white border border-mist text-sm focus:border-teal focus:outline-none"
+                  />
+                  <button
+                    onClick={handleReport}
+                    disabled={acting || !reportReason}
+                    className="mt-3 w-full py-2.5 rounded-lg bg-red-600 text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  >
+                    {acting ? 'Reporting\u2026' : 'Report and end delivery'}
+                  </button>
+                  <button
+                    onClick={() => { setReporting(false); setReportReason(''); setReportNote('') }}
+                    disabled={acting}
+                    className="mt-2 w-full py-2 text-xs text-slate hover:text-ink transition-colors"
+                  >
+                    Never mind
+                  </button>
+                </div>
+              )}
             </div>
           )}
           {request.status === 'accepted' && request.courier_arrived_at && (

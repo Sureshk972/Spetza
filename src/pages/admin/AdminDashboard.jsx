@@ -17,7 +17,7 @@ export default function AdminDashboard() {
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString()
 
-    const [users, senders, couriers, deliveries, completed, revenue, pendingChecks, ratings] = await Promise.all([
+    const [users, senders, couriers, deliveries, completed, revenue, pendingChecks, ratings, openReports] = await Promise.all([
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
       supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_type', 'sender'),
       supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_type', 'courier'),
@@ -26,6 +26,7 @@ export default function AdminDashboard() {
       supabase.from('delivery_requests').select('platform_fee_cents').eq('status', 'delivered'),
       supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('background_check_status', 'consider'),
       supabase.from('ratings').select('id', { count: 'exact', head: true }),
+      supabase.from('delivery_reports').select('id', { count: 'exact', head: true }).is('reviewed_at', null),
     ])
 
     const totalRevenue = (revenue.data ?? []).reduce((sum, r) => sum + (r.platform_fee_cents || 0), 0)
@@ -45,6 +46,7 @@ export default function AdminDashboard() {
       totalRevenue,
       pendingChecks: pendingChecks.count ?? 0,
       totalRatings: ratings.count ?? 0,
+      openReports: openReports.count ?? 0,
       recentSignups: recentSignups.count ?? 0,
     })
     setLoading(false)
@@ -83,6 +85,13 @@ export default function AdminDashboard() {
             hint={s.pendingChecks > 0 ? 'Needs review →' : 'All clear'}
           />
         </Link>
+        <Link to="/admin/reports" className="block">
+          <StatCard
+            label="Open Reports"
+            value={s.openReports}
+            hint={s.openReports > 0 ? 'Needs review →' : 'All clear'}
+          />
+        </Link>
         <StatCard
           label="Completion Rate"
           value={s.totalDeliveries > 0 ? Math.round((s.completedDeliveries / s.totalDeliveries) * 100) + '%' : '—'}
@@ -98,6 +107,7 @@ export default function AdminDashboard() {
           { to: '/admin/payments', label: 'Payment details', desc: 'Revenue breakdown' },
           { to: '/admin/verifications', label: 'Background checks', desc: 'Review flagged couriers' },
           { to: '/admin/ratings', label: 'Ratings', desc: 'Monitor feedback' },
+          { to: '/admin/reports', label: 'Reports', desc: 'Misdescribed packages' },
         ].map(link => (
           <Link
             key={link.to}

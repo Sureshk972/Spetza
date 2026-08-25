@@ -40,6 +40,7 @@ import AdminDeliveryDetail from './pages/admin/AdminDeliveryDetail.jsx'
 import AdminPayments from './pages/admin/AdminPayments.jsx'
 import AdminVerifications from './pages/admin/AdminVerifications.jsx'
 import AdminRatings from './pages/admin/AdminRatings.jsx'
+import AdminReports from './pages/admin/AdminReports.jsx'
 import AdminDemandMap from './pages/admin/AdminDemandMap.jsx'
 
 function RootRedirect() {
@@ -124,6 +125,7 @@ export default function App() {
         <Route path="payments" element={<AdminPayments />} />
         <Route path="verifications" element={<AdminVerifications />} />
         <Route path="ratings" element={<AdminRatings />} />
+        <Route path="reports" element={<AdminReports />} />
         <Route path="demand" element={<AdminDemandMap />} />
       </Route>
 

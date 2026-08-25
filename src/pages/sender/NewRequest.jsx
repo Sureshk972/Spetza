@@ -309,6 +309,18 @@ export default function NewRequest() {
           </div>
         </div>
 
+        {/* Kept factual and short. The sender flow is meant to feel easy, and
+            a paragraph of threats at the moment of posting doesn't fit --
+            the enforcement language lives in the Terms. */}
+        <div className="p-4 rounded-lg border border-mist bg-white">
+          <div className="text-xs uppercase tracking-widest text-slate">Describe it honestly</div>
+          <p className="text-xs text-slate/90 mt-1.5 leading-relaxed">
+            Your courier decides at the door whether to take it. If what turns up doesn't match
+            what you wrote — heavier, larger, or something we don't carry — they can decline and
+            report it. You won't be charged, and repeated reports can cost you access to Spetza.
+          </p>
+        </div>
+
         <label className="flex items-start gap-3 p-4 rounded-lg border border-mist bg-white cursor-pointer">
           <input
             type="checkbox"
