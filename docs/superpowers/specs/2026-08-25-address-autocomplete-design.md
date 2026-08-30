@@ -61,14 +61,19 @@ Two modes on one function, chosen by an `action` field in the body:
       "locationBias": {
         "circle": {
           "center": { "latitude": 41.8781, "longitude": -87.6298 },
-          "radius": 80000
+          "radius": 50000
         }
       }
     }
 
-Returns a trimmed list: `[{ placeId, mainText, secondaryText }]`. The 80km bias radius
-tracks `MAX_DISTANCE_MILES` (50) so suggestions are ranked over roughly the area
-Spetza actually serves. It biases ranking only — addresses outside it still appear.
+Returns a trimmed list: `[{ placeId, mainText, secondaryText }]`. The bias radius is
+**50,000m — Google's hard ceiling**, not a chosen number. An earlier draft used 80km
+to line up with `MAX_DISTANCE_MILES` (50 mi), and every request 400'd with "Invalid
+circle.radius". It falls slightly short of the service area, which costs nothing:
+addresses beyond it still resolve, they just aren't ranked first.
+
+`includedPrimaryTypes` is deliberately absent. Region and location bias do the
+narrowing; results come back as street addresses without it.
 
 **`action: "details"`** — body `{ placeId, sessionToken }`
 

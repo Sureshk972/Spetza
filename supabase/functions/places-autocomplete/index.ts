@@ -13,9 +13,14 @@ const json = (body: unknown, status = 200) =>
 
 // Rank suggestions over roughly the area Spetza serves. This biases ordering
 // only — an address outside the circle still shows up if it's what was typed.
-// 80km tracks MAX_DISTANCE_MILES (50) in src/lib/pricing.js.
+//
+// 50,000m is Google's hard ceiling for circle.radius, not a chosen number:
+// anything larger is rejected with "Invalid circle.radius" and the whole
+// request 400s. It falls a little short of MAX_DISTANCE_MILES (50 mi ≈
+// 80km), which costs nothing here — a request further out still resolves,
+// it just isn't ranked first.
 const CHICAGO = { latitude: 41.8781, longitude: -87.6298 };
-const BIAS_RADIUS_METERS = 80000;
+const BIAS_RADIUS_METERS = 50000;
 
 /** Pull a single component's short or long name out of a Places details response. */
 function component(components: any[], type: string, short = false): string {
