@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import { buildLabel } from '../lib/build.js'
 
 const NAV = [
   { to: '/admin', label: 'Dashboard', end: true },
@@ -82,6 +83,12 @@ export default function AdminLayout() {
           >
             Sign out
           </button>
+          {/* Which build this panel is running. An admin reading a bug report
+              needs to know whether their own view is as stale as the one
+              being described. */}
+          <div className="mt-3 px-3 text-[10px] text-slate/50">
+            Build {buildLabel()}
+          </div>
         </div>
       </aside>
 
