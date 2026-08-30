@@ -10,6 +10,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import { buildLabel } from '../lib/build.js'
 
 // Locked off — no runtime toggle. Change here in source to expose again.
 const SHOW_ROLE_SWITCHER = false
@@ -136,6 +137,13 @@ export default function ProfileFooterActions({ currentRole }) {
         <span>·</span>
         <Link to="/trust" className="hover:text-ink transition-colors">Trust &amp; Safety</Link>
       </div>
+
+      {/* Which build this session is actually running. The update pill tells
+          the person a newer one exists; this tells support what they were on
+          when something went wrong. */}
+      <p className="mt-3 text-center text-[11px] text-slate/50">
+        Build {buildLabel()}
+      </p>
     </div>
   )
 }
