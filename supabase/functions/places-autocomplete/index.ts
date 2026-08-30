@@ -55,11 +55,15 @@ Deno.serve(async (req) => {
       resp = await fetch("https://places.googleapis.com/v1/places:autocomplete", {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Goog-Api-Key": apiKey },
+        // No includedPrimaryTypes filter. Google classifies most address
+        // predictions as `route` or `geocode` rather than `street_address`,
+        // so filtering on the address-ish types returned an empty list for
+        // real Chicago addresses -- a silent dropdown with no error anywhere.
+        // Region and location bias do the narrowing instead.
         body: JSON.stringify({
           input,
           sessionToken,
           includedRegionCodes: ["us"],
-          includedPrimaryTypes: ["street_address", "premise", "subpremise"],
           locationBias: { circle: { center: CHICAGO, radius: BIAS_RADIUS_METERS } },
         }),
       });

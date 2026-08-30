@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useId } from 'react'
+import { toast } from 'sonner' // TEMPORARY: autocomplete diagnostics, remove after
 import { fetchSuggestions, fetchPlaceDetails, newSessionToken } from '../lib/places.js'
 import { withApt } from '../lib/address.js'
 
@@ -162,9 +163,21 @@ export default function StructuredAddressInput({
     abortRef.current = controller
     if (!sessionRef.current) sessionRef.current = newSessionToken()
 
+    // TEMPORARY DIAGNOSTICS — surfaces why the dropdown stays empty in
+    // production, where the UI is deliberately silent. Remove once fixed.
+    toast.message(`PLACES: querying "${input}"`)
+
     fetchSuggestions(input, sessionRef.current, { signal: controller.signal })
       .then((res) => {
-        if (controller.signal.aborted) return
+        if (controller.signal.aborted) {
+          toast.message('PLACES: aborted')
+          return
+        }
+        toast.message(
+          res.error
+            ? `PLACES ERROR: ${res.error}`
+            : `PLACES OK: ${res.suggestions?.length ?? 'no array'} results`,
+        )
         if (res.error || !res.suggestions?.length) {
           setSuggestions([])
           closeList()
@@ -174,8 +187,8 @@ export default function StructuredAddressInput({
         setOpen(true)
         setHighlight(-1)
       })
-      .catch(() => {
-        // Aborted or offline. Autocomplete stays quiet; manual entry still works.
+      .catch((e) => {
+        toast.message(`PLACES THREW: ${e?.name || ''} ${e?.message || e}`)
       })
   }, [closeList])
 
