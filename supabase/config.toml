@@ -8,3 +8,9 @@ verify_jwt = false
 # Supabase JWT. The function verifies the Stripe signature itself.
 [functions.stripe-connect-webhook]
 verify_jwt = false
+
+# Card disputes and async payment failures arrive the same way, signed with
+# this endpoint's own secret — Stripe signs each endpoint separately, so this
+# cannot reuse the Connect endpoint's. The function verifies the signature.
+[functions.stripe-payment-webhook]
+verify_jwt = false
