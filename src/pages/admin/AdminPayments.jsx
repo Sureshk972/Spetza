@@ -14,6 +14,12 @@ function dollars(cents) {
   return '$' + (cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+// Whole days until evidence is due. Negative once the deadline has passed.
+function daysUntil(iso) {
+  if (!iso) return null
+  return Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000)
+}
+
 const RANGES = [
   { label: '7d', days: 7 },
   { label: '30d', days: 30 },
@@ -25,6 +31,7 @@ export default function AdminPayments() {
   const [range, setRange] = useState(30)
   const [stats, setStats] = useState({ gmv: 0, fees: 0, count: 0 })
   const [rows, setRows] = useState([])
+  const [disputes, setDisputes] = useState([])
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
@@ -52,6 +59,18 @@ export default function AdminPayments() {
 
     setStats({ gmv, fees, processingEst, count: items.length, net: fees - processingEst })
     setRows(items)
+
+    // Open disputes always show, however old — one sitting past its deadline
+    // is exactly the thing a date filter must not hide.
+    const { data: disputeRows } = await supabase
+      .from('payment_disputes')
+      .select('*')
+      .or(`closed_at.is.null,created_at.gte.${fromIso}`)
+      .order('closed_at', { ascending: true, nullsFirst: true })
+      .order('evidence_due_at', { ascending: true, nullsFirst: false })
+      .limit(50)
+    setDisputes(disputeRows ?? [])
+
     setLoading(false)
   }, [range])
 
@@ -94,6 +113,71 @@ export default function AdminPayments() {
           </button>
         ))}
       </div>
+
+      {/* Disputes. Rendered above the KPIs because a dispute has a deadline
+          and the numbers below do not. Absent entirely when there are none. */}
+      {disputes.length > 0 && (
+        <div className="mb-8">
+          <h2 className="font-display text-lg font-black text-ink mb-1">Disputes</h2>
+          <p className="text-sm text-slate mb-3">
+            Stripe forfeits the money by default if evidence isn't submitted before the deadline.
+          </p>
+          <div className="space-y-2">
+            {disputes.map((d) => {
+              const days = daysUntil(d.evidence_due_at)
+              const open = !d.closed_at
+              const urgent = open && days !== null && days <= 3
+              return (
+                <div
+                  key={d.id}
+                  className={`flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 rounded-lg border ${
+                    urgent ? 'border-red-300 bg-red-50' : 'border-mist bg-white'
+                  }`}
+                >
+                  <span className="font-display font-black text-ink">{dollars(d.amount_cents)}</span>
+                  <span className="text-sm text-slate capitalize">
+                    {(d.reason || 'unspecified').replace(/_/g, ' ')}
+                  </span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${
+                    open ? 'bg-amber-100 text-amber-800' : 'bg-mist text-slate'
+                  }`}>
+                    {d.status?.replace(/_/g, ' ')}
+                  </span>
+                  {open && days !== null && (
+                    <span className={`text-xs font-semibold ${urgent ? 'text-red-700' : 'text-slate'}`}>
+                      {days < 0
+                        ? `Deadline passed ${Math.abs(days)}d ago`
+                        : days === 0
+                          ? 'Evidence due today'
+                          : `${days}d to respond`}
+                    </span>
+                  )}
+                  <span className="text-xs text-slate ml-auto">{fmtDate(d.opened_at)}</span>
+                  {d.delivery_request_id && (
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/admin/deliveries/${d.delivery_request_id}`)}
+                      className="text-teal text-xs hover:underline"
+                    >
+                      Delivery
+                    </button>
+                  )}
+                  {d.stripe_charge_id && (
+                    <a
+                      href={`https://dashboard.stripe.com/payments/${d.stripe_charge_id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-teal text-xs hover:underline"
+                    >
+                      Stripe ↗
+                    </a>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
