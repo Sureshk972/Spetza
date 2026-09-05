@@ -1,39 +1,98 @@
-import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import Footer from '../components/Footer.jsx'
 
+/**
+ * The one screen where someone says how they'll use Spetza.
+ *
+ * This used to auto-commit: Welcome stashed `spetza:intended_role` when someone
+ * tapped a call-to-action, and this page read it on mount and chose for them.
+ * Two couriers in a row came out as senders and never saw this screen, because
+ * the first button on the marketing page is the sender one and tapping it is
+ * how you get to signup at all. The stash also outlived the visit, so browsing
+ * the marketing page in June could decide your role in July.
+ *
+ * The stash now only pre-selects. Committing takes a deliberate tap, because
+ * the choice decides the whole shape of the product and nothing in the app
+ * changes it afterwards.
+ */
+
+const ROLES = [
+  {
+    key: 'sender',
+    eyebrow: 'Sender',
+    title: 'I need something delivered',
+    blurb: 'Post a pickup and dropoff, and a nearby courier will take it from here.',
+    eyebrowClass: 'text-teal',
+    selectedClass: 'border-teal bg-teal/5 shadow-md',
+    tickClass: 'bg-teal',
+  },
+  {
+    key: 'courier',
+    eyebrow: 'Courier',
+    title: 'I want to earn delivering',
+    blurb: 'See open requests near you. Accept the ones that fit your route.',
+    eyebrowClass: 'text-green',
+    selectedClass: 'border-green bg-green/5 shadow-md',
+    tickClass: 'bg-green',
+  },
+]
+
+/** Whatever the person tapped on the way in, if anything. Pre-selection only. */
+function readIntendedRole() {
+  try {
+    const r = localStorage.getItem('spetza:intended_role')
+    return r === 'sender' || r === 'courier' ? r : null
+  } catch {
+    return null
+  }
+}
+
+function clearIntendedRole() {
+  try {
+    localStorage.removeItem('spetza:intended_role')
+    sessionStorage.removeItem('spetza:intended_role')
+  } catch {
+    // Private tab. Nothing was stored, so nothing to clear.
+  }
+}
+
 export default function ChooseRole() {
   const { user, profile, refreshProfile } = useAuth()
   const navigate = useNavigate()
-  const [busy, setBusy] = useState(null)
-  const autoSelected = useRef(false)
+  const [selected, setSelected] = useState(null)
+  const [busy, setBusy] = useState(false)
 
-  if (profile?.account_type === 'sender') {
-    navigate('/sender', { replace: true })
-    return null
-  }
-  if (profile?.account_type === 'courier') {
-    navigate('/courier', { replace: true })
-    return null
-  }
+  // Start on whatever they tapped on the way in — but only highlighted.
+  useEffect(() => {
+    setSelected(readIntendedRole())
+  }, [])
 
-  const choose = async (role) => {
+  // Already decided: nothing to do here. Rendering a redirect rather than
+  // calling navigate() mid-render keeps React from warning about it.
+  if (profile?.account_type === 'sender') return <Navigate to="/sender" replace />
+  if (profile?.account_type === 'courier') return <Navigate to="/courier" replace />
+
+  const commit = async () => {
+    if (!selected || busy) return
     if (!hasSupabaseConfig) {
       toast.error('Supabase not configured.')
       return
     }
-    setBusy(role)
+
+    setBusy(true)
     const { error } = await supabase
       .from('profiles')
-      .upsert({ id: user.id, account_type: role, updated_at: new Date().toISOString() })
-    setBusy(null)
+      .upsert({ id: user.id, account_type: selected, updated_at: new Date().toISOString() })
+    setBusy(false)
+
     if (error) {
-      // Stale session — the auth.users row was deleted (e.g., admin cleanup)
-      // but the client still holds a valid JWT. Sign out and send them to
-      // sign up so they don't loop forever hitting the FK violation.
+      // Stale session — the auth.users row was deleted (e.g. admin cleanup) but
+      // the client still holds a valid JWT. Sign out and start again rather
+      // than looping on the same foreign-key violation forever.
       if (error.code === '23503' || /profiles_id_fkey/.test(error.message)) {
         toast.error('Your session is out of date. Please sign in again.')
         await supabase.auth.signOut()
@@ -43,56 +102,68 @@ export default function ChooseRole() {
       toast.error(error.message)
       return
     }
-    await refreshProfile()
-    navigate(role === 'sender' ? '/sender' : '/courier', { replace: true })
-  }
 
-  // Auto-select if user already chose a role on the Welcome page
-  useEffect(() => {
-    if (autoSelected.current) return
-    try {
-      const intended = localStorage.getItem('spetza:intended_role')
-      if (intended === 'sender' || intended === 'courier') {
-        autoSelected.current = true
-        localStorage.removeItem('spetza:intended_role')
-        choose(intended)
-      }
-    } catch {
-      // localStorage unavailable — show the picker
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    clearIntendedRole()
+    await refreshProfile()
+    navigate(selected === 'sender' ? '/sender' : '/courier', { replace: true })
+  }
 
   return (
     <div className="min-h-full flex items-center justify-center px-6 py-16">
       <div className="w-full max-w-2xl">
         <h1 className="font-display text-3xl text-ink text-center">How will you use Spetza?</h1>
-        <p className="text-slate text-center mt-2">Pick the one that fits.</p>
+        <p className="text-slate text-center mt-2">
+          Pick one to get started. You can't change this yourself later, so choose the one you
+          actually want.
+        </p>
+
         <div className="grid sm:grid-cols-2 gap-4 mt-10">
-          <button
-            onClick={() => choose('sender')}
-            disabled={busy !== null}
-            className="text-left p-6 rounded-2xl border border-mist hover:border-teal hover:shadow-md transition-all disabled:opacity-50"
-          >
-            <div className="text-xs uppercase tracking-widest text-teal">Sender</div>
-            <div className="font-display text-2xl text-ink mt-2">I need something delivered</div>
-            <p className="text-slate mt-3 text-sm">
-              Post a pickup and dropoff, and a nearby courier will take it from here.
-            </p>
-            {busy === 'sender' && <div className="text-slate text-xs mt-3">Saving…</div>}
-          </button>
-          <button
-            onClick={() => choose('courier')}
-            disabled={busy !== null}
-            className="text-left p-6 rounded-2xl border border-mist hover:border-green hover:shadow-md transition-all disabled:opacity-50"
-          >
-            <div className="text-xs uppercase tracking-widest text-green">Courier</div>
-            <div className="font-display text-2xl text-ink mt-2">I want to earn delivering</div>
-            <p className="text-slate mt-3 text-sm">
-              See open requests near you. Accept what fits your route.
-            </p>
-            {busy === 'courier' && <div className="text-slate text-xs mt-3">Saving…</div>}
-          </button>
+          {ROLES.map((role) => {
+            const on = selected === role.key
+            return (
+              <button
+                key={role.key}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setSelected(role.key)}
+                disabled={busy}
+                className={`text-left p-6 rounded-2xl border-2 transition-all disabled:opacity-50 ${
+                  on ? role.selectedClass : 'border-mist hover:border-slate/30'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className={`text-xs uppercase tracking-widest ${role.eyebrowClass}`}>
+                    {role.eyebrow}
+                  </div>
+                  {on && (
+                    <span
+                      aria-hidden="true"
+                      className={`h-5 w-5 rounded-full ${role.tickClass} text-white text-xs flex items-center justify-center`}
+                    >
+                      ✓
+                    </span>
+                  )}
+                </div>
+                <div className="font-display text-2xl text-ink mt-2">{role.title}</div>
+                <p className="text-slate mt-3 text-sm">{role.blurb}</p>
+              </button>
+            )
+          })}
         </div>
+
+        <button
+          type="button"
+          onClick={commit}
+          disabled={!selected || busy}
+          className="w-full mt-6 py-4 rounded-xl bg-ink text-white font-display font-bold text-lg transition-opacity hover:opacity-90 disabled:opacity-40"
+        >
+          {busy
+            ? 'Saving…'
+            : selected
+              ? `Continue as ${selected === 'sender' ? 'a sender' : 'a courier'}`
+              : 'Pick one to continue'}
+        </button>
+
         <Footer />
       </div>
     </div>

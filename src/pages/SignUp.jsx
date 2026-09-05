@@ -91,11 +91,15 @@ export default function SignUp() {
     // Write a profile row right away (before any navigation). RequireAuth
     // only gates on phone-verified / name-captured when `profile` is
     // non-null — with no row yet, a fresh signup falls straight through
-    // to /choose-role, skipping phone verification entirely. Baking the
-    // stashed role in here also lets ChooseRole be skipped later.
+    // to /choose-role, skipping phone verification entirely.
+    //
+    // The row deliberately carries NO account_type. Baking the stashed role
+    // in here used to save a tap, but it also settled the role before anyone
+    // was asked and left ChooseRole with nothing to do, so it redirected past
+    // itself -- two couriers signed up as senders and never saw the question.
+    // ChooseRole now uses the stash to pre-select and waits for a real tap.
     if (data?.user?.id && data?.session) {
       const patch = { id: data.user.id, updated_at: new Date().toISOString() }
-      if (role) patch.account_type = role
       const { error: profileErr } = await supabase.from('profiles').upsert(patch)
       if (profileErr) {
         console.error('Failed to create profile row after signup', profileErr)
@@ -108,8 +112,8 @@ export default function SignUp() {
       await refreshProfile()
 
       // Tie all subsequent events to this user and seed the profile.
-      identifyUser(data.user.id, { email, role: role || 'unknown' })
-      trackEvent('signup_completed', { role: role || 'unknown' })
+      identifyUser(data.user.id, { email, intended_role: role || 'unknown' })
+      trackEvent('signup_completed', { intended_role: role || 'unknown' })
     }
     setSubmitting(false)
   }
@@ -123,12 +127,11 @@ export default function SignUp() {
         <h1 className="font-display text-3xl text-ink mt-6">Create an account</h1>
         {role && (
           <p className="text-sm text-slate mt-2">
-            Signing up as{' '}
+            You picked{' '}
             <span className="text-teal uppercase tracking-widest text-xs font-medium">
               {role}
             </span>
-            {' · '}
-            <Link to="/welcome" className="text-teal hover:underline">Change</Link>
+            {' — we\'ll confirm this after you verify your phone.'}
           </p>
         )}
 
