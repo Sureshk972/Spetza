@@ -10,6 +10,7 @@ import CourierLayout from './components/CourierLayout.jsx'
 import AdminLayout from './layouts/AdminLayout.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 import Welcome from './pages/Welcome.jsx'
+import ComingSoon from './pages/ComingSoon.jsx'
 import SignIn from './pages/SignIn.jsx'
 import SignUp from './pages/SignUp.jsx'
 import Trust from './pages/Trust.jsx'
@@ -40,6 +41,7 @@ import AdminDeliveryDetail from './pages/admin/AdminDeliveryDetail.jsx'
 import AdminPayments from './pages/admin/AdminPayments.jsx'
 import AdminVerifications from './pages/admin/AdminVerifications.jsx'
 import AdminRatings from './pages/admin/AdminRatings.jsx'
+import AdminWaitlist from './pages/admin/AdminWaitlist.jsx'
 import AdminReports from './pages/admin/AdminReports.jsx'
 import AdminDemandMap from './pages/admin/AdminDemandMap.jsx'
 
@@ -74,6 +76,24 @@ function CourierRoute({ children }) {
   return <RoleRoute role="courier">{children}</RoleRoute>
 }
 
+// Pre-launch mode. Flipped with VITE_COMING_SOON in Netlify; off by default so
+// a missing variable can never accidentally hide a launched product.
+//
+// It replaces the public landing page only. /signup and /signin stay reachable
+// by direct URL so testing and early couriers still work, and /privacy and
+// /terms have to stay reachable because Twilio's A2P crawler checks them
+// against the approved campaign.
+//
+// Only /welcome needs the switch: RequireAuth already sends signed-out visitors
+// there, and signed-in ones never pass through it, so nobody with an account
+// sees the waitlist.
+const COMING_SOON = import.meta.env.VITE_COMING_SOON === 'true'
+
+/** The public front door: the waitlist before launch, the real pitch after. */
+function PublicLanding() {
+  return COMING_SOON ? <ComingSoon /> : <Welcome />
+}
+
 export default function App() {
   const navigate = useNavigate()
 
@@ -91,7 +111,7 @@ export default function App() {
     <TestModeBar />
     <UpdateBadge />
     <Routes>
-      <Route path="/welcome" element={<Welcome />} />
+      <Route path="/welcome" element={<PublicLanding />} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
       <Route path="/trust" element={<Trust />} />
@@ -127,6 +147,7 @@ export default function App() {
         <Route path="ratings" element={<AdminRatings />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="demand" element={<AdminDemandMap />} />
+        <Route path="waitlist" element={<AdminWaitlist />} />
       </Route>
 
       {/* Unknown URL: bounce to the root, which routes signed-in users to
