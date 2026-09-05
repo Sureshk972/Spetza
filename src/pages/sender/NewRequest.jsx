@@ -36,6 +36,7 @@ export default function NewRequest() {
   const [size, setSize] = useState('')
   const [photoPath, setPhotoPath] = useState(null)
   const [liabilityAccepted, setLiabilityAccepted] = useState(false)
+  const [descriptionHonest, setDescriptionHonest] = useState(false)
   // What happens if nobody answers at the dropoff. Decided here, before
   // pickup, so the courier never has to improvise on a doorstep.
   const [noAnswerPolicy, setNoAnswerPolicy] = useState('leave_at_door')
@@ -103,6 +104,10 @@ export default function NewRequest() {
       toast.error('A photo of the package is required.')
       return
     }
+    if (!descriptionHonest) {
+      toast.error('Please confirm your description is accurate.')
+      return
+    }
     if (!liabilityAccepted) {
       toast.error('Please acknowledge the liability disclaimer.')
       return
@@ -157,6 +162,7 @@ export default function NewRequest() {
     distance != null &&
     !overMax &&
     priceCents != null &&
+    descriptionHonest &&
     liabilityAccepted &&
     hasPaymentMethod
 
@@ -340,6 +346,17 @@ export default function NewRequest() {
             what you wrote — heavier, larger, or something we don't carry — they can decline and
             report it. You won't be charged, and repeated reports can cost you access to Spetza.
           </p>
+          <label className="flex items-start gap-3 mt-3 pt-3 border-t border-mist cursor-pointer">
+            <input
+              type="checkbox"
+              checked={descriptionHonest}
+              onChange={(e) => setDescriptionHonest(e.target.checked)}
+              className="mt-0.5 accent-teal"
+            />
+            <span className="text-xs text-slate leading-relaxed">
+              I confirm my description and photo match what the courier will collect.
+            </span>
+          </label>
         </div>
 
         <label className="flex items-start gap-3 p-4 rounded-lg border border-mist bg-white cursor-pointer">
