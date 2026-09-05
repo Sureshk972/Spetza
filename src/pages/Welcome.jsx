@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { trackEvent } from '../lib/analytics.js'
 import Footer from '../components/Footer.jsx'
 
 /* ── Testimonials ── */
@@ -121,16 +120,6 @@ function Testimonials() {
   )
 }
 
-const chooseRole = (role) => {
-  try {
-    localStorage.setItem('spetza:intended_role', role)
-  } catch {
-    // localStorage can throw in private tabs; fall through — the
-    // ChooseRole fallback will still catch these users after signup.
-  }
-  trackEvent('role_selected', { role })
-}
-
 export default function Welcome() {
   return (
     <div className="min-h-full flex flex-col items-center justify-center px-6 py-16">
@@ -176,13 +165,11 @@ export default function Welcome() {
           No schedules. No depots. Just neighbors moving things for neighbors.
         </p>
 
-        {/* Role cards */}
+        {/* What each side gets. Descriptive, not a choice -- the role is asked
+            once, on /choose-role, after the phone and name are done. Two
+            buttons here used to stash a role and settle it silently. */}
         <div className="mt-10 grid gap-3">
-          <Link
-            to="/signup"
-            onClick={() => chooseRole('sender')}
-            className="group block px-6 py-5 rounded-xl border-2 border-teal/20 bg-white text-left hover:border-teal hover:shadow-md transition-all"
-          >
+          <div className="px-6 py-5 rounded-xl border-2 border-teal/20 bg-white text-left">
             <div className="flex items-center gap-2">
               <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-teal/10 text-teal">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -191,17 +178,17 @@ export default function Welcome() {
                   <line x1="12" y1="22.08" x2="12" y2="12" />
                 </svg>
               </span>
-              <div className="text-xs uppercase tracking-widest text-teal font-bold">Sender</div>
+              <div className="text-xs uppercase tracking-widest text-teal font-bold">Senders</div>
             </div>
-            <div className="font-display text-xl mt-2 font-extrabold text-ink group-hover:text-teal transition-colors">
-              I want to send packages
+            <div className="font-display text-xl mt-2 font-extrabold text-ink">
+              Send a package across town today
             </div>
-          </Link>
-          <Link
-            to="/signup"
-            onClick={() => chooseRole('courier')}
-            className="group block px-6 py-5 rounded-xl border-2 border-green/20 bg-white text-left hover:border-green hover:shadow-md transition-all"
-          >
+            <div className="mt-2 text-xs text-slate leading-relaxed">
+              Post a pickup and a dropoff. Pay by the mile, and only when it arrives.
+            </div>
+          </div>
+
+          <div className="px-6 py-5 rounded-xl border-2 border-green/20 bg-white text-left">
             <div className="flex items-center gap-2">
               <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-green/10 text-green">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -209,16 +196,26 @@ export default function Welcome() {
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
               </span>
-              <div className="text-xs uppercase tracking-widest text-green font-bold">Courier</div>
+              <div className="text-xs uppercase tracking-widest text-green font-bold">Couriers</div>
             </div>
-            <div className="font-display text-xl mt-2 font-extrabold text-ink group-hover:text-green transition-colors">
-              I want to deliver packages
+            <div className="font-display text-xl mt-2 font-extrabold text-ink">
+              Deliver along the route you're already driving
             </div>
             <div className="mt-2 text-xs text-slate leading-relaxed">
               One-time $40 background check — <span className="text-green font-semibold">earn it all back</span>, $1 per delivery.
             </div>
-          </Link>
+          </div>
         </div>
+
+        <Link
+          to="/signup"
+          className="block w-full mt-6 py-4 rounded-xl bg-ink text-white font-display font-extrabold text-lg hover:opacity-90 transition-opacity"
+        >
+          Get started
+        </Link>
+        <p className="text-slate text-xs mt-3">
+          We'll ask whether you're sending or delivering once you're set up.
+        </p>
 
         <p className="text-slate text-xs mt-6">
           Already have an account?{' '}

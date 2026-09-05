@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import { trackEvent } from '../lib/analytics.js'
 import Footer from '../components/Footer.jsx'
 
 /**
@@ -41,35 +42,11 @@ const ROLES = [
   },
 ]
 
-/** Whatever the person tapped on the way in, if anything. Pre-selection only. */
-function readIntendedRole() {
-  try {
-    const r = localStorage.getItem('spetza:intended_role')
-    return r === 'sender' || r === 'courier' ? r : null
-  } catch {
-    return null
-  }
-}
-
-function clearIntendedRole() {
-  try {
-    localStorage.removeItem('spetza:intended_role')
-    sessionStorage.removeItem('spetza:intended_role')
-  } catch {
-    // Private tab. Nothing was stored, so nothing to clear.
-  }
-}
-
 export default function ChooseRole() {
   const { user, profile, refreshProfile } = useAuth()
   const navigate = useNavigate()
   const [selected, setSelected] = useState(null)
   const [busy, setBusy] = useState(false)
-
-  // Start on whatever they tapped on the way in — but only highlighted.
-  useEffect(() => {
-    setSelected(readIntendedRole())
-  }, [])
 
   // Already decided: nothing to do here. Rendering a redirect rather than
   // calling navigate() mid-render keeps React from warning about it.
@@ -103,7 +80,7 @@ export default function ChooseRole() {
       return
     }
 
-    clearIntendedRole()
+    trackEvent('role_selected', { role: selected })
     await refreshProfile()
     navigate(selected === 'sender' ? '/sender' : '/courier', { replace: true })
   }

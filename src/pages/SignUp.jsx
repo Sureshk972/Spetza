@@ -6,18 +6,6 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { trackEvent, identifyUser } from '../lib/analytics.js'
 import Footer from '../components/Footer.jsx'
 
-function readRole() {
-  try {
-    // Welcome writes to localStorage so intent survives tab close.
-    // Fall back to sessionStorage for anyone mid-flow before this change.
-    const r = localStorage.getItem('spetza:intended_role')
-      || sessionStorage.getItem('spetza:intended_role')
-    return r === 'sender' || r === 'courier' ? r : null
-  } catch {
-    return null
-  }
-}
-
 export default function SignUp() {
   const { user, refreshProfile } = useAuth()
   const navigate = useNavigate()
@@ -33,7 +21,6 @@ export default function SignUp() {
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const role = readRole()
 
   const requireConfig = () => {
     if (hasSupabaseConfig) return true
@@ -112,8 +99,8 @@ export default function SignUp() {
       await refreshProfile()
 
       // Tie all subsequent events to this user and seed the profile.
-      identifyUser(data.user.id, { email, intended_role: role || 'unknown' })
-      trackEvent('signup_completed', { intended_role: role || 'unknown' })
+      identifyUser(data.user.id, { email })
+      trackEvent('signup_completed')
     }
     setSubmitting(false)
   }
@@ -125,16 +112,6 @@ export default function SignUp() {
           &larr; back
         </Link>
         <h1 className="font-display text-3xl text-ink mt-6">Create an account</h1>
-        {role && (
-          <p className="text-sm text-slate mt-2">
-            You picked{' '}
-            <span className="text-teal uppercase tracking-widest text-xs font-medium">
-              {role}
-            </span>
-            {' — we\'ll confirm this after you verify your phone.'}
-          </p>
-        )}
-
         {step === 'email' ? (
           <>
             <form onSubmit={continueWithEmail} className="mt-6 space-y-4">

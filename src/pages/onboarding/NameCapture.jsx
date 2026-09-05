@@ -31,34 +31,21 @@ export default function NameCapture() {
       return
     }
     setSaving(true)
-    let intendedRole = null
-    try {
-      // Welcome writes to localStorage; keep sessionStorage as fallback
-      // for anyone mid-flow before this change landed.
-      const stashed = localStorage.getItem('spetza:intended_role')
-        || sessionStorage.getItem('spetza:intended_role')
-      if (stashed === 'sender' || stashed === 'courier') intendedRole = stashed
-    } catch {
-      // private tabs can throw; fall through to ChooseRole
-    }
+    // Name only. This step used to also set account_type from a role stashed
+    // by the Welcome page, which meant the role was decided here and
+    // ChooseRole -- the screen that exists to ask -- redirected past itself.
+    // The role is now asked once, out loud, on the next screen.
     const patch = {
       id: user.id,
       first_name: cleaned,
       last_name: lastName.trim() || null,
       updated_at: new Date().toISOString(),
     }
-    if (intendedRole) patch.account_type = intendedRole
     const { error } = await supabase.from('profiles').upsert(patch)
     if (error) {
       setSaving(false)
       toast.error(error.message)
       return
-    }
-    if (intendedRole) {
-      try {
-        localStorage.removeItem('spetza:intended_role')
-        sessionStorage.removeItem('spetza:intended_role')
-      } catch {}
     }
     identifyUser(user.id, { first_name: cleaned })
     trackEvent('name_capture_completed', {
