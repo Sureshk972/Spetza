@@ -10,11 +10,19 @@
 // paid for.
 //
 // Stripe signs webhooks with the endpoint secret, not a Supabase JWT.
+//
+// These two events arrive from two different Stripe destinations. A transfer
+// is an object in the platform account, so transfer.paid is delivered to a
+// destination scoped to "Your account"; account.updated belongs to the courier's
+// connected account and is delivered to one scoped to "Connected accounts".
+// Stripe will not let a single destination carry both scopes, and it signs each
+// with its own secret -- hence two secrets below. See _shared/stripeWebhook.ts.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14?target=denonext";
 import { sendPushToUsers } from "../_shared/fcm.ts";
 import { notifyAccount } from "../_shared/accountNotify.ts";
+import { verifyStripeEvent, webhookSecrets } from "../_shared/stripeWebhook.ts";
 
 const HANDLED = new Set(["transfer.paid", "account.updated"]);
 
@@ -23,7 +31,11 @@ const HANDLED = new Set(["transfer.paid", "account.updated"]);
 const REQUIREMENTS_NAG_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, { apiVersion: "2024-06-20" });
-const WEBHOOK_SECRET = Deno.env.get("STRIPE_CONNECT_WEBHOOK_SECRET");
+// Connected accounts first: account.updated fires far more often than a payout.
+const WEBHOOK_SECRETS = webhookSecrets(
+  "STRIPE_CONNECT_ACCOUNTS_WEBHOOK_SECRET",
+  "STRIPE_CONNECT_WEBHOOK_SECRET",
+);
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") {
@@ -33,15 +45,16 @@ Deno.serve(async (req) => {
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
 
-  if (!sig || !WEBHOOK_SECRET) {
+  if (!sig || WEBHOOK_SECRETS.length === 0) {
     return new Response("missing signature or webhook secret", { status: 400 });
   }
 
-  let event: Stripe.Event;
-  try {
-    event = stripe.webhooks.constructEvent(body, sig, WEBHOOK_SECRET);
-  } catch (err) {
-    console.error("Stripe signature verification failed:", err);
+  const event = await verifyStripeEvent(stripe, body, sig, WEBHOOK_SECRETS);
+  if (!event) {
+    console.error(
+      `stripe-connect-webhook: signature matched none of the ` +
+        `${WEBHOOK_SECRETS.length} configured secret(s)`,
+    );
     return new Response("bad signature", { status: 401 });
   }
 

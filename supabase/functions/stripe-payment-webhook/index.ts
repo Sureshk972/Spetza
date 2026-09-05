@@ -8,10 +8,12 @@
 // Stripe signs each endpoint with a different secret, so these cannot share
 // a function without one of them failing verification.
 //
-// Charges here are destination charges with on_behalf_of set to the courier's
-// connected account, so depending on how the endpoint is registered these can
-// arrive as either platform or connected-account events. The handler doesn't
-// care: it resolves everything from the charge's payment intent metadata.
+// Charges here are destination charges. Stripe calls those "indirect charges"
+// and scopes their events to the platform, so one destination scoped to "Your
+// account" catches all three -- a second, Connected-accounts destination would
+// add nothing until Spetza starts taking direct charges. resolveParties still
+// honours event.account, so a connect-scoped event would resolve rather than
+// 404 against the platform if that ever changes.
 //
 // Everything is keyed on Stripe's own ids, because Stripe re-delivers an
 // event on every status change and again whenever we answer non-2xx.
@@ -19,6 +21,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14?target=denonext";
 import { sendOperatorAlert, money } from "../_shared/operatorAlert.ts";
+import { verifyStripeEvent, webhookSecrets } from "../_shared/stripeWebhook.ts";
 
 const HANDLED = new Set([
   "charge.dispute.created",
@@ -27,7 +30,7 @@ const HANDLED = new Set([
 ]);
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, { apiVersion: "2024-06-20" });
-const WEBHOOK_SECRET = Deno.env.get("STRIPE_PAYMENT_WEBHOOK_SECRET");
+const WEBHOOK_SECRETS = webhookSecrets("STRIPE_PAYMENT_WEBHOOK_SECRET");
 
 const dashboardUrl = (path: string) => `https://dashboard.stripe.com/${path}`;
 
@@ -42,10 +45,16 @@ const toIso = (seconds: number | null | undefined): string | null =>
  * onto the payment intent's metadata. Tips carry `type: "tip"` instead, and a
  * dispute against one still has to be recorded — hence every field nullable.
  */
-async function resolveParties(paymentIntentId: string | null) {
+async function resolveParties(paymentIntentId: string | null, connectedAccountId?: string) {
   if (!paymentIntentId) return {};
   try {
-    const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+    // A connect-scoped event describes an object the connected account owns,
+    // so it has to be read as that account rather than as the platform.
+    const pi = await stripe.paymentIntents.retrieve(
+      paymentIntentId,
+      undefined,
+      connectedAccountId ? { stripeAccount: connectedAccountId } : undefined,
+    );
     const m = pi.metadata || {};
     return {
       delivery_request_id: m.delivery_request_id || null,
@@ -68,15 +77,16 @@ Deno.serve(async (req) => {
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
 
-  if (!sig || !WEBHOOK_SECRET) {
+  if (!sig || WEBHOOK_SECRETS.length === 0) {
     return new Response("missing signature or webhook secret", { status: 400 });
   }
 
-  let event: Stripe.Event;
-  try {
-    event = stripe.webhooks.constructEvent(body, sig, WEBHOOK_SECRET);
-  } catch (err) {
-    console.error("stripe-payment-webhook: signature verification failed:", err);
+  const event = await verifyStripeEvent(stripe, body, sig, WEBHOOK_SECRETS);
+  if (!event) {
+    console.error(
+      `stripe-payment-webhook: signature matched none of the ` +
+        `${WEBHOOK_SECRETS.length} configured secret(s)`,
+    );
     return new Response("bad signature", { status: 401 });
   }
 
@@ -99,7 +109,7 @@ Deno.serve(async (req) => {
         ? dispute.payment_intent
         : dispute.payment_intent?.id || null;
 
-    const parties = await resolveParties(paymentIntentId);
+    const parties = await resolveParties(paymentIntentId, event.account);
     const evidenceDueAt = toIso(dispute.evidence_details?.due_by);
 
     const { error: upsertErr } = await supabase
