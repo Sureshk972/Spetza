@@ -13,6 +13,7 @@ const NAV = [
   { to: '/admin/reports', label: 'Reports' },
   { to: '/admin/demand', label: 'Demand Map' },
   { to: '/admin/waitlist', label: 'Waitlist' },
+  { to: '/admin/pages', label: 'All Pages' },
 ]
 
 function SidebarLink({ to, label, end }) {

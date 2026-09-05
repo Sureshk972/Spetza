@@ -42,6 +42,7 @@ import AdminPayments from './pages/admin/AdminPayments.jsx'
 import AdminVerifications from './pages/admin/AdminVerifications.jsx'
 import AdminRatings from './pages/admin/AdminRatings.jsx'
 import AdminWaitlist from './pages/admin/AdminWaitlist.jsx'
+import AdminPages from './pages/admin/AdminPages.jsx'
 import AdminReports from './pages/admin/AdminReports.jsx'
 import AdminDemandMap from './pages/admin/AdminDemandMap.jsx'
 
@@ -148,6 +149,7 @@ export default function App() {
         <Route path="reports" element={<AdminReports />} />
         <Route path="demand" element={<AdminDemandMap />} />
         <Route path="waitlist" element={<AdminWaitlist />} />
+        <Route path="pages" element={<AdminPages />} />
       </Route>
 
       {/* Unknown URL: bounce to the root, which routes signed-in users to
