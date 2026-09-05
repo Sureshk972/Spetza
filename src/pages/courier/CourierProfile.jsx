@@ -122,6 +122,7 @@ export default function CourierProfile() {
       desc: 'First and last name — senders see your first name when you accept.',
       done: hasName,
       action: null,
+      anchor: 'basics',
     },
     {
       num: '2',
@@ -136,6 +137,7 @@ export default function CourierProfile() {
       desc: 'Connect your bank account through Stripe so you get paid after every delivery.',
       done: payoutsReady,
       action: null,
+      anchor: 'payouts',
     },
     {
       num: '4',
@@ -151,6 +153,7 @@ export default function CourierProfile() {
       desc: 'Tell us where you deliver so we show you nearby requests.',
       done: hasServiceArea,
       action: null,
+      anchor: 'service-area',
     },
   ]
 
@@ -248,6 +251,17 @@ export default function CourierProfile() {
                     Set up →
                   </Link>
                 )}
+                {/* Steps handled further down this page rather than on another
+                    route. Without this the row is inert, and sitting beside
+                    rows that do respond it reads as broken. */}
+                {!step.done && !step.inProgress && !step.action && step.anchor && (
+                  <a
+                    href={`#${step.anchor}`}
+                    className="text-xs text-teal font-medium hover:underline whitespace-nowrap"
+                  >
+                    Set up →
+                  </a>
+                )}
                 {step.inProgress && (
                   <span className="text-xs text-teal font-medium whitespace-nowrap">In progress</span>
                 )}
@@ -302,7 +316,7 @@ export default function CourierProfile() {
         <SmsPreferenceSection />
 
         {/* ── Basics ── */}
-        <section className="space-y-3">
+        <section id="basics" className="space-y-3 scroll-mt-4">
           <h2 className="text-xs uppercase tracking-widest text-slate">Basics</h2>
           <div className="rounded-xl border border-mist bg-white divide-y divide-mist">
             <div className="p-4">
@@ -422,7 +436,7 @@ export default function CourierProfile() {
         </section>
 
         {/* ── Service area ── */}
-        <section className="space-y-3">
+        <section id="service-area" className="space-y-3 scroll-mt-4">
           <h2 className="text-xs uppercase tracking-widest text-slate">Service area</h2>
           <div className="rounded-xl border border-mist bg-white p-4">
             <CourierServiceAreaSection
@@ -433,7 +447,7 @@ export default function CourierProfile() {
         </section>
 
         {/* ── Payouts ── */}
-        <section className="space-y-3">
+        <section id="payouts" className="space-y-3 scroll-mt-4">
           <h2 className="text-xs uppercase tracking-widest text-slate">Payouts</h2>
           <div className="rounded-xl border border-mist bg-white p-4">
             <CourierConnectSection profile={profile} />
