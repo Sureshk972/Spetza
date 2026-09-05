@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { consumeRateLimits, type Budget } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,6 +22,22 @@ const json = (body: unknown, status = 200) =>
 // it just isn't ranked first.
 const CHICAGO = { latitude: 41.8781, longitude: -87.6298 };
 const BIAS_RADIUS_METERS = 50000;
+
+// Budgets are sized off what entering an address actually costs. Typing one
+// address is roughly ten debounced `suggest` calls and exactly one `details`,
+// and a delivery needs two addresses. The per-minute numbers sit well above
+// anyone typing; the daily ones are what bound the bill, and still allow far
+// more deliveries a day than one account will ever post.
+const BUDGETS: Record<"suggest" | "details", Budget[]> = {
+  suggest: [
+    { bucket: "places:suggest:min", limit: 60, windowSeconds: 60 },
+    { bucket: "places:suggest:day", limit: 1000, windowSeconds: 86400 },
+  ],
+  details: [
+    { bucket: "places:details:min", limit: 30, windowSeconds: 60 },
+    { bucket: "places:details:day", limit: 200, windowSeconds: 86400 },
+  ],
+};
 
 /** Pull a single component's short or long name out of a Places details response. */
 function component(components: any[], type: string, short = false): string {
@@ -54,6 +71,15 @@ Deno.serve(async (req) => {
   if (action === "suggest") {
     const input = typeof body.input === "string" ? body.input.trim() : "";
     if (input.length < 3) return json({ suggestions: [] });
+
+    const budget = await consumeRateLimits(supabase, user.id, BUDGETS.suggest);
+    if (!budget.allowed) {
+      console.warn(`places-autocomplete: ${user.id} over "${budget.exceeded?.bucket}"`);
+      // The address field degrades quietly on any error -- the list closes and
+      // manual entry still works -- so this costs a throttled sender their
+      // suggestions, not their ability to post a delivery.
+      return json({ error: "too many address lookups, try again shortly" }, 429);
+    }
 
     let resp: Response;
     try {
@@ -108,6 +134,12 @@ Deno.serve(async (req) => {
   if (action === "details") {
     const placeId = typeof body.placeId === "string" ? body.placeId.trim() : "";
     if (!placeId) return json({ error: "missing placeId" }, 400);
+
+    const budget = await consumeRateLimits(supabase, user.id, BUDGETS.details);
+    if (!budget.allowed) {
+      console.warn(`places-autocomplete: ${user.id} over "${budget.exceeded?.bucket}"`);
+      return json({ error: "too many address lookups, try again shortly" }, 429);
+    }
 
     const url = new URL(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`);
     if (sessionToken) url.searchParams.set("sessionToken", sessionToken);
