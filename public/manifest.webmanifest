@@ -2,7 +2,7 @@
   "name": "Spetza",
   "short_name": "Spetza",
   "description": "Peer-to-peer package delivery.",
-  "start_url": "/signin",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#F2F2F2",
   "theme_color": "#F2F2F2",
