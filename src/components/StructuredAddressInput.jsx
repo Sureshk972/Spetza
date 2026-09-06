@@ -286,6 +286,9 @@ export default function StructuredAddressInput({
             highlight >= 0 ? `${listboxId}-opt-${highlight}` : undefined
           }
           autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="words"
+          spellCheck={false}
         />
 
         {open && suggestions.length > 0 && (
@@ -330,6 +333,10 @@ export default function StructuredAddressInput({
         onChange={(e) => update('apt', e.target.value)}
         placeholder="Apt, suite, unit (optional)"
         className={inputClass}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="words"
+        spellCheck={false}
       />
 
       <div className="grid grid-cols-[1fr_4.5rem_5.5rem] gap-2">
@@ -341,6 +348,10 @@ export default function StructuredAddressInput({
           onChange={(e) => update('city', e.target.value)}
           placeholder="City"
           className={inputClass}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="words"
+          spellCheck={false}
         />
 
         <select
