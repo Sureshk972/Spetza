@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import DeliveryProofPhoto from '../../components/DeliveryProofPhoto.jsx'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import RouteMap from '../../components/RouteMap.jsx'
@@ -672,6 +673,13 @@ export default function CourierDelivery() {
                       ? 'Photo attached. Your sender will see this.'
                       : 'Required. Show the package where you left it, or in the recipient\u2019s hands.'}
                   </p>
+                  {/* Show it back. This photo is the courier's only evidence
+                      they delivered anything, and it gets taken one-handed on
+                      a doorstep -- without a preview there is no way to know
+                      it isn't a blur or a shoe until the sender complains. */}
+                  {proofPath && (
+                    <DeliveryProofPhoto path={proofPath} label="What your sender will see" />
+                  )}
                   <label className="mt-3 block">
                     <input
                       type="file"
