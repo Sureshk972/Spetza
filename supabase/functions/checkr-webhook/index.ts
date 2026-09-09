@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { verifySignature, statusForEvent } from "../_shared/checkr.ts";
+import { verifySignature, statusForReport } from "../_shared/checkr.ts";
 import { notifyAccount } from "../_shared/accountNotify.ts";
 
 // Terminal states an admin owns — a late/duplicate webhook must never
@@ -45,10 +45,13 @@ Deno.serve(async (req) => {
   const reportStatus: string | null = obj?.status ?? null;
   const reportId: string | null = obj?.id ?? null;
 
-  const nextStatus = statusForEvent(eventType, reportStatus);
+  const reportResult: string | null = obj?.result ?? null;
+
+  const nextStatus = statusForReport(eventType, obj);
   console.log(
     `checkr-webhook: type=${eventType} report_status=${reportStatus} ` +
-      `candidate=${candidateId} -> next=${nextStatus ?? "(ignored)"}`,
+      `report_result=${reportResult} candidate=${candidateId} ` +
+      `-> next=${nextStatus ?? "(ignored)"}`,
   );
   if (!nextStatus) return new Response("ignored", { status: 200 });
 

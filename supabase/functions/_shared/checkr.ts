@@ -16,8 +16,26 @@ function authHeader(): string {
 
 export type AppBgStatus = "not_started" | "pending" | "clear" | "consider" | "rejected";
 
-// Map a Checkr webhook event + report status to our app status.
-// Returns null for events we ignore.
+// Map a whole Checkr webhook event to our app status.
+//
+// A Checkr report carries TWO fields: `status` (pending / complete /
+// suspended) and `result` (clear / consider). The verdict lives in
+// `result` — on a completed report `status` is the literal string
+// "complete", which matches neither branch below. Reading `status` here
+// silently parked every passing courier at "pending" forever; proven live
+// on 2026-09-09 with report 9ab9b32b2feacd90b7323386.
+export function statusForReport(
+  eventType: string,
+  report: { status?: string | null; result?: string | null } | null,
+): AppBgStatus | null {
+  const verdict = eventType === "report.completed"
+    ? (report?.result ?? null)
+    : (report?.status ?? null);
+  return statusForEvent(eventType, verdict);
+}
+
+// Map a Checkr event + the report's VERDICT (not its status) to our app
+// status. Prefer statusForReport — it picks the right field for you.
 export function statusForEvent(
   eventType: string,
   reportStatus: string | null,
