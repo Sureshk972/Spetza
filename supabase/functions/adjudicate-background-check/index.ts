@@ -58,6 +58,9 @@ Deno.serve(async (req) => {
 
   const { error } = await supabase.from("profiles").update({
     background_check_status: decision === "approved" ? "clear" : "rejected",
+    // Keep the displayed Checkr label in step with the decision, so the admin
+    // queue does not keep showing "Needs review" after it was reviewed.
+    checkr_display_status: decision === "approved" ? "Clear" : "Not eligible",
     background_check_notes: notes ? String(notes).trim() : null,
     background_check_reviewed_by: user.id,
     background_check_reviewed_at: new Date().toISOString(),

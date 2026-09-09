@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { verifySignature, statusForReport } from "../_shared/checkr.ts";
+import { stateForEvent, verifySignature } from "../_shared/checkr.ts";
 import { notifyAccount } from "../_shared/accountNotify.ts";
 
 // Terminal states an admin owns — a late/duplicate webhook must never
@@ -46,14 +46,19 @@ Deno.serve(async (req) => {
   const reportId: string | null = obj?.id ?? null;
 
   const reportResult: string | null = obj?.result ?? null;
+  const assessment: string | null = obj?.assessment ?? null;
+  const includesCanceled: boolean | null =
+    typeof obj?.includes_canceled === "boolean" ? obj.includes_canceled : null;
 
-  const nextStatus = statusForReport(eventType, obj);
+  const next = stateForEvent(eventType, obj);
+  const nextStatus = next?.status ?? null;
   console.log(
     `checkr-webhook: type=${eventType} report_status=${reportStatus} ` +
-      `report_result=${reportResult} candidate=${candidateId} ` +
-      `-> next=${nextStatus ?? "(ignored)"}`,
+      `report_result=${reportResult} assessment=${assessment} ` +
+      `includes_canceled=${includesCanceled} candidate=${candidateId} ` +
+      `-> next=${nextStatus ?? "(ignored)"} label=${next?.label ?? "-"}`,
   );
-  if (!nextStatus) return new Response("ignored", { status: 200 });
+  if (!next) return new Response("ignored", { status: 200 });
 
   if (!candidateId) {
     await supabase.from("checkr_webhook_deadletter").insert({
@@ -83,10 +88,14 @@ Deno.serve(async (req) => {
   }
 
   const update: Record<string, unknown> = {
-    background_check_status: nextStatus,
+    background_check_status: next.status,
     background_check_updated_at: new Date().toISOString(),
+    checkr_display_status: next.label,
   };
   if (reportId) update.checkr_report_id = reportId;
+  if (reportStatus) update.checkr_report_status = reportStatus;
+  if (assessment !== null) update.checkr_assessment = assessment;
+  if (includesCanceled !== null) update.checkr_includes_canceled = includesCanceled;
 
   const { error } = await supabase.from("profiles").update(update).eq("id", profile.id);
   if (error) {
@@ -95,19 +104,19 @@ Deno.serve(async (req) => {
     console.error(`checkr-webhook: db update failed for ${profile.id}:`, error.message);
     return new Response("db error", { status: 500 });
   }
-  console.log(`checkr-webhook: profile ${profile.id} -> ${nextStatus}`);
+  console.log(`checkr-webhook: profile ${profile.id} -> ${next.status} (${next.label})`);
 
   // Notify across every channel that applies. Previously this was push-only,
   // which is invisible on the iOS Safari PWA most couriers use — so in
   // practice a courier was never told their check finished.
   const accountEvent =
-    nextStatus === "clear"
+    next.status === "clear"
       ? "bgcheck_clear"
-      : nextStatus === "consider"
+      : next.status === "consider"
       ? "bgcheck_consider"
-      : nextStatus === "rejected"
+      : next.status === "rejected"
       ? "bgcheck_rejected"
-      : nextStatus === "not_started"
+      : next.status === "not_started"
       ? "bgcheck_expired"
       : null;
 

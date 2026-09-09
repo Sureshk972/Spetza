@@ -20,7 +20,7 @@ export default function AdminVerifications() {
     setLoading(true)
     const { data } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name, checkr_candidate_id, checkr_report_id, background_check_updated_at')
+      .select('id, first_name, last_name, checkr_candidate_id, checkr_report_id, background_check_updated_at, checkr_display_status, checkr_assessment, checkr_includes_canceled')
       .eq('account_type', 'courier')
       .eq('background_check_status', 'consider')
       .order('background_check_updated_at', { ascending: true })
@@ -50,6 +50,31 @@ export default function AdminVerifications() {
 
   const columns = [
     { key: 'name', header: 'Courier', render: (c) => <span className="font-medium">{name(c)}</span> },
+    {
+      // Checkr requires the report's own status and Assess tag be displayed
+      // in our application, not just stored (Customer API Integration
+      // Guidance v3.0, "Webhooks and Status Mappings").
+      key: 'checkr_display_status', header: 'Checkr status',
+      render: (c) => (
+        <span className="flex items-center gap-1.5">
+          <span className="text-xs font-medium">{c.checkr_display_status ?? '—'}</span>
+          {c.checkr_includes_canceled && (
+            <span
+              title="Report completed with one or more canceled screenings"
+              className="text-xs text-amber-600"
+            >
+              ⚠
+            </span>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: 'checkr_assessment', header: 'Assess',
+      render: (c) => c.checkr_assessment
+        ? <span className="text-xs capitalize text-slate">{c.checkr_assessment}</span>
+        : <span className="text-xs text-slate">—</span>
+    },
     { key: 'background_check_updated_at', header: 'Flagged', sortable: true, render: (c) => <span className="text-xs text-slate">{fmtDate(c.background_check_updated_at)}</span> },
     {
       key: 'checkr', header: 'Checkr',

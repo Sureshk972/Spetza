@@ -112,6 +112,17 @@ export default function AdminUserDetail() {
         {profile.account_type === 'courier' && (
           <>
             <Field label="BG Check" value={<span className="capitalize">{profile.background_check_status?.replace('_', ' ')}</span>} />
+            {profile.checkr_display_status && (
+              <Field
+                label="Checkr status"
+                value={
+                  <span>
+                    {profile.checkr_display_status}
+                    {profile.checkr_assessment ? ` · Assess: ${profile.checkr_assessment}` : ''}
+                  </span>
+                }
+              />
+            )}
             <Field label="Service Radius" value={profile.service_radius_miles ? `${profile.service_radius_miles} mi` : 'Not set'} />
             <Field label="Stripe Payouts" value={profile.stripe_connect_payouts_enabled ? <span className="text-green">Enabled</span> : 'Not set up'} />
           </>

@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
     if (!candidateId) {
       candidateId = await createCandidate(
         user.id, user.email ?? "", profile.first_name, profile.last_name,
+        workLocations,
       );
       // Store candidate id SYNCHRONOUSLY before creating the invitation,
       // so a fast webhook can always match this profile.
