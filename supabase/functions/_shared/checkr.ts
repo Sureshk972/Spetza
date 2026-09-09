@@ -8,7 +8,38 @@ const CHECKR_API = IS_STAGING
   ? "https://api.checkr-staging.com/v1"
   : "https://api.checkr.com/v1";
 const API_KEY = Deno.env.get("CHECKR_API_KEY") ?? "";
-const PACKAGE = Deno.env.get("CHECKR_PACKAGE_SLUG") ?? "";
+
+// Account hierarchy node, sent on invitations when set.
+//
+// Checkr makes `node` MANDATORY on every /invitations and /reports call the
+// moment a single node exists on the account — and nodes are created by
+// clicking around the dashboard, not by us. So the failure mode is: someone
+// segments the account by city, and every courier invitation starts erroring
+// with no deploy on our side to explain it.
+//
+// Leaving this unset keeps today's behaviour exactly (the field is omitted).
+// If a node ever appears, set the CHECKR_NODE_ID secret to its custom_id and
+// onboarding keeps working — a config change instead of an emergency deploy.
+// Read lazily rather than at module load, so a test (and a restarted
+// instance) sees the current value.
+export function configuredNodeId(): string {
+  return Deno.env.get("CHECKR_NODE_ID") ?? "";
+}
+
+// The exact body we POST to /invitations. Exported so the node behaviour is
+// testable without a network call.
+export function invitationBody(
+  candidateId: string,
+  workLocations: WorkLocation[],
+): Record<string, unknown> {
+  const node = configuredNodeId();
+  return {
+    candidate_id: candidateId,
+    package: Deno.env.get("CHECKR_PACKAGE_SLUG") ?? "",
+    work_locations: workLocations,
+    ...(node ? { node } : {}),
+  };
+}
 
 function authHeader(): string {
   return "Basic " + btoa(`${API_KEY}:`);
@@ -213,11 +244,7 @@ export async function createInvitation(
   const res = await fetch(`${CHECKR_API}/invitations`, {
     method: "POST",
     headers: { Authorization: authHeader(), "Content-Type": "application/json" },
-    body: JSON.stringify({
-      candidate_id: candidateId,
-      package: PACKAGE,
-      work_locations: workLocations,
-    }),
+    body: JSON.stringify(invitationBody(candidateId, workLocations)),
   });
   if (!res.ok) throw new Error(`checkr invitation create failed: ${res.status} ${await res.text()}`);
   const data = await res.json();

@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { stateForEvent, verdictFor, verifySignature } from "./checkr.ts";
+import { invitationBody, stateForEvent, verdictFor, verifySignature } from "./checkr.ts";
 
 Deno.test("verifySignature accepts a correct HMAC-SHA256 hex", async () => {
   const key = "test_key";
@@ -118,4 +118,24 @@ Deno.test("an unreadable completed report needs review", () => {
     stateForEvent("report.completed", { status: "complete", result: "wat", assessment: null })?.status,
     "consider",
   );
+});
+
+// Account hierarchy. Checkr makes `node` mandatory on every invitation the
+// moment one node exists on the account — created by clicking around their
+// dashboard, not by us. Unset must behave exactly as before; set must send it.
+Deno.test("invitation omits node when none is configured", () => {
+  Deno.env.delete("CHECKR_NODE_ID");
+  const body = invitationBody("cand_1", [{ country: "US", state: "IL", city: "Chicago" }]);
+  assertEquals("node" in body, false);
+  assertEquals(body.candidate_id, "cand_1");
+});
+
+Deno.test("invitation sends node when one is configured", () => {
+  Deno.env.set("CHECKR_NODE_ID", "chicago");
+  try {
+    const body = invitationBody("cand_2", [{ country: "US", state: "IL", city: "Chicago" }]);
+    assertEquals(body.node, "chicago");
+  } finally {
+    Deno.env.delete("CHECKR_NODE_ID");
+  }
 });
