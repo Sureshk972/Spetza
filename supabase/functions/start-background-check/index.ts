@@ -46,30 +46,47 @@ Deno.serve(async (req) => {
     return json({ error: "Background checks are not available yet. Please try again later." }, 503);
   }
 
-  // When COURIER_PAYS is on, verify the courier has paid $40 via
-  // Stripe Checkout before creating the Checkr invitation.
+  // Record the payment whenever one exists, INDEPENDENTLY of COURIER_PAYS.
+  //
+  // This used to live inside the COURIER_PAYS branch, which meant that with
+  // the flag off a real $40 payment was never written down. The client
+  // charges unconditionally (CourierVerify redirects through Checkout no
+  // matter what the flag says), so "flag off" never meant "free" — it only
+  // meant "unrecorded". And create-bgcheck-payment's only guards are
+  // `status = clear` and `bgcheck_paid_at`, so an unrecorded payment let the
+  // same courier be charged a second time.
+  //
+  // Money is recorded where it is taken, not where a feature flag says to
+  // look for it.
+  let paidAt: string | null = profile.bgcheck_paid_at ?? null;
+  if (!paidAt && profile.bgcheck_checkout_session_id) {
+    try {
+      const session = await stripe.checkout.sessions.retrieve(
+        profile.bgcheck_checkout_session_id,
+      );
+      if (session.payment_status === "paid") {
+        paidAt = new Date().toISOString();
+        await supabase.from("profiles").update({ bgcheck_paid_at: paidAt })
+          .eq("id", user.id);
+        console.log(`start-background-check: recorded payment for ${user.id}`);
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("bgcheck payment lookup failed:", msg);
+      // Only fatal when payment is actually required. With COURIER_PAYS off
+      // we still want the check to start; the payment stays unrecorded and
+      // is picked up on the next call.
+      if (COURIER_PAYS) return json({ error: "could not verify payment" }, 502);
+    }
+  }
+
+  // When COURIER_PAYS is on, payment is a hard gate.
   if (COURIER_PAYS) {
     if (!profile.bgcheck_checkout_session_id) {
       return json({ error: "payment required — use create-bgcheck-payment first" }, 402);
     }
-    if (!profile.bgcheck_paid_at) {
-      // Verify with Stripe that the session is actually paid.
-      try {
-        const session = await stripe.checkout.sessions.retrieve(
-          profile.bgcheck_checkout_session_id,
-        );
-        if (session.payment_status !== "paid") {
-          return json({ error: "payment not completed — please try again" }, 402);
-        }
-        // Mark as paid so subsequent calls skip the Stripe round-trip.
-        await supabase.from("profiles").update({
-          bgcheck_paid_at: new Date().toISOString(),
-        }).eq("id", user.id);
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        console.error("bgcheck payment verification failed:", msg);
-        return json({ error: "could not verify payment" }, 502);
-      }
+    if (!paidAt) {
+      return json({ error: "payment not completed — please try again" }, 402);
     }
   }
 

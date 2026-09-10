@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("account_type, selfie_path, stripe_connect_payouts_enabled, background_check_status, bgcheck_paid_at")
+    .select("account_type, selfie_path, stripe_connect_payouts_enabled, background_check_status, bgcheck_paid_at, bgcheck_checkout_session_id")
     .eq("id", user.id)
     .single();
 
@@ -38,6 +38,37 @@ Deno.serve(async (req) => {
   if (!profile.stripe_connect_payouts_enabled) return json({ error: "finish payout setup first" }, 409);
   if (profile.background_check_status === "clear") return json({ error: "already cleared" }, 409);
   if (profile.bgcheck_paid_at) return json({ error: "already paid" }, 409);
+
+  // A courier who paid and then closed the tab before start-background-check
+  // ran has a real payment that nothing has written down yet. Without this,
+  // they come back, see the "$40" button again, and — once Stripe's 24h
+  // idempotency window has passed — get charged a second time.
+  //
+  // So before creating anything, ask Stripe about the session we already have.
+  if (profile.bgcheck_checkout_session_id) {
+    try {
+      const existing = await stripe.checkout.sessions.retrieve(
+        profile.bgcheck_checkout_session_id,
+      );
+      if (existing.payment_status === "paid") {
+        await supabase.from("profiles").update({
+          bgcheck_paid_at: new Date().toISOString(),
+        }).eq("id", user.id);
+        console.log(`create-bgcheck-payment: recovered unrecorded payment for ${user.id}`);
+        return json({ error: "already paid" }, 409);
+      }
+      // Still payable — hand back the same session rather than opening a
+      // second one alongside it.
+      if (existing.status === "open" && existing.url) {
+        return json({ checkout_url: existing.url });
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      // An expired or unreadable session is not a reason to block payment;
+      // fall through and create a fresh one.
+      console.error("existing bgcheck session lookup failed:", msg);
+    }
+  }
 
   // Parse the return URL from the request body, fall back to default.
   const { return_url } = await req.json().catch(() => ({}));
