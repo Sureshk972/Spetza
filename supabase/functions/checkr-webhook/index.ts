@@ -42,8 +42,14 @@ Deno.serve(async (req) => {
   const eventType: string = evt?.type ?? "";
   const obj = evt?.data?.object ?? {};
   const candidateId: string | null = obj?.candidate_id ?? null;
-  const reportStatus: string | null = obj?.status ?? null;
-  const reportId: string | null = obj?.id ?? null;
+  // data.object is a report for report.* events and an invitation for
+  // invitation.* events. Both carry `id` and `status`, so only read them as
+  // report fields when the event is about a report -- otherwise the invitation
+  // id lands in checkr_report_id and the admin "open report" link 404s until
+  // report.created overwrites it.
+  const isReportEvent = eventType.startsWith("report.");
+  const reportStatus: string | null = isReportEvent ? (obj?.status ?? null) : null;
+  const reportId: string | null = isReportEvent ? (obj?.id ?? null) : null;
 
   const reportResult: string | null = obj?.result ?? null;
   const assessment: string | null = obj?.assessment ?? null;
