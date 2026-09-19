@@ -92,13 +92,26 @@ export default function PackagePhotoInput({ path, onChange, disabled }) {
       ) : (
         <label
           className={
-            'block px-4 py-6 rounded-lg border-2 border-dashed text-center text-sm ' +
+            'flex items-center gap-4 px-4 py-4 rounded-xl border-2 border-dashed text-left ' +
             (disabled
-              ? 'border-mist text-slate opacity-60'
-              : 'border-mist text-slate hover:border-teal hover:text-ink cursor-pointer')
+              ? 'border-mist bg-white opacity-60'
+              : 'border-teal/60 bg-teal/5 hover:bg-teal/10 active:bg-teal/15 cursor-pointer')
           }
         >
-          {uploading ? 'Uploading…' : 'Tap to add a photo of the package'}
+          <span className="flex-shrink-0 w-12 h-12 rounded-full bg-teal text-white flex items-center justify-center">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 7h3l2-3h6l2 3h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" />
+              <circle cx="12" cy="13" r="3.5" />
+            </svg>
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-ink">
+              {uploading ? 'Uploading…' : 'Add a photo of the package'}
+            </span>
+            <span className="block text-xs text-slate mt-0.5">
+              Couriers pick faster when they can see the size and shape.
+            </span>
+          </span>
           <input
             type="file"
             accept="image/*"
