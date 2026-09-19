@@ -14,6 +14,9 @@ function dollars(cents) {
   return '$' + (cents / 100).toFixed(2)
 }
 
+// Same base as AdminVerifications: the candidate page in Checkr's dashboard.
+const CHECKR_DASH = 'https://dashboard.checkr.com/candidates/'
+
 function Field({ label, value }) {
   return (
     <div>
@@ -120,6 +123,21 @@ export default function AdminUserDetail() {
                     {profile.checkr_display_status}
                     {profile.checkr_assessment ? ` · Assess: ${profile.checkr_assessment}` : ''}
                   </span>
+                }
+              />
+            )}
+            {profile.checkr_candidate_id && (
+              <Field
+                label="Checkr report"
+                value={
+                  <a
+                    href={`${CHECKR_DASH}${profile.checkr_candidate_id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-teal hover:underline"
+                  >
+                    Open in Checkr ↗
+                  </a>
                 }
               />
             )}
