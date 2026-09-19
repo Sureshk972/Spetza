@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
@@ -129,6 +129,20 @@ export default function SenderProfile() {
   const hasName = !!(profile?.first_name && profile?.last_name)
   const hasPhone = !!profile?.phone_verified_at
   const hasPaymentMethod = paymentMethods.length > 0
+
+  // "Add a card →" elsewhere in the app links here with #payments: open the
+  // form and bring it into view instead of dropping people at the top.
+  const location = useLocation()
+  const openAddCard = () => {
+    setAddingCard(true)
+    requestAnimationFrame(() =>
+      document.getElementById('payments')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    )
+  }
+  useEffect(() => {
+    if (location.hash === '#payments' && !pmLoading && !hasPaymentMethod) openAddCard()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.hash, pmLoading])
   const hasFirstDelivery = transactions.length > 0
   const allSetupDone = hasName && hasPhone && hasPaymentMethod
 
@@ -153,6 +167,7 @@ export default function SenderProfile() {
       desc: 'Your card is authorized when a courier accepts — you\'re only charged after delivery.',
       done: hasPaymentMethod,
       action: null,
+      onTap: openAddCard,
     },
   ]
 
@@ -222,8 +237,17 @@ export default function SenderProfile() {
             <div className="text-[10px] uppercase tracking-widest text-slate/60 font-bold">Set up your account</div>
           </div>
           <div className="divide-y divide-mist border-t border-mist">
-            {SENDER_SETUP_STEPS.map((step) => (
-              <div key={step.num} className="px-5 py-3.5 flex items-center gap-3">
+            {SENDER_SETUP_STEPS.map((step) => {
+              const tappable = !step.done && !!step.onTap
+              return (
+              <div
+                key={step.num}
+                role={tappable ? 'button' : undefined}
+                tabIndex={tappable ? 0 : undefined}
+                onClick={tappable ? step.onTap : undefined}
+                onKeyDown={(e) => { if (tappable && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); step.onTap() } }}
+                className={`px-5 py-3.5 flex items-center gap-3 ${tappable ? 'cursor-pointer active:bg-mist/40' : ''}`}
+              >
                 {step.done ? (
                   <span className="flex-shrink-0 w-7 h-7 rounded-full bg-teal/10 flex items-center justify-center">
                     <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" className="text-teal">
@@ -241,8 +265,12 @@ export default function SenderProfile() {
                     <div className="text-xs text-slate mt-0.5">{step.desc}</div>
                   )}
                 </div>
+                {tappable && (
+                  <span className="text-xs text-teal font-medium whitespace-nowrap">Set up →</span>
+                )}
               </div>
-            ))}
+              )
+            })}
           </div>
 
           {/* Phase 2: How to send */}
@@ -342,7 +370,7 @@ export default function SenderProfile() {
           </div>
         </section>
 
-        <section className="space-y-3">
+        <section id="payments" className="space-y-3 scroll-mt-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xs uppercase tracking-widest text-slate">Payment methods</h2>
             {!addingCard && !pmLoading && paymentMethods.length > 0 && (

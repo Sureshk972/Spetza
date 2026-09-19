@@ -114,7 +114,7 @@ export default function NewRequest() {
     }
     if (!hasPaymentMethod) {
       toast.error('Add a payment method before posting a delivery.')
-      navigate('/sender/profile')
+      navigate('/sender/profile#payments')
       return
     }
     setSubmitting(true)
@@ -180,7 +180,7 @@ export default function NewRequest() {
               We authorize your card when a courier accepts — you're not charged until it's delivered.
             </p>
             <Link
-              to="/sender/profile"
+              to="/sender/profile#payments"
               className="inline-block mt-2 text-sm text-teal font-semibold hover:underline"
             >
               Add a card →
