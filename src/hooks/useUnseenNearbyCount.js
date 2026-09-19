@@ -3,6 +3,8 @@ import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { haversineMiles } from '../lib/geocode.js'
+import { useCourierPositionContext } from '../context/CourierPositionContext.jsx'
+import { resolveCenter } from '../lib/courierLocation.js'
 
 /**
  * Polls for open delivery requests near the courier every 15 s.
@@ -13,10 +15,12 @@ export function useUnseenNearbyCount() {
   const [count, setCount] = useState(0)
   const prevRef = useRef(-1) // -1 = first load, suppress toast
 
-  const lat = Number(profile?.home_lat)
-  const lng = Number(profile?.home_lng)
-  const radius = Number(profile?.service_radius_miles)
-  const ready = hasSupabaseConfig && profile?.home_lat != null
+  const { fix } = useCourierPositionContext()
+  const center = resolveCenter({ fix, profile })
+  const lat = center?.lat
+  const lng = center?.lng
+  const radius = center?.radius
+  const ready = hasSupabaseConfig && center != null
 
   useEffect(() => {
     if (!ready) return

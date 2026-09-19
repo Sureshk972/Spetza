@@ -11,6 +11,8 @@ import PackagePhoto from '../../components/PackagePhoto.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 import { canAcceptDeliveries, courierStep } from '../../lib/courierGate.js'
 import PricingTable from '../../components/PricingTable.jsx'
+import { useCourierPositionContext } from '../../context/CourierPositionContext.jsx'
+import { resolveCenter } from '../../lib/courierLocation.js'
 
 function dollars(cents) {
   return `$${(cents / 100).toFixed(2)}`
@@ -64,16 +66,13 @@ export default function CourierHome() {
   const [liabilityChecked, setLiabilityChecked] = useState(false)
   const [progressing, setProgressing] = useState(null)
 
-  const serviceArea =
-    profile?.home_lat != null &&
-    profile?.home_lng != null &&
-    profile?.service_radius_miles != null
-      ? {
-          lat: Number(profile.home_lat),
-          lng: Number(profile.home_lng),
-          radius: Number(profile.service_radius_miles),
-        }
-      : null
+  // Centred on where the courier is now; home only if the phone gives us nothing.
+  const { fix } = useCourierPositionContext()
+  const serviceArea = useMemo(
+    () => resolveCenter({ fix, profile }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fix?.lat, fix?.lng, profile?.home_lat, profile?.home_lng, profile?.service_radius_miles],
+  )
 
   const refresh = () => {
     if (!hasSupabaseConfig) {
@@ -268,7 +267,7 @@ export default function CourierHome() {
             {serviceArea && (
               <>
                 <span className="text-slate/40">·</span>
-                <span>Within {serviceArea.radius} mi of your home</span>
+                <span>Within {serviceArea.radius} mi of {serviceArea.source === 'gps' ? 'you' : 'your home'}</span>
               </>
             )}
           </div>

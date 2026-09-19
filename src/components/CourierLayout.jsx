@@ -4,8 +4,18 @@ import EarnBackBar from './EarnBackBar.jsx'
 import { TEST_BAR_HEIGHT } from './TestModeBar.jsx'
 import { useUnseenNearbyCount } from '../hooks/useUnseenNearbyCount.js'
 import { usePendingPickups } from '../hooks/usePendingPickups.js'
+import { CourierPositionProvider } from '../context/CourierPositionContext.jsx'
 
 export default function CourierLayout({ children }) {
+  return (
+    <CourierPositionProvider>
+      <CourierShell>{children}</CourierShell>
+    </CourierPositionProvider>
+  )
+}
+
+// Split out so the badge hook runs inside the position provider.
+function CourierShell({ children }) {
   const unseenCount = useUnseenNearbyCount()
   const pendingPickups = usePendingPickups()
 
