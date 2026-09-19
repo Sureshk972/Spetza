@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveCenter, shouldSaveFix, isFresh, needsNewLabel, FRESH_MS } from './courierLocation.js'
+import { resolveCenter, shouldSaveFix, isFresh, needsNewLabel, placeCourier, FRESH_MS } from './courierLocation.js'
 
 const home = { home_lat: 41.5, home_lng: -87.3, service_radius_miles: 50 } // Indiana
 const chicago = { lat: 41.88, lng: -87.63, at: 1_000_000 }
@@ -85,5 +85,25 @@ describe('needsNewLabel', () => {
   })
   it('never needs a label without a centre', () => {
     expect(needsNewLabel(null, null)).toBe(false)
+  })
+})
+
+describe('placeCourier', () => {
+  const now = new Date('2026-09-19T18:00:00Z')
+  const base = { home_lat: '41.5', home_lng: '-87.3' }
+
+  it('draws a live dot at the last position when seen in the last 4 hours', () => {
+    const c = { ...base, last_lat: '41.88', last_lng: '-87.63', last_located_at: '2026-09-19T17:30:00Z' }
+    expect(placeCourier(c, now)).toMatchObject({ lat: 41.88, lng: -87.63, kind: 'live' })
+  })
+  it('draws a grey dot at the last position when older than 4 hours', () => {
+    const c = { ...base, last_lat: '41.88', last_lng: '-87.63', last_located_at: '2026-09-19T10:00:00Z' }
+    expect(placeCourier(c, now)).toMatchObject({ kind: 'stale', lat: 41.88 })
+  })
+  it('falls back to home when never located', () => {
+    expect(placeCourier(base, now)).toMatchObject({ kind: 'home', lat: 41.5, lng: -87.3 })
+  })
+  it('returns null with no usable position at all', () => {
+    expect(placeCourier({}, now)).toBeNull()
   })
 })

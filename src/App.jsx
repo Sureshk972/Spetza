@@ -45,6 +45,7 @@ import AdminWaitlist from './pages/admin/AdminWaitlist.jsx'
 import AdminPages from './pages/admin/AdminPages.jsx'
 import AdminReports from './pages/admin/AdminReports.jsx'
 import AdminDemandMap from './pages/admin/AdminDemandMap.jsx'
+import AdminFleetMap from './pages/admin/AdminFleetMap.jsx'
 
 function RootRedirect() {
   const { profile } = useAuth()
@@ -148,6 +149,7 @@ export default function App() {
         <Route path="ratings" element={<AdminRatings />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="demand" element={<AdminDemandMap />} />
+        <Route path="fleet" element={<AdminFleetMap />} />
         <Route path="waitlist" element={<AdminWaitlist />} />
         <Route path="pages" element={<AdminPages />} />
       </Route>

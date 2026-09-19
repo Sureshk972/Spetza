@@ -12,6 +12,7 @@ const NAV = [
   { to: '/admin/ratings', label: 'Ratings' },
   { to: '/admin/reports', label: 'Reports' },
   { to: '/admin/demand', label: 'Demand Map' },
+  { to: '/admin/fleet', label: 'Fleet' },
   { to: '/admin/waitlist', label: 'Waitlist' },
   { to: '/admin/pages', label: 'All Pages' },
 ]

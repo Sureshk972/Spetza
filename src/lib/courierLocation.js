@@ -68,3 +68,20 @@ export function needsNewLabel(lastLookedUp, center) {
   const moved = haversineMiles(lastLookedUp.lat, lastLookedUp.lng, center.lat, center.lng)
   return moved == null || moved >= RELABEL_MILES
 }
+
+// Admin fleet map: where to draw a courier and how to colour them.
+export const FLEET_COLORS = { live: '#76BF6B', stale: '#a8a29e', home: '#0388A6' }
+
+export function placeCourier(c, now = new Date()) {
+  const last = num(c?.last_lat) != null && num(c?.last_lng) != null
+  if (last && isFresh(c.last_located_at, now)) {
+    return { lat: num(c.last_lat), lng: num(c.last_lng), kind: 'live', color: FLEET_COLORS.live }
+  }
+  if (last) {
+    return { lat: num(c.last_lat), lng: num(c.last_lng), kind: 'stale', color: FLEET_COLORS.stale }
+  }
+  if (num(c?.home_lat) != null && num(c?.home_lng) != null) {
+    return { lat: num(c.home_lat), lng: num(c.home_lng), kind: 'home', color: FLEET_COLORS.home }
+  }
+  return null
+}
