@@ -9,6 +9,7 @@ import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
 import PackagePhoto from '../../components/PackagePhoto.jsx'
 import { resizeImage } from '../../lib/resizeImage.js'
+import { uniqueId, isImageFile, imageExt } from '../../lib/uploadName.js'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 
 const dollars = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
@@ -153,29 +154,40 @@ export default function CourierDelivery() {
   const onProofPhoto = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (!file.type.startsWith('image/')) { toast.error('Pick an image file.'); return }
+    if (!isImageFile(file)) { toast.error('Pick an image file.'); return }
     if (file.size > MAX_PROOF_BYTES) { toast.error('Image must be under 15 MB.'); return }
     setUploadingProof(true)
-    let uploadFile = file
     try {
-      uploadFile = await resizeImage(file)
-    } catch {
-      // Resize failed — upload the original rather than block a courier
-      // who is standing on a doorstep.
+      let uploadFile = file
+      try {
+        uploadFile = await resizeImage(file)
+      } catch {
+        // Resize failed — upload the original rather than block a courier
+        // who is standing on a doorstep.
+      }
+      const ext = imageExt(uploadFile)
+      // Path must start with the delivery id: storage RLS and complete-delivery
+      // both key off that first segment.
+      const objectPath = `${request.id}/${uniqueId()}.${ext}`
+      const { error: upErr } = await supabase.storage
+        .from(PROOF_BUCKET)
+        .upload(objectPath, uploadFile, { contentType: uploadFile.type || 'image/jpeg' })
+      if (upErr) {
+        console.error('proof upload failed', upErr)
+        toast.error("Couldn't upload that photo. Check your signal and try again.")
+        return
+      }
+      setProofPath(objectPath)
+    } catch (err) {
+      // Anything unexpected (an old WebView, a decode failure) must surface,
+      // not leave the button stuck on "Uploading…".
+      console.error('proof photo failed', err)
+      toast.error(`Couldn't attach that photo: ${err?.message || 'unknown error'}`)
+    } finally {
+      setUploadingProof(false)
+      // Allow re-picking the same file after a failure.
+      e.target.value = ''
     }
-    const ext = uploadFile.type === 'image/jpeg' ? 'jpg' : (uploadFile.name.split('.').pop() || 'jpg')
-    // Path must start with the delivery id: storage RLS and complete-delivery
-    // both key off that first segment.
-    const objectPath = `${request.id}/${crypto.randomUUID()}.${ext}`
-    const { error: upErr } = await supabase.storage
-      .from(PROOF_BUCKET)
-      .upload(objectPath, uploadFile, { contentType: uploadFile.type })
-    setUploadingProof(false)
-    if (upErr) {
-      toast.error("Couldn't upload that photo. Check your signal and try again.")
-      return
-    }
-    setProofPath(objectPath)
   }
 
   const handleDelivered = async () => {
@@ -697,6 +709,21 @@ export default function CourierDelivery() {
                       {uploadingProof
                         ? 'Uploading\u2026'
                         : proofPath ? 'Retake photo' : 'Take photo'}
+                    </span>
+                  </label>
+                  {/* Same handler, no `capture`: opens the photo library for
+                      couriers who already took the picture, or whose camera
+                      button misbehaves. */}
+                  <label className="block mt-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={onProofPhoto}
+                      disabled={uploadingProof || acting}
+                      className="hidden"
+                    />
+                    <span className="block w-full py-2 text-center text-xs text-teal font-medium cursor-pointer hover:underline">
+                      {proofPath ? 'Choose a different photo from library' : 'Or choose from library'}
                     </span>
                   </label>
                 </div>

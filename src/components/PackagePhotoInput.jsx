@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { resizeImage } from '../lib/resizeImage.js'
+import { uniqueId, isImageFile, imageExt } from '../lib/uploadName.js'
 
 const MAX_BYTES = 15 * 1024 * 1024 // raw camera photos can top 10 MB; we resize before upload
 
@@ -20,7 +21,7 @@ export default function PackagePhotoInput({ path, onChange, disabled }) {
   async function handleFile(e) {
     const file = e.target.files?.[0]
     if (!file || !user) return
-    if (!file.type.startsWith('image/')) {
+    if (!isImageFile(file)) {
       toast.error('Pick an image file.')
       return
     }
@@ -35,13 +36,11 @@ export default function PackagePhotoInput({ path, onChange, disabled }) {
     } catch {
       // resize failed — fall back to raw upload rather than blocking the flow
     }
-    const ext = uploadFile.type === 'image/jpeg'
-      ? 'jpg'
-      : (uploadFile.name.split('.').pop() || 'jpg')
-    const objectPath = `${user.id}/${crypto.randomUUID()}.${ext}`
+    const ext = imageExt(uploadFile)
+    const objectPath = `${user.id}/${uniqueId()}.${ext}`
     const { error } = await supabase.storage
       .from('package-photos')
-      .upload(objectPath, uploadFile, { contentType: uploadFile.type })
+      .upload(objectPath, uploadFile, { contentType: uploadFile.type || 'image/jpeg' })
     setUploading(false)
     if (error) {
       toast.error(error.message)
