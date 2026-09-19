@@ -1,5 +1,5 @@
 // Handles Stripe Connect webhook events:
-// - transfer.paid    → tell the courier their payout is moving
+// - transfer.created → tell the courier their earnings are on the way
 // - account.updated  → sync charges/payouts flags and tell the courier when
 //                      their payout status meaningfully changes
 //
@@ -11,8 +11,16 @@
 //
 // Stripe signs webhooks with the endpoint secret, not a Supabase JWT.
 //
+// NOTE: this listened for transfer.paid until 2026-09-10. That event does not
+// exist on current Stripe API versions -- it is not even offered in the event
+// picker -- so the payout notification could never have fired. transfer.created
+// is the live equivalent and the better product moment anyway: it is when the
+// money actually leaves the platform for the courier's Stripe balance, right
+// after a delivery completes. Arrival in their bank is a later, separate event
+// (payout.paid on the connected account) which we do not subscribe to yet.
+//
 // These two events arrive from two different Stripe destinations. A transfer
-// is an object in the platform account, so transfer.paid is delivered to a
+// is an object in the platform account, so transfer.created is delivered to a
 // destination scoped to "Your account"; account.updated belongs to the courier's
 // connected account and is delivered to one scoped to "Connected accounts".
 // Stripe will not let a single destination carry both scopes, and it signs each
@@ -24,7 +32,7 @@ import { sendPushToUsers } from "../_shared/fcm.ts";
 import { notifyAccount } from "../_shared/accountNotify.ts";
 import { verifyStripeEvent, webhookSecrets } from "../_shared/stripeWebhook.ts";
 
-const HANDLED = new Set(["transfer.paid", "account.updated"]);
+const HANDLED = new Set(["transfer.created", "account.updated"]);
 
 // Stripe re-sends account.updated on every requirement change. Only nag
 // about outstanding requirements once a day.
@@ -68,14 +76,14 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // ── transfer.paid — payout is moving to the courier's bank ──────────
-  if (event.type === "transfer.paid") {
+  // ── transfer.created — earnings released to the courier ─────────────
+  if (event.type === "transfer.created") {
     const transfer = event.data.object as Stripe.Transfer;
     const connectAccountId = transfer.destination as string;
     const amountCents = transfer.amount;
 
     if (!connectAccountId) {
-      console.error("stripe-connect-webhook: transfer.paid missing destination");
+      console.error("stripe-connect-webhook: transfer.created missing destination");
       return new Response("ok", { status: 200 });
     }
 
@@ -92,7 +100,7 @@ Deno.serve(async (req) => {
 
     await sendPushToUsers(supabase, [profile.id], {
       title: "Payout on the way!",
-      body: `$${(amountCents / 100).toFixed(2)} is being transferred to your bank account.`,
+      body: `$${(amountCents / 100).toFixed(2)} is on its way to your bank account.`,
       data: {
         event: "payout_completed",
         deep_link: "/courier/profile",
