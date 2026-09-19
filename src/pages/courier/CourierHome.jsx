@@ -13,6 +13,7 @@ import { canAcceptDeliveries, courierStep } from '../../lib/courierGate.js'
 import PricingTable from '../../components/PricingTable.jsx'
 import { useCourierPositionContext } from '../../context/CourierPositionContext.jsx'
 import { resolveCenter } from '../../lib/courierLocation.js'
+import { useNearestCity } from '../../hooks/useNearestCity.js'
 
 function dollars(cents) {
   return `$${(cents / 100).toFixed(2)}`
@@ -73,6 +74,7 @@ export default function CourierHome() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [fix?.lat, fix?.lng, profile?.home_lat, profile?.home_lng, profile?.service_radius_miles],
   )
+  const nearCity = useNearestCity(serviceArea)
 
   const refresh = () => {
     if (!hasSupabaseConfig) {
@@ -267,7 +269,10 @@ export default function CourierHome() {
             {serviceArea && (
               <>
                 <span className="text-slate/40">·</span>
-                <span>Within {serviceArea.radius} mi of {serviceArea.source === 'gps' ? 'you' : 'your home'}</span>
+                <span>
+                  Within {serviceArea.radius} mi of {serviceArea.source === 'gps' ? 'you' : 'your home'}
+                  {nearCity ? ` · near ${nearCity}` : ''}
+                </span>
               </>
             )}
           </div>

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { cityStateLabel } from "../_shared/placeLabel.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,8 +27,10 @@ Deno.serve(async (req) => {
   const { data: { user }, error: userErr } = await supabase.auth.getUser(token);
   if (userErr || !user) return json({ error: "unauthenticated" }, 401);
 
-  const { address } = await req.json().catch(() => ({}));
-  if (!address || typeof address !== "string" || !address.trim()) {
+  const { address, lat, lng } = await req.json().catch(() => ({}));
+  // Two modes: address -> point (forward), or point -> "City, ST" (reverse).
+  const reverse = Number.isFinite(Number(lat)) && Number.isFinite(Number(lng));
+  if (!reverse && (!address || typeof address !== "string" || !address.trim())) {
     return json({ error: "missing address" }, 400);
   }
 
@@ -35,7 +38,12 @@ Deno.serve(async (req) => {
   if (!apiKey) return json({ error: "geocoder not configured (GOOGLE_MAPS_API_KEY missing)" }, 500);
 
   const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
-  url.searchParams.set("address", address);
+  if (reverse) {
+    url.searchParams.set("latlng", `${Number(lat)},${Number(lng)}`);
+    url.searchParams.set("result_type", "locality|sublocality|administrative_area_level_2");
+  } else {
+    url.searchParams.set("address", address);
+  }
   url.searchParams.set("key", apiKey);
 
   let resp: Response;
@@ -58,6 +66,7 @@ Deno.serve(async (req) => {
     return json({ error: `geocoder http ${resp.status}: ${data.error_message || data.status || "unknown"}` }, 502);
   }
   if (data.status === "ZERO_RESULTS") {
+    if (reverse) return json({ label: null });
     return json({ error: "address not found" }, 404);
   }
   if (data.status !== "OK") {
@@ -65,8 +74,11 @@ Deno.serve(async (req) => {
     return json({ error: `${data.status}${data.error_message ? ": " + data.error_message : ""}` }, 502);
   }
   if (!data.results?.length) {
+    if (reverse) return json({ label: null });
     return json({ error: "address not found" }, 404);
   }
+
+  if (reverse) return json({ label: cityStateLabel(data.results) });
 
   const top = data.results[0];
   return json({

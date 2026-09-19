@@ -22,6 +22,15 @@ export async function geocodeAddress(address) {
   return { lat: data.lat, lng: data.lng, formattedAddress: data.formatted_address }
 }
 
+// Point -> "Chicago, IL". Null when the geocoder has nothing useful.
+export async function reverseGeocodeLabel(lat, lng) {
+  const { data, error } = await supabase.functions.invoke('geocode-address', {
+    body: { lat, lng },
+  })
+  if (error || !data || data.error) return null
+  return data.label ?? null
+}
+
 // Great-circle distance in miles between two lat/lng points.
 export function haversineMiles(lat1, lng1, lat2, lng2) {
   if ([lat1, lng1, lat2, lng2].some((n) => !Number.isFinite(n))) return null

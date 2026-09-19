@@ -56,3 +56,15 @@ export function isFresh(locatedAt, now = new Date()) {
   if (!Number.isFinite(t)) return false
   return now.getTime() - t < FRESH_MS
 }
+
+// The "near Chicago, IL" label only needs refreshing once the courier has
+// clearly left town, not on every GPS wobble.
+const RELABEL_MILES = 2
+
+/** Should we ask the geocoder for a fresh city label for this centre? */
+export function needsNewLabel(lastLookedUp, center) {
+  if (!center) return false
+  if (!lastLookedUp) return true
+  const moved = haversineMiles(lastLookedUp.lat, lastLookedUp.lng, center.lat, center.lng)
+  return moved == null || moved >= RELABEL_MILES
+}

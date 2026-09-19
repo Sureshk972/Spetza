@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveCenter, shouldSaveFix, isFresh, FRESH_MS } from './courierLocation.js'
+import { resolveCenter, shouldSaveFix, isFresh, needsNewLabel, FRESH_MS } from './courierLocation.js'
 
 const home = { home_lat: 41.5, home_lng: -87.3, service_radius_miles: 50 } // Indiana
 const chicago = { lat: 41.88, lng: -87.63, at: 1_000_000 }
@@ -68,5 +68,22 @@ describe('isFresh', () => {
   })
   it('window is four hours', () => {
     expect(FRESH_MS).toBe(4 * 60 * 60 * 1000)
+  })
+})
+
+describe('needsNewLabel', () => {
+  const looked = { lat: 41.88, lng: -87.63 }
+
+  it('needs a label the first time', () => {
+    expect(needsNewLabel(null, looked)).toBe(true)
+  })
+  it('keeps the label for small moves', () => {
+    expect(needsNewLabel(looked, { lat: 41.89, lng: -87.63 })).toBe(false) // ~0.7 mi
+  })
+  it('re-looks up after moving a couple of miles', () => {
+    expect(needsNewLabel(looked, { lat: 41.93, lng: -87.63 })).toBe(true) // ~3.5 mi
+  })
+  it('never needs a label without a centre', () => {
+    expect(needsNewLabel(null, null)).toBe(false)
   })
 })
