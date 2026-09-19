@@ -42,7 +42,7 @@ const statusLabel = {
 export default function CourierDelivery() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, refreshProfile } = useAuth()
   const [request, setRequest] = useState(null)
   const [sender, setSender] = useState(null)
   const [rated, setRated] = useState(false)
@@ -209,6 +209,9 @@ export default function CourierDelivery() {
       return
     }
     load()
+    // The earn-back bar and earnings read from the cached profile; the
+    // delivery just changed both.
+    refreshProfile()
   }
 
   const RETURN_ERROR_COPY = {
