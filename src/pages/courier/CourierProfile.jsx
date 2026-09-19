@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
@@ -34,6 +34,7 @@ const BG_LABEL = {
 }
 
 export default function CourierProfile() {
+  const navigate = useNavigate()
   const { user, profile, refreshProfile } = useAuth()
   const [editingName, setEditingName] = useState(false)
   const [firstName, setFirstName] = useState('')
@@ -221,8 +222,25 @@ export default function CourierProfile() {
             <div className="text-[10px] uppercase tracking-widest text-slate/60 font-bold">Set up your account</div>
           </div>
           <div className="divide-y divide-mist border-t border-mist">
-            {SETUP_STEPS.map((step) => (
-              <div key={step.num} className="px-5 py-3.5 flex items-center gap-3">
+            {SETUP_STEPS.map((step) => {
+              // The whole row is the tap target, not just the "Set up" text:
+              // on a phone people tap the row, and a row that ignores the tap
+              // reads as broken.
+              const pending = !step.done && !step.inProgress
+              const go = () => {
+                if (!pending) return
+                if (step.action) navigate(step.action)
+                else if (step.anchor) document.getElementById(step.anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }
+              return (
+              <div
+                key={step.num}
+                role={pending ? 'button' : undefined}
+                tabIndex={pending ? 0 : undefined}
+                onClick={go}
+                onKeyDown={(e) => { if (pending && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); go() } }}
+                className={`px-5 py-3.5 flex items-center gap-3 ${pending ? 'cursor-pointer active:bg-mist/40' : ''}`}
+              >
                 {step.done ? (
                   <span className="flex-shrink-0 w-7 h-7 rounded-full bg-green/10 flex items-center justify-center">
                     <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" className="text-green">
@@ -247,7 +265,7 @@ export default function CourierProfile() {
                   )}
                 </div>
                 {!step.done && !step.inProgress && step.action && (
-                  <Link to={step.action} className="text-xs text-teal font-medium hover:underline whitespace-nowrap">
+                  <Link to={step.action} onClick={(e) => e.stopPropagation()} className="text-xs text-teal font-medium hover:underline whitespace-nowrap">
                     Set up →
                   </Link>
                 )}
@@ -257,6 +275,7 @@ export default function CourierProfile() {
                 {!step.done && !step.inProgress && !step.action && step.anchor && (
                   <a
                     href={`#${step.anchor}`}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); go() }}
                     className="text-xs text-teal font-medium hover:underline whitespace-nowrap"
                   >
                     Set up →
@@ -266,7 +285,8 @@ export default function CourierProfile() {
                   <span className="text-xs text-teal font-medium whitespace-nowrap">In progress</span>
                 )}
               </div>
-            ))}
+              )
+            })}
           </div>
 
           {/* Phase 2: How you earn */}
