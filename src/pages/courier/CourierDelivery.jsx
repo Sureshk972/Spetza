@@ -288,7 +288,9 @@ export default function CourierDelivery() {
       toast.error(error.message)
       return
     }
-    load()
+    // The delivery is no longer ours, so this page has nothing to show.
+    toast('Delivery released. It\'s back on the open list.')
+    navigate('/courier', { replace: true })
   }
 
   if (loading) {
