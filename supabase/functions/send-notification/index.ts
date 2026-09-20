@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     .select("pin")
     .eq("delivery_request_id", delivery_request_id)
     .maybeSingle();
-  const pickupPin: string | null = pinRow?.pin ?? null;
+  let pickupPin: string | null = pinRow?.pin ?? null;
 
   const [senderInfo, courierInfo] = await Promise.all([
     lookupPerson(supabase, request.sender_id, "Your sender"),
@@ -243,30 +243,54 @@ Deno.serve(async (req) => {
   if (request.kind === "pickup" && (deliveryEvent === "accepted" || deliveryEvent === "arrived")) {
     const { data: contact } = await supabase
       .from("delivery_pickup_contacts")
-      .select("name, phone, sms_status")
+      .select("phone")
       .eq("delivery_request_id", delivery_request_id)
       .maybeSingle();
     if (!contact) {
       console.error(`send-notification: pickup request ${delivery_request_id} has no contact row`);
       results.contactSms = { ok: false, error: "no contact" };
     } else {
-      const bodyText = pickupContactSms(deliveryEvent, {
-        orderNumber: request.order_number,
-        courierName: courierInfo?.firstName ?? null,
-        requesterName: senderInfo?.firstName ?? null,
-        description: request.package_description,
-        pin: pickupPin,
-      });
-      if (bodyText) {
-        const sent = await sendSms(contact.phone, bodyText);
-        results.contactSms = sent;
-        // Only the accepted text carries the PIN, so only it decides whether
-        // the requester has to relay the code themselves.
-        if (deliveryEvent === "accepted") {
-          await supabase
-            .from("delivery_pickup_contacts")
-            .update({ sms_status: sent.ok ? "sent" : "failed" })
-            .eq("delivery_request_id", delivery_request_id);
+      // accept-delivery-request flips status (which fires the trigger that
+      // calls us) before it upserts delivery_pins, so on "accepted" the PIN
+      // read above can race and come back null. Re-read a few times rather
+      // than text the contact "----" and mark it sent.
+      if (deliveryEvent === "accepted" && !pickupPin) {
+        for (let i = 0; i < 3 && !pickupPin; i++) {
+          await new Promise((r) => setTimeout(r, 500));
+          const { data: retryRow } = await supabase
+            .from("delivery_pins")
+            .select("pin")
+            .eq("delivery_request_id", delivery_request_id)
+            .maybeSingle();
+          pickupPin = retryRow?.pin ?? null;
+        }
+      }
+      if (deliveryEvent === "accepted" && !pickupPin) {
+        console.error(`send-notification: no pin yet for pickup request ${delivery_request_id}`);
+        results.contactSms = { ok: false, error: "no pin" };
+        await supabase
+          .from("delivery_pickup_contacts")
+          .update({ sms_status: "failed" })
+          .eq("delivery_request_id", delivery_request_id);
+      } else {
+        const bodyText = pickupContactSms(deliveryEvent, {
+          orderNumber: request.order_number,
+          courierName: courierInfo?.firstName ?? null,
+          requesterName: senderInfo?.firstName ?? null,
+          description: request.package_description,
+          pin: pickupPin,
+        });
+        if (bodyText) {
+          const sent = await sendSms(contact.phone, bodyText);
+          results.contactSms = sent;
+          // Only the accepted text carries the PIN, so only it decides whether
+          // the requester has to relay the code themselves.
+          if (deliveryEvent === "accepted") {
+            await supabase
+              .from("delivery_pickup_contacts")
+              .update({ sms_status: sent.ok ? "sent" : "failed" })
+              .eq("delivery_request_id", delivery_request_id);
+          }
         }
       }
     }
