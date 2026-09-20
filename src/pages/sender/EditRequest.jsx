@@ -5,13 +5,12 @@ import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import PackagePhotoInput from '../../components/PackagePhotoInput.jsx'
 import StructuredAddressInput from '../../components/StructuredAddressInput.jsx'
-import { MAX_DISTANCE_MILES, priceForDistance, feeFor, totalFor } from '../../lib/pricing.js'
+import PriceBreakout from '../../components/PriceBreakout.jsx'
+import { MAX_DISTANCE_MILES, priceForDistance, breakoutForRequest } from '../../lib/pricing.js'
 import { geocodeAddress, haversineMiles } from '../../lib/geocode.js'
 import { withApt } from '../../lib/address.js'
 import { pickupContactError } from '../../lib/requestKind.js'
 import { normalizePhone } from '../../lib/phone.js'
-
-const money = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
 
 const blankGeo = { status: 'idle', lat: null, lng: null, formatted: null, error: null }
 
@@ -101,8 +100,7 @@ export default function EditRequest() {
 
   const overMax = distance != null && distance > MAX_DISTANCE_MILES
   const priceCents = overMax ? null : priceForDistance(distance ?? NaN)
-  const feeCents = feeFor(priceCents)
-  const totalCents = totalFor(priceCents)
+  const breakout = breakoutForRequest({ max_price_cents: priceCents }, 'sender')
 
   // `apt` comes back from the address input because Google's formatted address
   // drops the unit number, and the courier needs it.
@@ -366,10 +364,11 @@ export default function EditRequest() {
             label="Distance"
             value={distance == null ? '—' : `${distance.toFixed(1)} mi`}
           />
-          <div className="flex justify-between items-baseline">
-            <span className="text-xs uppercase tracking-widest text-ink">Total</span>
-            <span className="font-display text-xl text-ink">{money(totalCents)}</span>
-          </div>
+          {breakout ? (
+            <PriceBreakout breakout={breakout} caption="total" className="pt-1" />
+          ) : (
+            <Row label="Total" value="—" />
+          )}
           {overMax && (
             <div className="text-xs text-teal pt-1">
               Over the {MAX_DISTANCE_MILES} mi limit.

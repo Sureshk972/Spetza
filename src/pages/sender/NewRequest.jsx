@@ -7,7 +7,8 @@ import PackagePhotoInput from '../../components/PackagePhotoInput.jsx'
 import StructuredAddressInput from '../../components/StructuredAddressInput.jsx'
 import RouteMap from '../../components/RouteMap.jsx'
 import PricingTable from '../../components/PricingTable.jsx'
-import { MAX_DISTANCE_MILES, priceForDistance, feeFor, totalFor } from '../../lib/pricing.js'
+import PriceBreakout from '../../components/PriceBreakout.jsx'
+import { MAX_DISTANCE_MILES, priceForDistance, breakoutForRequest } from '../../lib/pricing.js'
 import { PACKAGE_SIZES } from '../../lib/packageSizes.js'
 import { geocodeAddress, haversineMiles } from '../../lib/geocode.js'
 import { withApt } from '../../lib/address.js'
@@ -15,8 +16,6 @@ import { trackEvent } from '../../lib/analytics.js'
 import { REQUEST_KINDS, pickupContactError } from '../../lib/requestKind.js'
 import { normalizePhone } from '../../lib/phone.js'
 import { postDeliveryRequest } from '../../lib/postRequest.js'
-
-const money = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
 
 // Pull a 5-digit US zip out of a geocoder-formatted address string
 // (e.g. "123 W Foster Ave, Chicago, IL 60640, USA" → "60640").
@@ -58,8 +57,7 @@ export default function NewRequest() {
 
   const overMax = distance != null && distance > MAX_DISTANCE_MILES
   const priceCents = overMax ? null : priceForDistance(distance ?? NaN)
-  const feeCents = feeFor(priceCents)
-  const totalCents = totalFor(priceCents)
+  const breakout = breakoutForRequest({ max_price_cents: priceCents }, 'sender')
 
   // `apt` comes back from the address input because Google's formatted address
   // drops the unit number, and the courier needs it.
@@ -350,10 +348,11 @@ export default function NewRequest() {
             label="Distance"
             value={distance == null ? '—' : `${distance.toFixed(1)} mi`}
           />
-          <div className="flex justify-between items-baseline">
-            <span className="text-xs uppercase tracking-widest text-ink">Total</span>
-            <span className="font-display text-xl text-ink">{money(totalCents)}</span>
-          </div>
+          {breakout ? (
+            <PriceBreakout breakout={breakout} caption="total" className="pt-1" />
+          ) : (
+            <Row label="Total" value="—" />
+          )}
           {overMax && (
             <div className="text-xs text-red-600 pt-1">
               Over the {MAX_DISTANCE_MILES} mi limit.

@@ -8,8 +8,10 @@ import RouteMap from '../../components/RouteMap.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
 import PackagePhoto from '../../components/PackagePhoto.jsx'
+import PriceBreakout from '../../components/PriceBreakout.jsx'
 import { uploadProofPhoto } from '../../lib/proofUpload.js'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
+import { breakoutForRequest } from '../../lib/pricing.js'
 
 const dollars = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
 
@@ -528,10 +530,7 @@ export default function CourierDelivery() {
 
         <div className="p-4 rounded-xl border border-mist bg-white space-y-1.5">
           <div className="text-xs uppercase tracking-widest text-slate">Your earnings</div>
-          <div className="flex justify-between items-baseline">
-            <span className="text-xs uppercase tracking-widest text-ink">You receive</span>
-            <span className="font-display text-xl text-ink">{dollars(courierTake)}</span>
-          </div>
+          <PriceBreakout breakout={breakoutForRequest(request, 'courier')} caption="you receive" className="pt-1" />
           <div className="text-xs text-slate pt-1">
             {/* "Paid out" used to appear here the moment a delivery closed,
                 which reads as "it's in my bank". It isn't: capture moves the

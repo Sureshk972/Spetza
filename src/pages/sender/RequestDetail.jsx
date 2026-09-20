@@ -3,18 +3,17 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { feeFor, totalFor } from '../../lib/pricing.js'
+import { breakoutForRequest } from '../../lib/pricing.js'
 import RouteMap from '../../components/RouteMap.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
 import PackagePhoto from '../../components/PackagePhoto.jsx'
 import DeliveryProofPhoto from '../../components/DeliveryProofPhoto.jsx'
 import TipPrompt from '../../components/TipPrompt.jsx'
+import PriceBreakout from '../../components/PriceBreakout.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 import { chime } from '../../lib/chime.js'
 import { contactStatusCopy } from '../../lib/requestKind.js'
-
-const dollars = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
 
 function fmt(iso) {
   if (!iso) return null
@@ -194,10 +193,6 @@ export default function RequestDetail() {
   }
 
   const priceCents = request.accepted_price_cents ?? request.max_price_cents
-  const feeCents = request.platform_fee_cents ?? feeFor(request.max_price_cents)
-  const totalCents = request.accepted_price_cents != null
-    ? request.accepted_price_cents + (request.platform_fee_cents ?? 0)
-    : totalFor(request.max_price_cents)
 
   const timeline = [
     { key: 'posted', label: 'Posted', iso: request.created_at, done: true },
@@ -384,14 +379,7 @@ export default function RequestDetail() {
 
         <div className="p-4 rounded-xl border border-mist bg-white space-y-1.5">
           <div className="text-xs uppercase tracking-widest text-slate">Payment</div>
-          <Row label="Delivery" value={dollars(totalCents)} />
-          {request.tip_cents > 0 && (
-            <Row label="Tip" value={dollars(request.tip_cents)} />
-          )}
-          <div className="border-t border-slate/20 pt-1.5 flex justify-between items-baseline">
-            <span className="text-xs uppercase tracking-widest text-ink">Total</span>
-            <span className="font-display text-xl text-ink">{dollars(totalCents + (request.tip_cents || 0))}</span>
-          </div>
+          <PriceBreakout breakout={breakoutForRequest(request, 'sender')} caption="total" className="pt-1" />
           <div className="text-xs text-slate pt-1">
             {request.status === 'delivered'
               ? 'Charged.'
@@ -445,15 +433,6 @@ export default function RequestDetail() {
           </button>
         )}
       </div>
-    </div>
-  )
-}
-
-function Row({ label, value }) {
-  return (
-    <div className="flex justify-between text-sm text-slate">
-      <span>{label}</span>
-      <span className="text-ink">{value}</span>
     </div>
   )
 }
