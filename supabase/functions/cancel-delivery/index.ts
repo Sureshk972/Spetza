@@ -79,6 +79,8 @@ Deno.serve(async (req) => {
         platform_fee_cents: null,
         stripe_payment_intent_id: null,
         courier_arrived_at: null,
+        // Pickup requests: the next courier must take their own photo.
+        pickup_photo_path: null,
       };
 
   const { error: updateErr } = await supabase
