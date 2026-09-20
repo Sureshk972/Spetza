@@ -221,25 +221,6 @@ export default function CourierHome() {
     navigate(`/courier/deliveries/${request.id}`)
   }
 
-  const handleDelivered = async (request) => {
-    const take = (request.accepted_price_cents ?? request.max_price_cents) - (request.platform_fee_cents ?? 0)
-    const ok = window.confirm(
-      `Confirm delivered? You'll earn ${dollars(take)}.`,
-    )
-    if (!ok) return
-    setProgressing(request.id)
-    const { error } = await supabase.functions.invoke(
-      'complete-delivery',
-      { body: { delivery_request_id: request.id } },
-    )
-    setProgressing(null)
-    if (error) {
-      alert(error.message)
-      return
-    }
-    refresh()
-  }
-
   const handleAbandon = async (request) => {
     const ok = window.confirm(
       "Abandon this delivery? It will go back to the open list for another courier.",
@@ -445,17 +426,11 @@ export default function CourierHome() {
                             {r.courier_arrived_at ? '🔑 Enter PIN →' : '📍 Head to pickup →'}
                           </span>
                         ) : (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              handleDelivered(r)
-                            }}
-                            disabled={progressing === r.id}
-                            className="px-3 py-1 rounded-lg bg-green text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-                          >
-                            {progressing === r.id ? 'Capturing…' : 'Mark delivered'}
-                          </button>
+                          /* Finishing needs the drop-off photo, which lives on
+                             the delivery page -- so this only points there. */
+                          <span className="px-3 py-1 rounded-lg bg-green/10 border border-green/30 text-green text-xs font-medium">
+                            📸 Drop off →
+                          </span>
                         )}
                       </div>
                     </div>
