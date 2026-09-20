@@ -467,13 +467,13 @@ export default function CourierDelivery() {
                   {acting ? 'Notifying sender…' : "I've arrived"}
                 </button>
               </div>
-              <div className="flex justify-end">
+              <div className="mt-3 flex justify-end">
                 <button
                   onClick={handleAbandon}
                   disabled={acting}
-                  className="px-3 py-1.5 rounded-lg text-sm text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                  className="px-4 py-2 rounded-lg border border-red-300 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
                 >
-                  Abandon
+                  Abandon delivery
                 </button>
               </div>
 
@@ -572,13 +572,13 @@ export default function CourierDelivery() {
                 </div>
                 {pinError && <p className="text-sm text-red-500 mt-2">{pinError}</p>}
               </div>
-              <div className="flex justify-end">
+              <div className="mt-3 flex justify-end">
                 <button
                   onClick={handleAbandon}
                   disabled={acting}
-                  className="px-3 py-1.5 rounded-lg text-sm text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                  className="px-4 py-2 rounded-lg border border-red-300 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
                 >
-                  Abandon
+                  Abandon delivery
                 </button>
               </div>
             </div>
