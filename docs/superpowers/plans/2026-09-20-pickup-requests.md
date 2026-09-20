@@ -275,7 +275,7 @@ const ctx = {
 Deno.test("accepted: names both people, tells the contact what to check, gives the PIN", () => {
   assertEquals(
     pickupContactSms("accepted", ctx),
-    "Spetza: Maria is picking up \"Blue jacket\" for Suresh. Before handing it over, ask to see the job on her phone — it shows SPZ-00021 and your name. Then give her PIN 4821. Reply STOP to opt out.",
+    "Spetza: Maria is picking up \"Blue jacket\" for Suresh. Before handing it over, ask to see the job on their phone — it shows SPZ-00021 and your name. Then give them PIN 4821. Reply STOP to opt out.",
   );
 });
 
@@ -343,26 +343,8 @@ export function pickupContactSms(
 ): string | null {
   const courier = ctx.courierName || "Your courier";
   const requester = ctx.requesterName || "a Spetza customer";
-  // Gender-neutral; the contact only needs to know whose phone to look at.
-  const their = ctx.courierName ? "her" : "their";
-  if (event === "accepted") {
-    return (
-      `Spetza: ${courier} is picking up "${ctx.description}" for ${requester}. ` +
-      `Before handing it over, ask to see the job on ${their} phone — it shows ` +
-      `${ctx.orderNumber} and your name. Then give ${their} PIN ${ctx.pin ?? "----"}. ` +
-      `Reply STOP to opt out.`
-    );
-  }
-  if (event === "arrived") {
-    return `Spetza: ${courier} is outside for the pickup.`;
-  }
-  return null;
-}
-```
-
-Note: the courier's pronoun is not on the profile. Use **"their"** in both branches — change the test's expected string to `on their phone … give them PIN 4821` and drop the `their` ternary:
-
-```ts
+  // "their"/"them": pronouns are not on the profile, and the contact only
+  // needs to know whose phone to look at.
   if (event === "accepted") {
     return (
       `Spetza: ${courier} is picking up "${ctx.description}" for ${requester}. ` +
@@ -371,11 +353,11 @@ Note: the courier's pronoun is not on the profile. Use **"their"** in both branc
       `Reply STOP to opt out.`
     );
   }
-```
-
-and the test:
-```ts
-    "Spetza: Maria is picking up \"Blue jacket\" for Suresh. Before handing it over, ask to see the job on their phone — it shows SPZ-00021 and your name. Then give them PIN 4821. Reply STOP to opt out.",
+  if (event === "arrived") {
+    return `Spetza: ${courier} is outside for the pickup.`;
+  }
+  return null;
+}
 ```
 
 - [ ] **Step 4: Run to verify they pass**
