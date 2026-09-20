@@ -189,7 +189,7 @@ export default function NewRequest() {
   return (
     <div className="min-h-full px-6 py-12 max-w-xl mx-auto">
       <Link to="/sender" className="text-sm text-slate hover:text-ink">&larr; back</Link>
-      <h1 className="font-display text-3xl text-ink mt-6">New delivery request</h1>
+      <h1 className="font-display text-3xl text-ink mt-6">{isPickup ? 'New pickup order' : 'New delivery order'}</h1>
       <div className="mt-4 grid grid-cols-2 gap-2 p-1 rounded-lg bg-mist" role="tablist" aria-label="Delivery type">
         {REQUEST_KINDS.map((k) => (
           <button
