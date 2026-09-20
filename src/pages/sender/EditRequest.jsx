@@ -169,38 +169,42 @@ export default function EditRequest() {
       return
     }
     setSaving(true)
-    const { error } = await supabase
-      .from('delivery_requests')
-      .update({
-        pickup_address: pickupGeo.formatted || pickup,
-        pickup_lat: pickupGeo.lat,
-        pickup_lng: pickupGeo.lng,
-        dropoff_address: dropoffGeo.formatted || dropoff,
-        dropoff_lat: dropoffGeo.lat,
-        dropoff_lng: dropoffGeo.lng,
-        package_description: description,
-        distance_miles: Number(distance.toFixed(2)),
-        package_size: size.trim() || null,
-        package_photo_path: isPickup ? null : photoPath,
-        max_price_cents: priceCents,
-      })
-      .eq('id', id)
-      .eq('sender_id', user.id)
-      .eq('status', 'open')
-    setSaving(false)
-    if (error) {
-      toast.error(error.message)
-      return
-    }
-    if (isPickup) {
-      const { error: contactErr } = await supabase
-        .from('delivery_pickup_contacts')
-        .update({ name: contactName.trim(), phone: normalizePhone(contactPhone) })
-        .eq('delivery_request_id', id)
-      if (contactErr) {
-        toast.error(contactErr.message)
+    try {
+      const { error } = await supabase
+        .from('delivery_requests')
+        .update({
+          pickup_address: pickupGeo.formatted || pickup,
+          pickup_lat: pickupGeo.lat,
+          pickup_lng: pickupGeo.lng,
+          dropoff_address: dropoffGeo.formatted || dropoff,
+          dropoff_lat: dropoffGeo.lat,
+          dropoff_lng: dropoffGeo.lng,
+          package_description: description,
+          distance_miles: Number(distance.toFixed(2)),
+          package_size: size.trim() || null,
+          package_photo_path: isPickup ? null : photoPath,
+          max_price_cents: priceCents,
+        })
+        .eq('id', id)
+        .eq('sender_id', user.id)
+        .eq('status', 'open')
+      if (error) {
+        toast.error(error.message)
         return
       }
+      if (isPickup) {
+        // Upsert: a request whose contact row somehow went missing gets one
+        // back instead of a silent no-op update.
+        const { error: contactErr } = await supabase
+          .from('delivery_pickup_contacts')
+          .upsert({ delivery_request_id: id, name: contactName.trim(), phone: normalizePhone(contactPhone) })
+        if (contactErr) {
+          toast.error(contactErr.message)
+          return
+        }
+      }
+    } finally {
+      setSaving(false)
     }
     toast.success('Request updated.')
     navigate('/sender')
@@ -288,7 +292,7 @@ export default function EditRequest() {
             </Field>
           </div>
         )}
-        <Field label="Pickup address">
+        <Field label={isPickup ? 'Pick up from — address' : 'Pickup address'}>
           <StructuredAddressInput
             value={pickup}
             disabled={locked}
@@ -309,7 +313,7 @@ export default function EditRequest() {
           />
           <GeoCaption geo={pickupGeo} />
         </Field>
-        <Field label="Dropoff address">
+        <Field label={isPickup ? 'Deliver to me at' : 'Dropoff address'}>
           <StructuredAddressInput
             value={dropoff}
             disabled={locked}
