@@ -97,7 +97,7 @@ function buildSmsBody(ctx: SmsContext): string | null {
 
 // Send a single SMS via Twilio REST API.
 // Returns { ok, error? }. Never throws.
-async function sendSms(
+export async function sendSms(
   to: string,
   body: string,
 ): Promise<{ ok: boolean; error?: string }> {

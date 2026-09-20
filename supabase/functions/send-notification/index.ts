@@ -6,7 +6,8 @@ import {
   type DeliveryEvent,
 } from "../_shared/email.ts";
 import { sendPushToUsers, type PushMessage } from "../_shared/fcm.ts";
-import { sendSmsToUser, sendSmsToCouriers, type SmsEvent } from "../_shared/sms.ts";
+import { sendSmsToUser, sendSmsToCouriers, sendSms, type SmsEvent } from "../_shared/sms.ts";
+import { pickupContactSms } from "../_shared/pickupContact.ts";
 
 const VALID_EVENTS: DeliveryEvent[] = [
   "created",
@@ -65,7 +66,7 @@ Deno.serve(async (req) => {
   const { data: request, error: requestErr } = await supabase
     .from("delivery_requests")
     .select(
-      "order_number, pickup_address, dropoff_address, pickup_lat, pickup_lng, package_size, max_price_cents, accepted_price_cents, sender_id, courier_id",
+      "order_number, pickup_address, dropoff_address, pickup_lat, pickup_lng, package_size, package_description, max_price_cents, accepted_price_cents, sender_id, courier_id, kind",
     )
     .eq("id", delivery_request_id)
     .single();
@@ -233,6 +234,42 @@ Deno.serve(async (req) => {
       event: "created",
       role: "courier",
     });
+  }
+
+  // ── PICKUP CONTACT SMS ────────────────────────────────────────────
+  // Pickup-kind only. The contact never signed up, so there is no consent
+  // row to check: the requester named them for this one job, and the copy
+  // carries STOP. Two messages max: accepted (with the PIN) and arrived.
+  if (request.kind === "pickup" && (deliveryEvent === "accepted" || deliveryEvent === "arrived")) {
+    const { data: contact } = await supabase
+      .from("delivery_pickup_contacts")
+      .select("name, phone, sms_status")
+      .eq("delivery_request_id", delivery_request_id)
+      .maybeSingle();
+    if (!contact) {
+      console.error(`send-notification: pickup request ${delivery_request_id} has no contact row`);
+      results.contactSms = { ok: false, error: "no contact" };
+    } else {
+      const bodyText = pickupContactSms(deliveryEvent, {
+        orderNumber: request.order_number,
+        courierName: courierInfo?.firstName ?? null,
+        requesterName: senderInfo?.firstName ?? null,
+        description: request.package_description,
+        pin: pickupPin,
+      });
+      if (bodyText) {
+        const sent = await sendSms(contact.phone, bodyText);
+        results.contactSms = sent;
+        // Only the accepted text carries the PIN, so only it decides whether
+        // the requester has to relay the code themselves.
+        if (deliveryEvent === "accepted") {
+          await supabase
+            .from("delivery_pickup_contacts")
+            .update({ sms_status: sent.ok ? "sent" : "failed" })
+            .eq("delivery_request_id", delivery_request_id);
+        }
+      }
+    }
   }
 
   return json({ ok: true, results }, 200);
