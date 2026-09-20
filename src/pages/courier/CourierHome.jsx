@@ -356,6 +356,123 @@ export default function CourierHome() {
           </div>
         )}
 
+        <div id="open-requests" className="mt-10">
+          <div className="text-xs uppercase tracking-widest text-slate mb-3 flex items-center gap-2">
+            Open in your area
+            {visibleRequests.length > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-green text-white text-[10px] font-bold">
+                {visibleRequests.length}
+              </span>
+            )}
+          </div>
+          {loading ? (
+            <div className="text-slate">Loading…</div>
+          ) : !serviceArea ? (
+            <div className="text-center py-16 rounded-2xl border border-dashed border-mist">
+              <p className="text-slate">Set a service area to see open requests.</p>
+              <Link to="/courier/profile" className="inline-block mt-3 text-teal hover:underline">
+                Open profile
+              </Link>
+            </div>
+          ) : visibleRequests.length === 0 ? (
+            <div className="text-center py-16 rounded-2xl border border-dashed border-mist">
+              <p className="text-slate">No open requests in your area right now.</p>
+              <p className="text-slate text-sm mt-2">Check back soon.</p>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {visibleRequests.map((r) => {
+                const canAccept = canAcceptDeliveries(profile)
+                const disabledReason = canAccept
+                  ? undefined
+                  : courierStep(profile) === 'selfie'
+                  ? 'Add a selfie to accept'
+                  : courierStep(profile) === 'payouts'
+                  ? 'Connect a bank account to accept'
+                  : 'Finish your background check to accept'
+                const metaParts = [
+                  r.distance_miles != null ? `Trip ${r.distance_miles} mi` : null,
+                  `${r.miles_from_you.toFixed(1)} mi from you`,
+                  r.package_size ? `Size ${r.package_size}` : null,
+                ].filter(Boolean)
+                return (
+                  <li key={r.id} className="p-5 rounded-xl border border-mist bg-white space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs uppercase tracking-wide font-bold whitespace-nowrap ${kindTextClass(r.kind)}`}>
+                          {r.order_number}
+                        </span>
+                        {r.id === newestId ? (
+                          <span className="px-1.5 py-0.5 rounded-full bg-green text-white text-[10px] font-bold uppercase tracking-wide">
+                            New
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 rounded-full bg-teal/10 text-teal text-[10px] font-bold uppercase tracking-wide">
+                            Open
+                          </span>
+                        )}
+                        <KindTag kind={r.kind} />
+                      </div>
+                      <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
+                        {timeLabel(r.created_at)}
+                      </div>
+                    </div>
+                    <PriceBreakout breakout={breakoutForRequest(r, 'courier')} caption="you earn" size="lg" />
+                    <div className="divide-y divide-mist">
+                      <div className="pb-3">
+                        <div className="text-xs uppercase tracking-wide text-slate/70">From</div>
+                        <div className="text-sm text-ink mt-1">{r.pickup_address}</div>
+                      </div>
+                      <div className="py-3">
+                        <div className="text-xs uppercase tracking-wide text-slate/70">To</div>
+                        <div className="text-sm text-ink mt-1">{r.dropoff_address}</div>
+                      </div>
+                      {r.package_description && (
+                        <div className="py-3">
+                          <div className="text-xs uppercase tracking-wide text-slate/70">Description</div>
+                          <div className="text-sm text-ink mt-1">{r.package_description}</div>
+                        </div>
+                      )}
+                      <PackagePhoto path={r.package_photo_path} alt={r.package_description || 'Package photo'} />
+                    </div>
+                    {metaParts.length > 0 && (
+                      <div className="text-xs text-slate flex flex-wrap gap-x-2 gap-y-1">
+                        {metaParts.map((part, i) => (
+                          <span key={i} className="flex items-center gap-2">
+                            {i > 0 && <span className="text-slate/40">·</span>}
+                            <span>{part}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="pt-3 border-t border-mist space-y-2">
+                      {/* Inline reason for disabled Accept — tooltips (title=)
+                          are invisible on touch, so couriers were tapping a
+                          greyed button and getting zero feedback. */}
+                      {!canAccept && (
+                        <Link
+                          to="/courier/verify"
+                          className="block text-center text-xs text-teal font-semibold hover:underline"
+                        >
+                          {disabledReason} →
+                        </Link>
+                      )}
+                      <button
+                        onClick={() => handleAcceptClick(r)}
+                        disabled={accepting === r.id || !canAccept}
+                        title={disabledReason}
+                        className="w-full py-3 rounded-lg bg-green text-white text-base font-bold shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:shadow-none"
+                      >
+                        {accepting === r.id ? 'Accepting…' : `Accept · earn ${dollars(courierTakeForRequest(r))}`}
+                      </button>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </div>
+
         {active.length > 0 && (
           <section className="mt-10">
             <div className="text-xs uppercase tracking-widest text-slate mb-3">
@@ -502,122 +619,6 @@ export default function CourierHome() {
           <PricingTable variant="courier" collapsible />
         </div>
 
-        <div id="open-requests" className="mt-10">
-          <div className="text-xs uppercase tracking-widest text-slate mb-3 flex items-center gap-2">
-            Open in your area
-            {visibleRequests.length > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-green text-white text-[10px] font-bold">
-                {visibleRequests.length}
-              </span>
-            )}
-          </div>
-          {loading ? (
-            <div className="text-slate">Loading…</div>
-          ) : !serviceArea ? (
-            <div className="text-center py-16 rounded-2xl border border-dashed border-mist">
-              <p className="text-slate">Set a service area to see open requests.</p>
-              <Link to="/courier/profile" className="inline-block mt-3 text-teal hover:underline">
-                Open profile
-              </Link>
-            </div>
-          ) : visibleRequests.length === 0 ? (
-            <div className="text-center py-16 rounded-2xl border border-dashed border-mist">
-              <p className="text-slate">No open requests in your area right now.</p>
-              <p className="text-slate text-sm mt-2">Check back soon.</p>
-            </div>
-          ) : (
-            <ul className="space-y-3">
-              {visibleRequests.map((r) => {
-                const canAccept = canAcceptDeliveries(profile)
-                const disabledReason = canAccept
-                  ? undefined
-                  : courierStep(profile) === 'selfie'
-                  ? 'Add a selfie to accept'
-                  : courierStep(profile) === 'payouts'
-                  ? 'Connect a bank account to accept'
-                  : 'Finish your background check to accept'
-                const metaParts = [
-                  r.distance_miles != null ? `Trip ${r.distance_miles} mi` : null,
-                  `${r.miles_from_you.toFixed(1)} mi from you`,
-                  r.package_size ? `Size ${r.package_size}` : null,
-                ].filter(Boolean)
-                return (
-                  <li key={r.id} className="p-5 rounded-xl border border-mist bg-white space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs uppercase tracking-wide font-bold whitespace-nowrap ${kindTextClass(r.kind)}`}>
-                          {r.order_number}
-                        </span>
-                        {r.id === newestId ? (
-                          <span className="px-1.5 py-0.5 rounded-full bg-green text-white text-[10px] font-bold uppercase tracking-wide">
-                            New
-                          </span>
-                        ) : (
-                          <span className="px-1.5 py-0.5 rounded-full bg-teal/10 text-teal text-[10px] font-bold uppercase tracking-wide">
-                            Open
-                          </span>
-                        )}
-                        <KindTag kind={r.kind} />
-                      </div>
-                      <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
-                        {timeLabel(r.created_at)}
-                      </div>
-                    </div>
-                    <PriceBreakout breakout={breakoutForRequest(r, 'courier')} caption="you earn" size="lg" />
-                    <div className="divide-y divide-mist">
-                      <div className="pb-3">
-                        <div className="text-xs uppercase tracking-wide text-slate/70">From</div>
-                        <div className="text-sm text-ink mt-1">{r.pickup_address}</div>
-                      </div>
-                      <div className="py-3">
-                        <div className="text-xs uppercase tracking-wide text-slate/70">To</div>
-                        <div className="text-sm text-ink mt-1">{r.dropoff_address}</div>
-                      </div>
-                      {r.package_description && (
-                        <div className="py-3">
-                          <div className="text-xs uppercase tracking-wide text-slate/70">Description</div>
-                          <div className="text-sm text-ink mt-1">{r.package_description}</div>
-                        </div>
-                      )}
-                      <PackagePhoto path={r.package_photo_path} alt={r.package_description || 'Package photo'} />
-                    </div>
-                    {metaParts.length > 0 && (
-                      <div className="text-xs text-slate flex flex-wrap gap-x-2 gap-y-1">
-                        {metaParts.map((part, i) => (
-                          <span key={i} className="flex items-center gap-2">
-                            {i > 0 && <span className="text-slate/40">·</span>}
-                            <span>{part}</span>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <div className="pt-3 border-t border-mist space-y-2">
-                      {/* Inline reason for disabled Accept — tooltips (title=)
-                          are invisible on touch, so couriers were tapping a
-                          greyed button and getting zero feedback. */}
-                      {!canAccept && (
-                        <Link
-                          to="/courier/verify"
-                          className="block text-center text-xs text-teal font-semibold hover:underline"
-                        >
-                          {disabledReason} →
-                        </Link>
-                      )}
-                      <button
-                        onClick={() => handleAcceptClick(r)}
-                        disabled={accepting === r.id || !canAccept}
-                        title={disabledReason}
-                        className="w-full py-3 rounded-lg bg-green text-white text-base font-bold shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:shadow-none"
-                      >
-                        {accepting === r.id ? 'Accepting…' : `Accept · earn ${dollars(courierTakeForRequest(r))}`}
-                      </button>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </div>
       </div>
 
       {/* Accept confirmation modal */}
