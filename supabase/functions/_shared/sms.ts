@@ -5,6 +5,10 @@
 const TWILIO_ACCOUNT_SID = () => Deno.env.get("TWILIO_ACCOUNT_SID");
 const TWILIO_AUTH_TOKEN = () => Deno.env.get("TWILIO_AUTH_TOKEN");
 const TWILIO_PHONE_NUMBER = () => Deno.env.get("TWILIO_PHONE_NUMBER");
+// A2P 10DLC: carriers only accept traffic tied to the registered campaign,
+// and the campaign is attached to a Messaging Service, not to the bare
+// number. Sending via the service is what makes the messages deliverable.
+const TWILIO_MESSAGING_SERVICE_SID = () => Deno.env.get("TWILIO_MESSAGING_SERVICE_SID");
 
 export type SmsEvent =
   | "created"
@@ -100,11 +104,15 @@ async function sendSms(
   const sid = TWILIO_ACCOUNT_SID();
   const token = TWILIO_AUTH_TOKEN();
   const from = TWILIO_PHONE_NUMBER();
+  const service = TWILIO_MESSAGING_SERVICE_SID();
 
-  if (!sid || !token || !from) {
+  if (!sid || !token || (!service && !from)) {
     console.warn("SMS: Twilio credentials not set; SMS not sent");
     return { ok: false, error: "Twilio credentials not configured" };
   }
+  // Prefer the registered service; fall back to the bare number only if
+  // no service is configured (which carriers will mostly drop).
+  const sender: Record<string, string> = service ? { MessagingServiceSid: service } : { From: from! };
 
   try {
     const res = await fetch(
@@ -115,7 +123,7 @@ async function sendSms(
           Authorization: `Basic ${btoa(`${sid}:${token}`)}`,
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: new URLSearchParams({ To: to, From: from, Body: body }),
+        body: new URLSearchParams({ To: to, Body: body, ...sender }),
       },
     );
 
