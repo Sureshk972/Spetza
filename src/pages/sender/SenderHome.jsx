@@ -119,6 +119,15 @@ function HowItWorks({ variant = 'full' }) {
   )
 }
 
+const statusLabel = {
+  open: 'Open',
+  accepted: 'Accepted',
+  picked_up: 'In transit',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled',
+  returned: 'Returned',
+}
+
 const statusStyles = {
   open: 'bg-mist text-slate',
   accepted: 'bg-teal/10 text-teal',
@@ -290,8 +299,13 @@ export default function SenderHome() {
                       </div>
                       <KindTag kind={r.kind} />
                     </div>
-                    <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
-                      {timeLabel(r.created_at)}
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-0.5 text-xs rounded-full ${statusStyles[r.status] ?? 'bg-mist text-slate'}`}>
+                        {statusLabel[r.status] ?? r.status}
+                      </span>
+                      <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
+                        {timeLabel(r.created_at)}
+                      </div>
                     </div>
                   </div>
                   <PriceBreakout breakout={breakoutForRequest(r, 'sender')} size="lg" />
@@ -365,9 +379,7 @@ export default function SenderHome() {
                         Edit
                       </button>
                     ) : (
-                      <span className={`inline-block px-2 py-0.5 text-xs rounded-full capitalize ${statusStyles[r.status] ?? 'bg-mist text-slate'}`}>
-                        {r.status.replace('_', ' ')}
-                      </span>
+                      <span />
                     )}
                     {(r.status === 'open' || r.status === 'accepted') ? (
                       <button
