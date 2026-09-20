@@ -1377,8 +1377,8 @@ Add to `~/12Sigma/TASKS.md` under "Done": `Pickup requests shipped <date>; verif
 **Why:** Today the sender sees one number (price + 15%) and the courier sees one number (price − fee). Both should see how it's made up, everywhere the amount appears.
 
 **Shape, both sides:** big headline number, then two small lines under it:
-- Courier: **$17.00** / `$20.00 Delivery` / `−$3.00 Platform fee` (+ `+$1.00 Earn-back credit` when the recorded fee is below the standard 15%)
-- Sender: **$23.00** / `$20.00 Delivery` / `$3.00 Platform fee` (+ `$x Tip` when a tip exists)
+- Courier: **$17.00** / `$20.00 Delivery rate` / `−$3.00 Platform fee` (+ `+$1.00 Earn-back credit` when the recorded fee is below the standard 15%)
+- Sender: **$23.00** / `$20.00 Delivery rate` / `$3.00 Platform fee` (+ `$x Tip` when a tip exists)
 
 **Files:**
 - Modify: `src/lib/pricing.js` — add `breakoutForRequest(r, role)`; Test: `src/lib/pricing.test.js`
@@ -1395,7 +1395,7 @@ describe('breakoutForRequest', () => {
     expect(breakoutForRequest({ max_price_cents: 2000 }, 'sender')).toEqual({
       headline: 2300,
       lines: [
-        { label: 'Delivery', cents: 2000 },
+        { label: 'Delivery rate', cents: 2000 },
         { label: 'Platform fee', cents: 300 },
       ],
     })
@@ -1404,7 +1404,7 @@ describe('breakoutForRequest', () => {
     expect(breakoutForRequest({ accepted_price_cents: 2000, max_price_cents: 2000, platform_fee_cents: 300, tip_cents: 500 }, 'sender')).toEqual({
       headline: 2800,
       lines: [
-        { label: 'Delivery', cents: 2000 },
+        { label: 'Delivery rate', cents: 2000 },
         { label: 'Platform fee', cents: 300 },
         { label: 'Tip', cents: 500 },
       ],
@@ -1414,7 +1414,7 @@ describe('breakoutForRequest', () => {
     expect(breakoutForRequest({ max_price_cents: 2000 }, 'courier')).toEqual({
       headline: 1700,
       lines: [
-        { label: 'Delivery', cents: 2000 },
+        { label: 'Delivery rate', cents: 2000 },
         { label: 'Platform fee', cents: -300 },
       ],
     })
@@ -1423,7 +1423,7 @@ describe('breakoutForRequest', () => {
     expect(breakoutForRequest({ accepted_price_cents: 2000, max_price_cents: 2000, platform_fee_cents: 200, tip_cents: 500 }, 'courier')).toEqual({
       headline: 2300,
       lines: [
-        { label: 'Delivery', cents: 2000 },
+        { label: 'Delivery rate', cents: 2000 },
         { label: 'Platform fee', cents: -300 },
         { label: 'Earn-back credit', cents: 100 },
         { label: 'Tip', cents: 500 },
@@ -1448,7 +1448,7 @@ export function breakoutForRequest(r, role) {
   const standardFee = feeFor(price)
   const fee = r?.platform_fee_cents ?? standardFee
   const tip = r?.tip_cents || 0
-  const lines = [{ label: 'Delivery', cents: price }]
+  const lines = [{ label: 'Delivery rate', cents: price }]
   if (role === 'sender') {
     lines.push({ label: 'Platform fee', cents: fee })
     if (tip) lines.push({ label: 'Tip', cents: tip })
