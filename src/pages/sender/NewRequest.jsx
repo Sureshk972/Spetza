@@ -192,7 +192,7 @@ export default function NewRequest() {
     <div className="min-h-full px-6 py-12 max-w-xl mx-auto">
       <Link to="/sender" className="text-sm text-slate hover:text-ink">&larr; back</Link>
       <h1 className="font-display text-3xl text-ink mt-6">New delivery request</h1>
-      <div className="mt-4 grid grid-cols-2 gap-2 p-1 rounded-lg bg-mist" role="tablist">
+      <div className="mt-4 grid grid-cols-2 gap-2 p-1 rounded-lg bg-mist" role="tablist" aria-label="Delivery type">
         {REQUEST_KINDS.map((k) => (
           <button
             key={k.value}
@@ -200,6 +200,11 @@ export default function NewRequest() {
             role="tab"
             aria-selected={kind === k.value}
             onClick={() => setKind(k.value)}
+            onKeyDown={(e) => {
+              if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+              e.preventDefault()
+              setKind(kind === 'send' ? 'pickup' : 'send')
+            }}
             className={`py-2 rounded-md text-sm font-semibold transition-colors ${
               kind === k.value ? 'bg-white text-teal shadow-sm' : 'text-slate hover:text-ink'
             }`}
