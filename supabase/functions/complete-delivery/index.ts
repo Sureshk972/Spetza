@@ -110,10 +110,11 @@ Deno.serve(async (req) => {
   }
 
   // Original application_fee_amount at accept was (platform_fee_cents * 2)
-  // per accept-delivery-request. The apply_earnback_credit RPC just
-  // decremented platform_fee_cents by earnbackApplied, so reconstruct
-  // the original by adding it back. Reduce by the credit for capture.
-  const originalFeeCents = (request.platform_fee_cents ?? 0) * 2 + earnbackApplied;
+  // per accept-delivery-request. `request` was read BEFORE the RPC ran, so
+  // its platform_fee_cents is still the pre-credit value -- do not add the
+  // credit back on top or the credit never reaches Stripe. (That was the
+  // case until 2026-09-19: the app showed $9.50 while Stripe paid $8.50.)
+  const originalFeeCents = (request.platform_fee_cents ?? 0) * 2;
   const reducedFeeCents = Math.max(0, originalFeeCents - earnbackApplied);
 
   let pi;
