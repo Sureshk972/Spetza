@@ -112,7 +112,7 @@ function HowItWorks({ variant = 'full' }) {
         to="/sender/new"
         className="inline-block mt-8 px-6 py-3 rounded-lg bg-teal text-white font-bold hover:bg-teal/90 transition-colors"
       >
-        New delivery
+        Create an order
       </Link>
     </div>
   )
@@ -260,7 +260,7 @@ export default function SenderHome() {
             to="/sender/new"
             className="mt-5 block w-full py-3 rounded-lg bg-teal text-white text-base font-bold text-center shadow-sm hover:opacity-90 transition-opacity"
           >
-            New delivery
+            Create an order
           </Link>
         </header>
       )}
