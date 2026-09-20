@@ -453,7 +453,7 @@ export default function NewRequest() {
           disabled={!canSubmit}
           className="w-full px-4 py-3 rounded-lg bg-teal text-white font-medium hover:bg-teal/90 transition-colors disabled:opacity-50"
         >
-          {submitting ? 'Posting…' : isPickup ? 'Get it picked up' : 'Send it'}
+          {submitting ? 'Placing order…' : 'Place Order'}
         </button>
       </form>
     </div>
