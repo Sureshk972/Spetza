@@ -4,8 +4,8 @@ import { REQUEST_KINDS, pickupContactError, contactStatusCopy } from './requestK
 describe('REQUEST_KINDS', () => {
   it('offers send and pickup with the agreed labels', () => {
     expect(REQUEST_KINDS).toEqual([
-      { value: 'send', label: 'Send something' },
-      { value: 'pickup', label: 'Pick up something' },
+      { value: 'send', label: 'Deliver' },
+      { value: 'pickup', label: 'Pick Up' },
     ])
   })
 })

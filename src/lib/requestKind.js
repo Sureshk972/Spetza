@@ -4,8 +4,8 @@
 import { normalizePhone } from './phone.js'
 
 export const REQUEST_KINDS = [
-  { value: 'send', label: 'Send something' },
-  { value: 'pickup', label: 'Pick up something' },
+  { value: 'send', label: 'Deliver' },
+  { value: 'pickup', label: 'Pick Up' },
 ]
 
 // Returns a message to show, or null when the contact is usable.
