@@ -14,6 +14,7 @@ import { withApt } from '../../lib/address.js'
 import { trackEvent } from '../../lib/analytics.js'
 import { REQUEST_KINDS, pickupContactError } from '../../lib/requestKind.js'
 import { normalizePhone } from '../../lib/phone.js'
+import { postDeliveryRequest } from '../../lib/postRequest.js'
 
 const money = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
 
@@ -135,9 +136,9 @@ export default function NewRequest() {
     setSubmitting(true)
     const pickupAddress = pickupGeo.formatted || pickup
     const dropoffAddress = dropoffGeo.formatted || dropoff
-    const { data: inserted, error } = await supabase
-      .from('delivery_requests')
-      .insert({
+    const { id, error } = await postDeliveryRequest(
+      supabase,
+      {
         sender_id: user.id,
         kind,
         pickup_address: pickupAddress,
@@ -155,34 +156,17 @@ export default function NewRequest() {
         // "bring it back" would mean back to the contact, which is a
         // different flow. Fixed to leave_at_door there.
         no_answer_policy: isPickup ? 'leave_at_door' : noAnswerPolicy,
-      })
-      .select('id')
-      .single()
+      },
+      isPickup ? { name: contactName.trim(), phone: normalizePhone(contactPhone) } : null,
+    )
+    setSubmitting(false)
     if (error) {
-      setSubmitting(false)
       toast.error(error.message)
       return
     }
-    if (isPickup) {
-      const { error: contactErr } = await supabase
-        .from('delivery_pickup_contacts')
-        .insert({
-          delivery_request_id: inserted.id,
-          name: contactName.trim(),
-          phone: normalizePhone(contactPhone),
-        })
-      if (contactErr) {
-        // A pickup job with nobody to collect from must not sit in the
-        // courier pool. Remove it and let the requester try again.
-        await supabase.from('delivery_requests').delete().eq('id', inserted.id)
-        setSubmitting(false)
-        toast.error(contactErr.message)
-        return
-      }
-    }
-    setSubmitting(false)
     trackEvent('delivery_posted', {
-      delivery_id: inserted?.id,
+      delivery_id: id,
+      kind,
       pickup_zip: zipFrom(pickupAddress),
       dropoff_zip: zipFrom(dropoffAddress),
       distance_miles: Number(distance.toFixed(2)),
