@@ -11,9 +11,10 @@ import PackagePhoto from '../../components/PackagePhoto.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 import { canAcceptDeliveries, courierStep } from '../../lib/courierGate.js'
 import PricingTable from '../../components/PricingTable.jsx'
+import PriceBreakout from '../../components/PriceBreakout.jsx'
 import { useCourierPositionContext } from '../../context/CourierPositionContext.jsx'
 import { resolveCenter } from '../../lib/courierLocation.js'
-import { courierTakeForRequest } from '../../lib/pricing.js'
+import { courierTakeForRequest, breakoutForRequest } from '../../lib/pricing.js'
 import { useNearestCity } from '../../hooks/useNearestCity.js'
 
 function dollars(cents) {
@@ -368,17 +369,21 @@ export default function CourierHome() {
                   >
                     <div className="space-y-3">
                       <div className="flex items-baseline justify-between gap-3">
-                        <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
-                          {r.order_number}
+                        <div className="flex items-center gap-2">
+                          <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
+                            {r.order_number}
+                          </div>
+                          {r.kind === 'pickup' && (
+                            <span className="px-1.5 py-0.5 rounded-full bg-teal/10 text-teal text-[10px] font-bold uppercase tracking-wide">
+                              Pickup
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs uppercase tracking-wide text-green whitespace-nowrap">
                           {r.status === 'accepted' ? 'Awaiting pickup' : 'In transit'}
                         </div>
                       </div>
-                      <div className="font-display text-2xl text-ink">
-                        {dollars(courierTakeForRequest(r))}
-                        <span className="ml-2 text-xs font-sans text-slate/70">you earn</span>
-                      </div>
+                      <PriceBreakout breakout={breakoutForRequest(r, 'courier')} caption="you earn" size="lg" />
                       <div className="divide-y divide-forest/20">
                         <div className="pb-3">
                           <div className="text-xs uppercase tracking-wide text-slate/70">From</div>
@@ -463,10 +468,11 @@ export default function CourierHome() {
                         Delivered
                       </div>
                     </div>
-                    <div className="font-display text-2xl text-ink">
-                      {dollars(courierTakeForRequest(r) + (r.tip_cents || 0))}
-                      <span className="ml-2 text-xs font-sans text-slate/70">{r.tip_cents ? 'earned incl. tip' : 'earned'}</span>
-                    </div>
+                    <PriceBreakout
+                      breakout={breakoutForRequest(r, 'courier')}
+                      caption={r.tip_cents ? 'earned incl. tip' : 'earned'}
+                      size="lg"
+                    />
                     <div className="text-sm text-slate">
                       <span className="text-slate/70 mr-2">To</span>
                       <span className="text-ink">{r.dropoff_address}</span>
@@ -551,15 +557,17 @@ export default function CourierHome() {
                             Open
                           </span>
                         )}
+                        {r.kind === 'pickup' && (
+                          <span className="px-1.5 py-0.5 rounded-full bg-teal/10 text-teal text-[10px] font-bold uppercase tracking-wide">
+                            Pickup
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
                         {timeLabel(r.created_at)}
                       </div>
                     </div>
-                    <div className="font-display text-2xl text-ink">
-                      {dollars(courierTakeForRequest(r))}
-                      <span className="ml-2 text-xs font-sans text-slate/70">you earn</span>
-                    </div>
+                    <PriceBreakout breakout={breakoutForRequest(r, 'courier')} caption="you earn" size="lg" />
                     <div className="divide-y divide-mist">
                       <div className="pb-3">
                         <div className="text-xs uppercase tracking-wide text-slate/70">From</div>

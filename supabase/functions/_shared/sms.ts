@@ -67,6 +67,23 @@ const SMS_TEMPLATES: Record<SmsEvent, Record<SmsRole, string>> = {
   },
 };
 
+// Pickup-kind overrides. On a pickup request the requester is not at the
+// pickup: a named contact is, and they get the PIN by their own text. So
+// the requester must not be told to "share this code", and the courier is
+// collecting from the contact, not from {name} (the requester). Events
+// not listed here fall through to SMS_TEMPLATES.
+const SMS_TEMPLATES_PICKUP: Partial<Record<SmsEvent, Partial<Record<SmsRole, string>>>> = {
+  accepted: {
+    sender:
+      "✅ {order} — {name} accepted and is heading to collect it. We've texted the pickup code to your contact.",
+    courier:
+      "✅ {order} — You accepted a pickup. Head to the pickup address and collect from the contact shown on the job.\n\nhttps://spetza.com/#/courier/deliveries/{id}",
+  },
+  arrived: {
+    sender: "🚗 {order} — {name} is at the pickup.",
+  },
+};
+
 interface SmsContext {
   event: SmsEvent;
   role: SmsRole;
@@ -76,14 +93,17 @@ interface SmsContext {
   priceCents?: number | null;
   pickupPin?: string | null;
   counterpartyName?: string | null;
+  kind?: "send" | "pickup";
 }
 
 function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-function buildSmsBody(ctx: SmsContext): string | null {
-  const template = SMS_TEMPLATES[ctx.event]?.[ctx.role];
+export function buildSmsBody(ctx: SmsContext): string | null {
+  const template =
+    (ctx.kind === "pickup" ? SMS_TEMPLATES_PICKUP[ctx.event]?.[ctx.role] : undefined) ??
+    SMS_TEMPLATES[ctx.event]?.[ctx.role];
   if (!template) return null;
 
   return template
@@ -97,7 +117,7 @@ function buildSmsBody(ctx: SmsContext): string | null {
 
 // Send a single SMS via Twilio REST API.
 // Returns { ok, error? }. Never throws.
-async function sendSms(
+export async function sendSms(
   to: string,
   body: string,
 ): Promise<{ ok: boolean; error?: string }> {

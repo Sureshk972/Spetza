@@ -3,17 +3,17 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { feeFor, totalFor } from '../../lib/pricing.js'
+import { breakoutForRequest } from '../../lib/pricing.js'
 import RouteMap from '../../components/RouteMap.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
 import PackagePhoto from '../../components/PackagePhoto.jsx'
 import DeliveryProofPhoto from '../../components/DeliveryProofPhoto.jsx'
 import TipPrompt from '../../components/TipPrompt.jsx'
+import PriceBreakout from '../../components/PriceBreakout.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 import { chime } from '../../lib/chime.js'
-
-const dollars = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
+import { contactStatusCopy } from '../../lib/requestKind.js'
 
 function fmt(iso) {
   if (!iso) return null
@@ -52,6 +52,7 @@ export default function RequestDetail() {
   // transit -- that's the window where a courier might turn up with the
   // package instead of a delivery.
   const [returnPin, setReturnPin] = useState(null)
+  const [contact, setContact] = useState(null)
   const [rated, setRated] = useState(false)
   const [loading, setLoading] = useState(true)
   const [cancelling, setCancelling] = useState(false)
@@ -69,6 +70,17 @@ export default function RequestDetail() {
       .eq('sender_id', user.id)
       .maybeSingle()
     setRequest(req ?? null)
+
+    if (req?.kind === 'pickup') {
+      const { data: c } = await supabase
+        .from('delivery_pickup_contacts')
+        .select('name, phone, sms_status')
+        .eq('delivery_request_id', req.id)
+        .maybeSingle()
+      setContact(c ?? null)
+    } else {
+      setContact(null)
+    }
 
     // Fetch codes from the sender-only table. Both live on the same row;
     // which one we surface depends on where the delivery is.
@@ -128,6 +140,13 @@ export default function RequestDetail() {
     refresh: load,
   })
 
+  useRealtimeRefresh({
+    channelName: id && request?.kind === 'pickup' ? `sender-contact:${id}` : null,
+    table: 'delivery_pickup_contacts',
+    filter: id ? `delivery_request_id=eq.${id}` : null,
+    refresh: load,
+  })
+
   // Play a chime the moment the courier arrives so the sender knows to
   // check the door even if their attention has wandered. Only fires on
   // the null → set transition; a fresh page-load with the courier
@@ -174,10 +193,6 @@ export default function RequestDetail() {
   }
 
   const priceCents = request.accepted_price_cents ?? request.max_price_cents
-  const feeCents = request.platform_fee_cents ?? feeFor(request.max_price_cents)
-  const totalCents = request.accepted_price_cents != null
-    ? request.accepted_price_cents + (request.platform_fee_cents ?? 0)
-    : totalFor(request.max_price_cents)
 
   const timeline = [
     { key: 'posted', label: 'Posted', iso: request.created_at, done: true },
@@ -222,9 +237,16 @@ export default function RequestDetail() {
               <span className="text-ink">{request.pickup_address}</span>
             </div>
             <div className="text-slate">
-              <span className="text-slate/70 mr-2">To</span>
+              <span className="text-slate/70 mr-2">{request.kind === 'pickup' ? 'To me at' : 'To'}</span>
               <span className="text-ink">{request.dropoff_address}</span>
             </div>
+            {contact && (
+              <div className="text-slate pt-1">
+                <span className="text-slate/70 mr-2">Picking up from</span>
+                <span className="text-ink">{contact.name}</span>
+                <span className="text-slate/70 ml-2">{contact.phone}</span>
+              </div>
+            )}
           </div>
           {request.distance_miles != null && (
             <div className="mt-2 text-xs text-slate">
@@ -252,10 +274,17 @@ export default function RequestDetail() {
         <div className="p-4 rounded-xl border border-mist bg-white">
           <div className="text-xs uppercase tracking-widest text-slate">Package</div>
           <div className="mt-2 flex items-start gap-3">
-            <PackagePhoto path={request.package_photo_path} variant="thumbnail" />
+            {request.package_photo_path && <PackagePhoto path={request.package_photo_path} variant="thumbnail" />}
             <div className="text-sm text-slate">{request.package_description}</div>
           </div>
         </div>
+
+        {request.pickup_photo_path && (
+          <div className="p-4 rounded-xl border border-teal/30 bg-teal/5">
+            <div className="text-xs uppercase tracking-widest text-teal font-bold">Picked up</div>
+            <DeliveryProofPhoto path={request.pickup_photo_path} label="What your courier collected" />
+          </div>
+        )}
 
         {request.delivery_photo_path && (
           <div className="p-4 rounded-xl border border-green/30 bg-green/5">
@@ -289,7 +318,21 @@ export default function RequestDetail() {
           )}
         </div>
 
-        {request.status === 'accepted' && pickupPin && (
+        {request.status === 'accepted' && pickupPin && request.kind === 'pickup' && contact && (
+          <div className="p-4 rounded-xl border border-teal/30 bg-teal/5">
+            <div className="text-xs uppercase tracking-widest text-teal font-bold">Pickup code</div>
+            <p className="text-sm text-slate mt-2">{contactStatusCopy(contact.name, contact.sms_status)}</p>
+            {contact.sms_status === 'failed' && (
+              <div className="mt-2 text-4xl font-bold tracking-[0.3em] text-ink text-center py-2">
+                {pickupPin}
+              </div>
+            )}
+            {request.courier_arrived_at && (
+              <p className="text-sm text-green font-medium mt-2">Your courier is at {contact.name}'s now.</p>
+            )}
+          </div>
+        )}
+        {request.status === 'accepted' && pickupPin && request.kind !== 'pickup' && (
           <div className={`p-4 rounded-xl border ${
             request.courier_arrived_at
               ? 'border-green bg-green/5 ring-2 ring-green/30'
@@ -336,14 +379,7 @@ export default function RequestDetail() {
 
         <div className="p-4 rounded-xl border border-mist bg-white space-y-1.5">
           <div className="text-xs uppercase tracking-widest text-slate">Payment</div>
-          <Row label="Delivery" value={dollars(totalCents)} />
-          {request.tip_cents > 0 && (
-            <Row label="Tip" value={dollars(request.tip_cents)} />
-          )}
-          <div className="border-t border-slate/20 pt-1.5 flex justify-between items-baseline">
-            <span className="text-xs uppercase tracking-widest text-ink">Total</span>
-            <span className="font-display text-xl text-ink">{dollars(totalCents + (request.tip_cents || 0))}</span>
-          </div>
+          <PriceBreakout breakout={breakoutForRequest(request, 'sender')} caption="total" className="pt-1" />
           <div className="text-xs text-slate pt-1">
             {request.status === 'delivered'
               ? 'Charged.'
@@ -397,15 +433,6 @@ export default function RequestDetail() {
           </button>
         )}
       </div>
-    </div>
-  )
-}
-
-function Row({ label, value }) {
-  return (
-    <div className="flex justify-between text-sm text-slate">
-      <span>{label}</span>
-      <span className="text-ink">{value}</span>
     </div>
   )
 }

@@ -28,6 +28,9 @@ const REASONS = new Set([
   "too_heavy",
   "prohibited_item",
   "not_as_described",
+  // Pickup-kind: the contact wasn't there or the item wasn't ready. Same
+  // outcome as the others -- cancel, release the hold, file for review.
+  "nobody_there",
 ]);
 
 Deno.serve(async (req) => {

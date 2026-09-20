@@ -5,11 +5,12 @@ import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import PackagePhotoInput from '../../components/PackagePhotoInput.jsx'
 import StructuredAddressInput from '../../components/StructuredAddressInput.jsx'
-import { MAX_DISTANCE_MILES, priceForDistance, feeFor, totalFor } from '../../lib/pricing.js'
+import PriceBreakout from '../../components/PriceBreakout.jsx'
+import { MAX_DISTANCE_MILES, priceForDistance, breakoutForRequest } from '../../lib/pricing.js'
 import { geocodeAddress, haversineMiles } from '../../lib/geocode.js'
 import { withApt } from '../../lib/address.js'
-
-const money = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
+import { pickupContactError } from '../../lib/requestKind.js'
+import { normalizePhone } from '../../lib/phone.js'
 
 const blankGeo = { status: 'idle', lat: null, lng: null, formatted: null, error: null }
 
@@ -26,6 +27,9 @@ export default function EditRequest() {
   const [description, setDescription] = useState('')
   const [size, setSize] = useState('')
   const [photoPath, setPhotoPath] = useState(null)
+  const [contactName, setContactName] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
+  const isPickup = request?.kind === 'pickup'
   const [liabilityAccepted, setLiabilityAccepted] = useState(false)
   const [saving, setSaving] = useState(false)
   const [cancelling, setCancelling] = useState(false)
@@ -51,6 +55,18 @@ export default function EditRequest() {
           setDescription(data.package_description)
           setSize(data.package_size ?? '')
           setPhotoPath(data.package_photo_path ?? null)
+          if (data.kind === 'pickup') {
+            supabase
+              .from('delivery_pickup_contacts')
+              .select('name, phone')
+              .eq('delivery_request_id', id)
+              .maybeSingle()
+              .then(({ data: c }) => {
+                if (cancelled || !c) return
+                setContactName(c.name)
+                setContactPhone(c.phone)
+              })
+          }
           if (data.pickup_lat != null && data.pickup_lng != null) {
             setPickupGeo({
               status: 'ok',
@@ -84,8 +100,7 @@ export default function EditRequest() {
 
   const overMax = distance != null && distance > MAX_DISTANCE_MILES
   const priceCents = overMax ? null : priceForDistance(distance ?? NaN)
-  const feeCents = feeFor(priceCents)
-  const totalCents = totalFor(priceCents)
+  const breakout = breakoutForRequest({ max_price_cents: priceCents }, 'sender')
 
   // `apt` comes back from the address input because Google's formatted address
   // drops the unit number, and the courier needs it.
@@ -136,37 +151,58 @@ export default function EditRequest() {
       toast.error('Add a size description.')
       return
     }
-    if (!photoPath) {
+    if (!isPickup && !photoPath) {
       toast.error('A photo of the package is required.')
       return
+    }
+    if (isPickup) {
+      const contactErr = pickupContactError({ name: contactName, phone: contactPhone })
+      if (contactErr) {
+        toast.error(contactErr)
+        return
+      }
     }
     if (!liabilityAccepted) {
       toast.error('Please acknowledge the liability disclaimer.')
       return
     }
     setSaving(true)
-    const { error } = await supabase
-      .from('delivery_requests')
-      .update({
-        pickup_address: pickupGeo.formatted || pickup,
-        pickup_lat: pickupGeo.lat,
-        pickup_lng: pickupGeo.lng,
-        dropoff_address: dropoffGeo.formatted || dropoff,
-        dropoff_lat: dropoffGeo.lat,
-        dropoff_lng: dropoffGeo.lng,
-        package_description: description,
-        distance_miles: Number(distance.toFixed(2)),
-        package_size: size.trim() || null,
-        package_photo_path: photoPath,
-        max_price_cents: priceCents,
-      })
-      .eq('id', id)
-      .eq('sender_id', user.id)
-      .eq('status', 'open')
-    setSaving(false)
-    if (error) {
-      toast.error(error.message)
-      return
+    try {
+      const { error } = await supabase
+        .from('delivery_requests')
+        .update({
+          pickup_address: pickupGeo.formatted || pickup,
+          pickup_lat: pickupGeo.lat,
+          pickup_lng: pickupGeo.lng,
+          dropoff_address: dropoffGeo.formatted || dropoff,
+          dropoff_lat: dropoffGeo.lat,
+          dropoff_lng: dropoffGeo.lng,
+          package_description: description,
+          distance_miles: Number(distance.toFixed(2)),
+          package_size: size.trim() || null,
+          package_photo_path: isPickup ? null : photoPath,
+          max_price_cents: priceCents,
+        })
+        .eq('id', id)
+        .eq('sender_id', user.id)
+        .eq('status', 'open')
+      if (error) {
+        toast.error(error.message)
+        return
+      }
+      if (isPickup) {
+        // Upsert: a request whose contact row somehow went missing gets one
+        // back instead of a silent no-op update.
+        const { error: contactErr } = await supabase
+          .from('delivery_pickup_contacts')
+          .upsert({ delivery_request_id: id, name: contactName.trim(), phone: normalizePhone(contactPhone) })
+        if (contactErr) {
+          toast.error(contactErr.message)
+          return
+        }
+      }
+    } finally {
+      setSaving(false)
     }
     toast.success('Request updated.')
     navigate('/sender')
@@ -230,7 +266,31 @@ export default function EditRequest() {
       )}
 
       <form onSubmit={handleSave} className="mt-8 space-y-5">
-        <Field label="Pickup address">
+        {isPickup && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Pick up from — name">
+              <input
+                type="text"
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                maxLength={80}
+                disabled={locked}
+                className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none disabled:opacity-60"
+              />
+            </Field>
+            <Field label="Their mobile">
+              <input
+                type="tel"
+                inputMode="tel"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                disabled={locked}
+                className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none disabled:opacity-60"
+              />
+            </Field>
+          </div>
+        )}
+        <Field label={isPickup ? 'Pick up from — address' : 'Pickup address'}>
           <StructuredAddressInput
             value={pickup}
             disabled={locked}
@@ -251,7 +311,7 @@ export default function EditRequest() {
           />
           <GeoCaption geo={pickupGeo} />
         </Field>
-        <Field label="Dropoff address">
+        <Field label={isPickup ? 'Deliver to me at' : 'Dropoff address'}>
           <StructuredAddressInput
             value={dropoff}
             disabled={locked}
@@ -293,19 +353,22 @@ export default function EditRequest() {
             className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none disabled:opacity-60"
           />
         </Field>
-        <Field label="Photo of the package">
-          <PackagePhotoInput path={photoPath} onChange={setPhotoPath} disabled={locked} />
-        </Field>
+        {!isPickup && (
+          <Field label="Photo of the package">
+            <PackagePhotoInput path={photoPath} onChange={setPhotoPath} disabled={locked} />
+          </Field>
+        )}
 
         <div className="rounded-lg bg-mist px-4 py-3 space-y-1.5">
           <Row
             label="Distance"
             value={distance == null ? '—' : `${distance.toFixed(1)} mi`}
           />
-          <div className="flex justify-between items-baseline">
-            <span className="text-xs uppercase tracking-widest text-ink">Total</span>
-            <span className="font-display text-xl text-ink">{money(totalCents)}</span>
-          </div>
+          {breakout ? (
+            <PriceBreakout breakout={breakout} caption="total" className="pt-1" />
+          ) : (
+            <Row label="Total" value="—" />
+          )}
           {overMax && (
             <div className="text-xs text-teal pt-1">
               Over the {MAX_DISTANCE_MILES} mi limit.

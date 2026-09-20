@@ -4,6 +4,7 @@
 // Includes brute-force protection: 5 attempts, then 15-min lockout.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { pickupBlockedReason } from "../_shared/pickupRules.ts";
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
@@ -48,7 +49,7 @@ Deno.serve(async (req) => {
   // Verify the caller is the assigned courier and delivery is in accepted state
   const { data: request, error: reqErr } = await supabase
     .from("delivery_requests")
-    .select("id, courier_id, status")
+    .select("id, courier_id, status, kind, pickup_photo_path")
     .eq("id", delivery_request_id)
     .single();
 
@@ -60,6 +61,13 @@ Deno.serve(async (req) => {
   }
   if (request.status !== "accepted") {
     return json({ error: "delivery is not in accepted state" }, 409);
+  }
+
+  // Pickup-kind: the item photo is the requester's only look at what was
+  // collected. The client hides the PIN field until it exists; this is the rule.
+  const blocked = pickupBlockedReason(request.kind, request.pickup_photo_path, request.id);
+  if (blocked) {
+    return json({ error: "take a photo of the item before entering the PIN", code: blocked }, 409);
   }
 
   // Read PIN + attempt state from the sender-only table (service_role bypasses RLS)

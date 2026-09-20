@@ -54,6 +54,29 @@ export function courierTakeForRequest(r) {
   return price - fee
 }
 
+// Everything a page needs to show one amount honestly: the headline the
+// person cares about, and the lines that add up to it. `role` picks the
+// side: the sender pays price + fee, the courier keeps price − fee.
+export function breakoutForRequest(r, role) {
+  const price = r?.accepted_price_cents ?? r?.max_price_cents
+  if (price == null) return null
+  const standardFee = feeFor(price)
+  const fee = r?.platform_fee_cents ?? standardFee
+  const tip = r?.tip_cents || 0
+  const lines = [{ label: 'Delivery rate', cents: price }]
+  if (role === 'sender') {
+    lines.push({ label: 'Platform fee', cents: fee })
+    if (tip) lines.push({ label: 'Tip', cents: tip })
+    return { headline: price + fee + tip, lines }
+  }
+  lines.push({ label: 'Platform fee', cents: -standardFee })
+  // The fee on record shrinks by the earn-back credit at delivery; show the
+  // credit as its own line so the courier sees why they keep more.
+  if (fee < standardFee) lines.push({ label: 'Earn-back credit', cents: standardFee - fee })
+  if (tip) lines.push({ label: 'Tip', cents: tip })
+  return { headline: price - fee + tip, lines }
+}
+
 export function tierOptions() {
   return TIERS.map((t, i) => {
     const low = i === 0 ? 0 : TIERS[i - 1].upTo

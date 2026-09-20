@@ -1369,3 +1369,131 @@ Expected: error with `code: "photo_required"`, status 409 — before any PIN com
 - [ ] **Step 8: Record**
 
 Add to `~/12Sigma/TASKS.md` under "Done": `Pickup requests shipped <date>; verified on SPZ-000xx (contact text, photo-before-PIN, landline fallback).` Tick the checklist artifact item if one is added for it.
+
+---
+
+### Task 15: Price breakout for both sides (added 2026-09-20 after Suresh's request)
+
+**Why:** Today the sender sees one number (price + 15%) and the courier sees one number (price − fee). Both should see how it's made up, everywhere the amount appears.
+
+**Shape, both sides:** big headline number, then two small lines under it:
+- Courier: **$17.00** / `$20.00 Delivery rate` / `−$3.00 Platform fee` (+ `+$1.00 Earn-back credit` when the recorded fee is below the standard 15%)
+- Sender: **$23.00** / `$20.00 Delivery rate` / `$3.00 Platform fee` (+ `$x Tip` when a tip exists)
+
+**Files:**
+- Modify: `src/lib/pricing.js` — add `breakoutForRequest(r, role)`; Test: `src/lib/pricing.test.js`
+- Create: `src/components/PriceBreakout.jsx`
+- Modify: `src/pages/sender/SenderHome.jsx:296-301`, `src/pages/sender/NewRequest.jsx:350-356`, `src/pages/sender/EditRequest.jsx:366-372`, `src/pages/sender/RequestDetail.jsx:384-394`, `src/pages/courier/CourierHome.jsx:385-388, 473-476, 571-574`, `src/pages/courier/CourierDelivery.jsx:528-534`
+
+- [ ] **Step 1: Failing tests** (append to `pricing.test.js`)
+
+```js
+import { breakoutForRequest } from './pricing.js'
+
+describe('breakoutForRequest', () => {
+  it('sender: total on top, delivery + platform fee below', () => {
+    expect(breakoutForRequest({ max_price_cents: 2000 }, 'sender')).toEqual({
+      headline: 2300,
+      lines: [
+        { label: 'Delivery rate', cents: 2000 },
+        { label: 'Platform fee', cents: 300 },
+      ],
+    })
+  })
+  it('sender: uses the recorded fee and adds a tip line', () => {
+    expect(breakoutForRequest({ accepted_price_cents: 2000, max_price_cents: 2000, platform_fee_cents: 300, tip_cents: 500 }, 'sender')).toEqual({
+      headline: 2800,
+      lines: [
+        { label: 'Delivery rate', cents: 2000 },
+        { label: 'Platform fee', cents: 300 },
+        { label: 'Tip', cents: 500 },
+      ],
+    })
+  })
+  it('courier: take on top, delivery and fee below, fee negative', () => {
+    expect(breakoutForRequest({ max_price_cents: 2000 }, 'courier')).toEqual({
+      headline: 1700,
+      lines: [
+        { label: 'Delivery rate', cents: 2000 },
+        { label: 'Platform fee', cents: -300 },
+      ],
+    })
+  })
+  it('courier: shows the earn-back credit when the recorded fee is below 15%', () => {
+    expect(breakoutForRequest({ accepted_price_cents: 2000, max_price_cents: 2000, platform_fee_cents: 200, tip_cents: 500 }, 'courier')).toEqual({
+      headline: 2300,
+      lines: [
+        { label: 'Delivery rate', cents: 2000 },
+        { label: 'Platform fee', cents: -300 },
+        { label: 'Earn-back credit', cents: 100 },
+        { label: 'Tip', cents: 500 },
+      ],
+    })
+  })
+  it('returns null without a price', () => {
+    expect(breakoutForRequest({}, 'sender')).toBeNull()
+  })
+})
+```
+
+- [ ] **Step 2: Implement in `pricing.js`**
+
+```js
+// Everything a page needs to show one amount honestly: the headline the
+// person cares about, and the lines that add up to it. `role` picks the
+// side: the sender pays price + fee, the courier keeps price − fee.
+export function breakoutForRequest(r, role) {
+  const price = r?.accepted_price_cents ?? r?.max_price_cents
+  if (price == null) return null
+  const standardFee = feeFor(price)
+  const fee = r?.platform_fee_cents ?? standardFee
+  const tip = r?.tip_cents || 0
+  const lines = [{ label: 'Delivery rate', cents: price }]
+  if (role === 'sender') {
+    lines.push({ label: 'Platform fee', cents: fee })
+    if (tip) lines.push({ label: 'Tip', cents: tip })
+    return { headline: price + fee + tip, lines }
+  }
+  lines.push({ label: 'Platform fee', cents: -standardFee })
+  // The fee on record shrinks by the earn-back credit at delivery; show the
+  // credit as its own line so the courier sees why they keep more.
+  if (fee < standardFee) lines.push({ label: 'Earn-back credit', cents: standardFee - fee })
+  if (tip) lines.push({ label: 'Tip', cents: tip })
+  return { headline: price - fee + tip, lines }
+}
+```
+
+- [ ] **Step 3: `PriceBreakout.jsx`**
+
+```jsx
+// Headline amount with the lines that make it up underneath. Used on every
+// card and page that shows money, so both sides always see the same story.
+const dollars = (cents) => `${cents < 0 ? '−' : ''}$${(Math.abs(cents) / 100).toFixed(2)}`
+
+export default function PriceBreakout({ breakout, caption, size = 'md', className = '' }) {
+  if (!breakout) return null
+  const headlineClass = size === 'lg' ? 'text-2xl' : 'text-xl'
+  return (
+    <div className={className}>
+      <div className={`font-display ${headlineClass} text-ink`}>
+        {dollars(breakout.headline)}
+        {caption && <span className="ml-2 text-xs font-sans text-slate/70">{caption}</span>}
+      </div>
+      <div className="mt-1 space-y-0.5">
+        {breakout.lines.map((l) => (
+          <div key={l.label} className="flex items-baseline gap-2 text-xs text-slate">
+            <span className="text-ink tabular-nums w-16">{dollars(l.cents)}</span>
+            <span>{l.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+```
+
+- [ ] **Step 4: Wire every amount**
+
+Replace each single-number block with `<PriceBreakout breakout={breakoutForRequest(r, 'sender'|'courier')} caption="…" size="lg"|"md" />`, keeping the existing caption words ("incl. service fee" → drop it; "you earn"; "earned" / "earned incl. tip"; NewRequest/Edit "Total"; RequestDetail replaces the Delivery/Tip/Total rows; CourierDelivery replaces the "You receive" row). NewRequest/EditRequest have no request row yet — build one: `breakoutForRequest({ max_price_cents: priceCents }, 'sender')`. Leave the courier earnings tiles (today/week/total), the Accept button label and the confirm dialogs as they are — they're totals, not a single delivery.
+
+- [ ] **Step 5: `npm test && npm run build`** — green. Commit: `Show the price breakout to senders and couriers everywhere an amount appears`.

@@ -74,6 +74,19 @@ off, so the live site matches these images. Revisit after approval.
 - **HELP** — "Spetza delivery updates. Msg&data rates may apply. Msg frequency
   varies. Reply STOP to unsubscribe. Support: contact@spetza.com"
 
+## Message samples
+
+### Pickup contact (named by a requester, not a Spetza account)
+
+A requester may name the person or business handing a package over. That
+number receives at most two transactional texts per courier assignment for
+that job (a reopened job with a new courier sends again):
+
+- Accepted: "Spetza: Maria is picking up "Blue jacket" for Suresh. Before handing it over, ask to see the job on their phone — it shows SPZ-00021 and your name. Then give them PIN 4821. Reply STOP to opt out."
+- Arrived: "Spetza: Maria is outside for the pickup."
+
+STOP is honoured by Twilio's Messaging Service opt-out handling.
+
 ## Notes for next time
 
 The one-time verification code is a separate, user-initiated message — tapping

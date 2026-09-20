@@ -7,13 +7,15 @@ import PackagePhotoInput from '../../components/PackagePhotoInput.jsx'
 import StructuredAddressInput from '../../components/StructuredAddressInput.jsx'
 import RouteMap from '../../components/RouteMap.jsx'
 import PricingTable from '../../components/PricingTable.jsx'
-import { MAX_DISTANCE_MILES, priceForDistance, feeFor, totalFor } from '../../lib/pricing.js'
+import PriceBreakout from '../../components/PriceBreakout.jsx'
+import { MAX_DISTANCE_MILES, priceForDistance, breakoutForRequest } from '../../lib/pricing.js'
 import { PACKAGE_SIZES } from '../../lib/packageSizes.js'
 import { geocodeAddress, haversineMiles } from '../../lib/geocode.js'
 import { withApt } from '../../lib/address.js'
 import { trackEvent } from '../../lib/analytics.js'
-
-const money = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
+import { REQUEST_KINDS, pickupContactError } from '../../lib/requestKind.js'
+import { normalizePhone } from '../../lib/phone.js'
+import { postDeliveryRequest } from '../../lib/postRequest.js'
 
 // Pull a 5-digit US zip out of a geocoder-formatted address string
 // (e.g. "123 W Foster Ave, Chicago, IL 60640, USA" → "60640").
@@ -32,6 +34,12 @@ export default function NewRequest() {
   const [dropoff, setDropoff] = useState('')
   const [pickupGeo, setPickupGeo] = useState(blankGeo)
   const [dropoffGeo, setDropoffGeo] = useState(blankGeo)
+  // Which way the delivery runs. Pickup mode: someone else hands the package
+  // over and the requester waits at the dropoff.
+  const [kind, setKind] = useState('send')
+  const [contactName, setContactName] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
+  const isPickup = kind === 'pickup'
   const [description, setDescription] = useState('')
   const [size, setSize] = useState('')
   const [photoPath, setPhotoPath] = useState(null)
@@ -49,8 +57,7 @@ export default function NewRequest() {
 
   const overMax = distance != null && distance > MAX_DISTANCE_MILES
   const priceCents = overMax ? null : priceForDistance(distance ?? NaN)
-  const feeCents = feeFor(priceCents)
-  const totalCents = totalFor(priceCents)
+  const breakout = breakoutForRequest({ max_price_cents: priceCents }, 'sender')
 
   // `apt` comes back from the address input because Google's formatted address
   // drops the unit number, and the courier needs it.
@@ -100,9 +107,16 @@ export default function NewRequest() {
       toast.error('Pick a package size.')
       return
     }
-    if (!photoPath) {
+    if (!isPickup && !photoPath) {
       toast.error('A photo of the package is required.')
       return
+    }
+    if (isPickup) {
+      const contactErr = pickupContactError({ name: contactName, phone: contactPhone })
+      if (contactErr) {
+        toast.error(contactErr)
+        return
+      }
     }
     if (!descriptionHonest) {
       toast.error('Please confirm your description is accurate.')
@@ -120,10 +134,11 @@ export default function NewRequest() {
     setSubmitting(true)
     const pickupAddress = pickupGeo.formatted || pickup
     const dropoffAddress = dropoffGeo.formatted || dropoff
-    const { data: inserted, error } = await supabase
-      .from('delivery_requests')
-      .insert({
+    const { id, error } = await postDeliveryRequest(
+      supabase,
+      {
         sender_id: user.id,
+        kind,
         pickup_address: pickupAddress,
         pickup_lat: pickupGeo.lat,
         pickup_lng: pickupGeo.lng,
@@ -133,19 +148,23 @@ export default function NewRequest() {
         package_description: description,
         distance_miles: Number(distance.toFixed(2)),
         package_size: size.trim() || null,
-        package_photo_path: photoPath,
+        package_photo_path: isPickup ? null : photoPath,
         max_price_cents: priceCents,
-        no_answer_policy: noAnswerPolicy,
-      })
-      .select('id')
-      .single()
+        // The requester is the one waiting at the dropoff in pickup mode;
+        // "bring it back" would mean back to the contact, which is a
+        // different flow. Fixed to leave_at_door there.
+        no_answer_policy: isPickup ? 'leave_at_door' : noAnswerPolicy,
+      },
+      isPickup ? { name: contactName.trim(), phone: normalizePhone(contactPhone) } : null,
+    )
     setSubmitting(false)
     if (error) {
       toast.error(error.message)
       return
     }
     trackEvent('delivery_posted', {
-      delivery_id: inserted?.id,
+      delivery_id: id,
+      kind,
       pickup_zip: zipFrom(pickupAddress),
       dropoff_zip: zipFrom(dropoffAddress),
       distance_miles: Number(distance.toFixed(2)),
@@ -162,6 +181,7 @@ export default function NewRequest() {
     distance != null &&
     !overMax &&
     priceCents != null &&
+    (!isPickup || !pickupContactError({ name: contactName, phone: contactPhone })) &&
     descriptionHonest &&
     liabilityAccepted &&
     hasPaymentMethod
@@ -170,6 +190,27 @@ export default function NewRequest() {
     <div className="min-h-full px-6 py-12 max-w-xl mx-auto">
       <Link to="/sender" className="text-sm text-slate hover:text-ink">&larr; back</Link>
       <h1 className="font-display text-3xl text-ink mt-6">New delivery request</h1>
+      <div className="mt-4 grid grid-cols-2 gap-2 p-1 rounded-lg bg-mist" role="tablist" aria-label="Delivery type">
+        {REQUEST_KINDS.map((k) => (
+          <button
+            key={k.value}
+            type="button"
+            role="tab"
+            aria-selected={kind === k.value}
+            onClick={() => setKind(k.value)}
+            onKeyDown={(e) => {
+              if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+              e.preventDefault()
+              setKind(kind === 'send' ? 'pickup' : 'send')
+            }}
+            className={`py-2 rounded-md text-sm font-semibold transition-colors ${
+              kind === k.value ? 'bg-white text-teal shadow-sm' : 'text-slate hover:text-ink'
+            }`}
+          >
+            {k.label}
+          </button>
+        ))}
+      </div>
 
       {!hasPaymentMethod && (
         <div className="mt-6 p-4 rounded-lg border-2 border-teal/30 bg-teal/5 flex items-start gap-3">
@@ -190,7 +231,34 @@ export default function NewRequest() {
       )}
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-        <Field label="Pickup address">
+        {isPickup && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Pick up from — name">
+              <input
+                type="text"
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                placeholder="Joe, or Joe's Pizza"
+                maxLength={80}
+                className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
+              />
+            </Field>
+            <Field label="Their mobile">
+              <input
+                type="tel"
+                inputMode="tel"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                placeholder="(312) 555-0100"
+                className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none"
+              />
+              <div className="text-xs text-slate mt-1.5">
+                We text them your courier's name and the pickup code when a courier accepts.
+              </div>
+            </Field>
+          </div>
+        )}
+        <Field label={isPickup ? 'Pick up from — address' : 'Pickup address'}>
           <StructuredAddressInput
             value={pickup}
             onChange={(v) => {
@@ -210,7 +278,7 @@ export default function NewRequest() {
           />
           <GeoCaption geo={pickupGeo} />
         </Field>
-        <Field label="Dropoff address">
+        <Field label={isPickup ? 'Deliver to me at' : 'Dropoff address'}>
           <StructuredAddressInput
             value={dropoff}
             onChange={(v) => {
@@ -269,19 +337,22 @@ export default function NewRequest() {
             })}
           </div>
         </Field>
-        <Field label="Photo of the package">
-          <PackagePhotoInput path={photoPath} onChange={setPhotoPath} />
-        </Field>
+        {!isPickup && (
+          <Field label="Photo of the package">
+            <PackagePhotoInput path={photoPath} onChange={setPhotoPath} />
+          </Field>
+        )}
 
         <div className="rounded-lg bg-mist px-4 py-3 space-y-1.5">
           <Row
             label="Distance"
             value={distance == null ? '—' : `${distance.toFixed(1)} mi`}
           />
-          <div className="flex justify-between items-baseline">
-            <span className="text-xs uppercase tracking-widest text-ink">Total</span>
-            <span className="font-display text-xl text-ink">{money(totalCents)}</span>
-          </div>
+          {breakout ? (
+            <PriceBreakout breakout={breakout} caption="total" className="pt-1" />
+          ) : (
+            <Row label="Total" value="—" />
+          )}
           {overMax && (
             <div className="text-xs text-red-600 pt-1">
               Over the {MAX_DISTANCE_MILES} mi limit.
@@ -291,50 +362,52 @@ export default function NewRequest() {
 
         <PricingTable variant="sender" />
 
-        <div className="p-4 rounded-lg border border-mist bg-white">
-          <div className="text-xs uppercase tracking-widest text-slate">
-            If nobody's there
+        {!isPickup && (
+          <div className="p-4 rounded-lg border border-mist bg-white">
+            <div className="text-xs uppercase tracking-widest text-slate">
+              If nobody's there
+            </div>
+            <p className="text-xs text-slate/80 mt-1 leading-relaxed">
+              Your courier follows this without calling you.
+            </p>
+            <div className="mt-3 space-y-2">
+              {[
+                {
+                  value: 'leave_at_door',
+                  title: 'Leave it at the door',
+                  detail: 'Your courier photographs where they left it. Once it\u2019s down, it\u2019s on you.',
+                },
+                {
+                  value: 'return_to_sender',
+                  title: 'Bring it back to me',
+                  detail: 'You\u2019ll get a code to hand over when they return it. Costs the same either way.',
+                },
+              ].map((opt) => (
+                <label
+                  key={opt.value}
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    noAnswerPolicy === opt.value
+                      ? 'border-teal bg-teal/5'
+                      : 'border-mist bg-white hover:border-slate/30'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="no_answer_policy"
+                    value={opt.value}
+                    checked={noAnswerPolicy === opt.value}
+                    onChange={(e) => setNoAnswerPolicy(e.target.value)}
+                    className="mt-0.5 accent-teal shrink-0"
+                  />
+                  <span>
+                    <span className="block text-sm text-ink font-medium">{opt.title}</span>
+                    <span className="block text-xs text-slate leading-relaxed mt-0.5">{opt.detail}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
-          <p className="text-xs text-slate/80 mt-1 leading-relaxed">
-            Your courier follows this without calling you.
-          </p>
-          <div className="mt-3 space-y-2">
-            {[
-              {
-                value: 'leave_at_door',
-                title: 'Leave it at the door',
-                detail: 'Your courier photographs where they left it. Once it\u2019s down, it\u2019s on you.',
-              },
-              {
-                value: 'return_to_sender',
-                title: 'Bring it back to me',
-                detail: 'You\u2019ll get a code to hand over when they return it. Costs the same either way.',
-              },
-            ].map((opt) => (
-              <label
-                key={opt.value}
-                className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                  noAnswerPolicy === opt.value
-                    ? 'border-teal bg-teal/5'
-                    : 'border-mist bg-white hover:border-slate/30'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="no_answer_policy"
-                  value={opt.value}
-                  checked={noAnswerPolicy === opt.value}
-                  onChange={(e) => setNoAnswerPolicy(e.target.value)}
-                  className="mt-0.5 accent-teal shrink-0"
-                />
-                <span>
-                  <span className="block text-sm text-ink font-medium">{opt.title}</span>
-                  <span className="block text-xs text-slate leading-relaxed mt-0.5">{opt.detail}</span>
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
+        )}
 
         {/* Kept factual and short. The sender flow is meant to feel easy, and
             a paragraph of threats at the moment of posting doesn't fit --
@@ -354,7 +427,9 @@ export default function NewRequest() {
               className="mt-0.5 accent-teal"
             />
             <span className="text-xs text-slate leading-relaxed">
-              I confirm my description and photo match what the courier will collect.
+              {isPickup
+                ? 'I confirm my description matches what the courier will collect.'
+                : 'I confirm my description and photo match what the courier will collect.'}
             </span>
           </label>
         </div>
@@ -378,7 +453,7 @@ export default function NewRequest() {
           disabled={!canSubmit}
           className="w-full px-4 py-3 rounded-lg bg-teal text-white font-medium hover:bg-teal/90 transition-colors disabled:opacity-50"
         >
-          {submitting ? 'Posting…' : 'Send it'}
+          {submitting ? 'Posting…' : isPickup ? 'Get it picked up' : 'Send it'}
         </button>
       </form>
     </div>

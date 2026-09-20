@@ -84,6 +84,14 @@ export default function Terms() {
             SMS messages related to deliveries, payments, and account security. Message frequency
             varies. Message and data rates may apply. Reply <strong className="text-ink">STOP</strong> to
             opt out or <strong className="text-ink">HELP</strong> for assistance.
+            <p className="mt-2">
+              If you post a pickup request, you confirm you have permission to give us the
+              name and mobile number of the person handing the package over. We text that
+              number at most twice per courier assignment on that delivery — once with your
+              courier's name and the pickup code, and once when the courier arrives. If a
+              courier drops the job and another accepts, they are texted again. They can reply
+              STOP at any time.
+            </p>
           </Section>
 
           <Section title="Ratings and reviews">

@@ -2,12 +2,13 @@ import { useEffect, useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
-import { totalFor } from '../../lib/pricing.js'
+import { breakoutForRequest } from '../../lib/pricing.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
 import PackagePhoto from '../../components/PackagePhoto.jsx'
 import TipPrompt from '../../components/TipPrompt.jsx'
+import PriceBreakout from '../../components/PriceBreakout.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 
 /* ── How It Works ── */
@@ -124,10 +125,6 @@ const statusStyles = {
   delivered: 'bg-green/10 text-green',
   cancelled: 'bg-mist text-slate line-through',
   returned: 'bg-teal/10 text-teal',
-}
-
-function dollars(cents) {
-  return `$${(cents / 100).toFixed(2)}`
 }
 
 function timeLabel(iso) {
@@ -293,12 +290,7 @@ export default function SenderHome() {
                       {timeLabel(r.created_at)}
                     </div>
                   </div>
-                  <div className="font-display text-2xl text-ink">
-                    {dollars(r.accepted_price_cents != null && r.platform_fee_cents != null
-                      ? r.accepted_price_cents + r.platform_fee_cents
-                      : totalFor(r.max_price_cents))}
-                    <span className="ml-2 text-xs font-sans text-slate/70">incl. service fee</span>
-                  </div>
+                  <PriceBreakout breakout={breakoutForRequest(r, 'sender')} size="lg" />
                   <div className="divide-y divide-mist">
                     <div className="pb-3">
                       <div className="text-xs uppercase tracking-wide text-slate/70">From</div>
