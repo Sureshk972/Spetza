@@ -13,6 +13,7 @@ import { canAcceptDeliveries, courierStep } from '../../lib/courierGate.js'
 import PricingTable from '../../components/PricingTable.jsx'
 import { useCourierPositionContext } from '../../context/CourierPositionContext.jsx'
 import { resolveCenter } from '../../lib/courierLocation.js'
+import { courierTakeForRequest } from '../../lib/pricing.js'
 import { useNearestCity } from '../../hooks/useNearestCity.js'
 
 function dollars(cents) {
@@ -374,7 +375,10 @@ export default function CourierHome() {
                           {r.status === 'accepted' ? 'Awaiting pickup' : 'In transit'}
                         </div>
                       </div>
-                      <div className="font-display text-2xl text-ink">{dollars(r.max_price_cents)}</div>
+                      <div className="font-display text-2xl text-ink">
+                        {dollars(courierTakeForRequest(r))}
+                        <span className="ml-2 text-xs font-sans text-slate/70">you earn</span>
+                      </div>
                       <div className="divide-y divide-forest/20">
                         <div className="pb-3">
                           <div className="text-xs uppercase tracking-wide text-slate/70">From</div>
@@ -459,7 +463,10 @@ export default function CourierHome() {
                         Delivered
                       </div>
                     </div>
-                    <div className="font-display text-2xl text-ink">{dollars(r.max_price_cents)}</div>
+                    <div className="font-display text-2xl text-ink">
+                      {dollars(courierTakeForRequest(r) + (r.tip_cents || 0))}
+                      <span className="ml-2 text-xs font-sans text-slate/70">{r.tip_cents ? 'earned incl. tip' : 'earned'}</span>
+                    </div>
                     <div className="text-sm text-slate">
                       <span className="text-slate/70 mr-2">To</span>
                       <span className="text-ink">{r.dropoff_address}</span>
@@ -549,7 +556,10 @@ export default function CourierHome() {
                         {timeLabel(r.created_at)}
                       </div>
                     </div>
-                    <div className="font-display text-2xl text-ink">{dollars(r.max_price_cents)}</div>
+                    <div className="font-display text-2xl text-ink">
+                      {dollars(courierTakeForRequest(r))}
+                      <span className="ml-2 text-xs font-sans text-slate/70">you earn</span>
+                    </div>
                     <div className="divide-y divide-mist">
                       <div className="pb-3">
                         <div className="text-xs uppercase tracking-wide text-slate/70">From</div>
@@ -595,7 +605,7 @@ export default function CourierHome() {
                         title={disabledReason}
                         className="w-full py-3 rounded-lg bg-green text-white text-base font-bold shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:shadow-none"
                       >
-                        {accepting === r.id ? 'Accepting…' : `Accept · ${dollars(r.max_price_cents)}`}
+                        {accepting === r.id ? 'Accepting…' : `Accept · earn ${dollars(courierTakeForRequest(r))}`}
                       </button>
                     </div>
                   </li>
@@ -615,7 +625,7 @@ export default function CourierHome() {
         >
           <div className="w-full max-w-sm bg-white rounded-2xl p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <h2 className="font-display text-xl text-ink">
-              Accept for {dollars(confirmRequest.max_price_cents)}?
+              Accept and earn {dollars(courierTakeForRequest(confirmRequest))}?
             </h2>
             <p className="text-sm text-slate">
               {confirmRequest.order_number} · {confirmRequest.pickup_address} → {confirmRequest.dropoff_address}

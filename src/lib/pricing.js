@@ -37,6 +37,23 @@ export function totalFor(deliveryCents) {
   return deliveryCents + feeFor(deliveryCents)
 }
 
+// What the courier actually pockets: the delivery price less the 15% fee.
+// The sender pays price + 15%, the courier keeps price - 15%; showing the
+// bare price to either side misleads both.
+export function courierTakeFor(deliveryCents) {
+  if (deliveryCents == null) return null
+  return deliveryCents - feeFor(deliveryCents)
+}
+
+// For a request row: uses the recorded fee once one exists (it shrinks by the
+// earn-back credit at delivery), otherwise the standard 15%.
+export function courierTakeForRequest(r) {
+  const price = r?.accepted_price_cents ?? r?.max_price_cents
+  if (price == null) return null
+  const fee = r?.platform_fee_cents ?? feeFor(price)
+  return price - fee
+}
+
 export function tierOptions() {
   return TIERS.map((t, i) => {
     const low = i === 0 ? 0 : TIERS[i - 1].upTo

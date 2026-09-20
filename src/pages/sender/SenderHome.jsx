@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
+import { totalFor } from '../../lib/pricing.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
@@ -293,7 +294,10 @@ export default function SenderHome() {
                     </div>
                   </div>
                   <div className="font-display text-2xl text-ink">
-                    {dollars(r.max_price_cents)}
+                    {dollars(r.accepted_price_cents != null && r.platform_fee_cents != null
+                      ? r.accepted_price_cents + r.platform_fee_cents
+                      : totalFor(r.max_price_cents))}
+                    <span className="ml-2 text-xs font-sans text-slate/70">incl. service fee</span>
                   </div>
                   <div className="divide-y divide-mist">
                     <div className="pb-3">
