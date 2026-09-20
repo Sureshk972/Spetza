@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import DeliveryProofPhoto from '../../components/DeliveryProofPhoto.jsx'
@@ -64,7 +64,13 @@ export default function CourierDelivery() {
   const [pin, setPin] = useState('')
   const [pinError, setPinError] = useState('')
 
+  // Set while we are handing the delivery back. The realtime listener sees
+  // the row change before our redirect runs and would otherwise reload it,
+  // find nothing, and flash "Delivery not found" on the way out.
+  const leavingRef = useRef(false)
+
   const load = async () => {
+    if (leavingRef.current) return
     if (!hasSupabaseConfig || !user) {
       setLoading(false)
       return
@@ -280,11 +286,13 @@ export default function CourierDelivery() {
     const ok = window.confirm('Abandon this delivery? It will go back to the open list.')
     if (!ok) return
     setActing(true)
+    leavingRef.current = true
     const { error } = await supabase.functions.invoke('cancel-delivery', {
       body: { delivery_request_id: request.id },
     })
     setActing(false)
     if (error) {
+      leavingRef.current = false
       toast.error(error.message)
       return
     }
