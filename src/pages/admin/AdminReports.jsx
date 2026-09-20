@@ -15,6 +15,7 @@ const REASON_LABEL = {
   wrong_size: 'Bigger than the size given',
   prohibited_item: "Item we don't carry",
   not_as_described: 'Not what was described',
+  nobody_there: 'Nobody there / item not ready',
 }
 
 function when(iso) {
