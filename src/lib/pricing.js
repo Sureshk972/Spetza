@@ -65,9 +65,12 @@ export function breakoutForRequest(r, role) {
   const tip = r?.tip_cents || 0
   const lines = [{ label: 'Delivery rate', cents: price }]
   if (role === 'sender') {
-    lines.push({ label: 'Platform fee', cents: fee })
+    // The sender is charged the standard fee at accept. The fee on record
+    // is the courier side, which the earn-back credit shrinks at delivery,
+    // so it must never drive what the sender sees.
+    lines.push({ label: 'Platform fee', cents: standardFee })
     if (tip) lines.push({ label: 'Tip', cents: tip })
-    return { headline: price + fee + tip, lines }
+    return { headline: price + standardFee + tip, lines }
   }
   lines.push({ label: 'Platform fee', cents: -standardFee })
   // The fee on record shrinks by the earn-back credit at delivery; show the

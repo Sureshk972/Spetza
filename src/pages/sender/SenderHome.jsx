@@ -292,20 +292,18 @@ export default function SenderHome() {
               ].filter(Boolean)
               const inner = (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <div className="flex items-center gap-2">
                       <div className={`text-xs uppercase tracking-wide font-bold whitespace-nowrap ${kindTextClass(r.kind)}`}>
                         {r.order_number}
                       </div>
                       <KindTag kind={r.kind} />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-0.5 text-xs rounded-full ${statusStyles[r.status] ?? 'bg-mist text-slate'}`}>
-                        {statusLabel[r.status] ?? r.status}
-                      </span>
-                      <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
-                        {timeLabel(r.created_at)}
-                      </div>
+                    <span className={`px-2 py-0.5 text-xs rounded-full whitespace-nowrap ${statusStyles[r.status] ?? 'bg-mist text-slate'}`}>
+                      {statusLabel[r.status] ?? r.status}
+                    </span>
+                    <div className="ml-auto text-xs uppercase tracking-wide text-slate whitespace-nowrap">
+                      {timeLabel(r.created_at)}
                     </div>
                   </div>
                   <PriceBreakout breakout={breakoutForRequest(r, 'sender')} size="lg" />

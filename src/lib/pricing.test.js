@@ -24,8 +24,8 @@ describe('breakoutForRequest', () => {
       ],
     })
   })
-  it('sender: uses the recorded fee and adds a tip line', () => {
-    expect(breakoutForRequest({ accepted_price_cents: 2000, max_price_cents: 2000, platform_fee_cents: 300, tip_cents: 500 }, 'sender')).toEqual({
+  it('sender: always the standard fee (the recorded fee is the courier side) plus a tip line', () => {
+    expect(breakoutForRequest({ accepted_price_cents: 2000, max_price_cents: 2000, platform_fee_cents: 200, tip_cents: 500 }, 'sender')).toEqual({
       headline: 2800,
       lines: [
         { label: 'Delivery rate', cents: 2000 },

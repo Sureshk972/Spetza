@@ -8,7 +8,7 @@ export default function KindTag({ kind, className = '' }) {
   const pickup = kind === 'pickup'
   return (
     <span
-      className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+      className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide whitespace-nowrap ${
         pickup ? 'bg-teal/10 text-teal' : 'bg-green/10 text-green'
       } ${className}`}
     >
