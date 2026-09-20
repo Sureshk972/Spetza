@@ -346,6 +346,76 @@ export default function CourierDelivery() {
     timeline.push({ key: 'cancelled', label: 'Cancelled', iso: request.cancelled_at, done: true, error: true })
   }
 
+  // Distinct from Abandon on purpose. Abandoning hands the
+  // package to the next courier; reporting says the listing
+  // itself is wrong, so the delivery ends here instead of
+  // sending someone else to the same doorstep.
+  // Rendered in both accepted-state branches: a pickup courier taps
+  // "I've arrived" first and only then finds nobody there.
+  const reportBlock = !reporting ? (
+    <button
+      onClick={() => setReporting(true)}
+      disabled={acting}
+      className="mt-3 w-full py-2 text-xs text-slate hover:text-ink underline underline-offset-4 disabled:opacity-50 transition-colors"
+    >
+      {isPickup ? "Can't collect this package" : "This package isn't as described"}
+    </button>
+  ) : (
+    <div className="mt-3 p-4 rounded-xl border border-red-200 bg-red-50/40">
+      <div className="text-xs uppercase tracking-widest text-red-600 font-bold">
+        Report this package
+      </div>
+      <p className="text-xs text-slate mt-1 leading-relaxed">
+        This ends the delivery — it won't go to another courier. The sender isn't
+        charged, and we review every report.
+      </p>
+      <div className="mt-3 space-y-1.5">
+        {REPORT_REASONS.map((r) => (
+          <label
+            key={r.value}
+            className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-sm transition-colors ${
+              reportReason === r.value
+                ? 'border-red-400 bg-white'
+                : 'border-mist bg-white hover:border-slate/30'
+            }`}
+          >
+            <input
+              type="radio"
+              name="report_reason"
+              value={r.value}
+              checked={reportReason === r.value}
+              onChange={(e) => setReportReason(e.target.value)}
+              className="accent-red-500 shrink-0"
+            />
+            <span className="text-ink">{r.label}</span>
+          </label>
+        ))}
+      </div>
+      <textarea
+        value={reportNote}
+        onChange={(e) => setReportNote(e.target.value)}
+        rows={2}
+        maxLength={1000}
+        placeholder="Anything else we should know? (optional)"
+        className="mt-3 w-full px-3 py-2 rounded-lg bg-white border border-mist text-sm focus:border-teal focus:outline-none"
+      />
+      <button
+        onClick={handleReport}
+        disabled={acting || !reportReason}
+        className="mt-3 w-full py-2.5 rounded-lg bg-red-600 text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity"
+      >
+        {acting ? 'Reporting\u2026' : 'Report and end delivery'}
+      </button>
+      <button
+        onClick={() => { setReporting(false); setReportReason(''); setReportNote('') }}
+        disabled={acting}
+        className="mt-2 w-full py-2 text-xs text-slate hover:text-ink transition-colors"
+      >
+        Never mind
+      </button>
+    </div>
+  )
+
   return (
     <div className="min-h-full px-6 py-12 max-w-2xl mx-auto">
       <Link to="/courier" className="text-sm text-slate hover:text-ink">&larr; back</Link>
@@ -527,73 +597,7 @@ export default function CourierDelivery() {
                 </button>
               </div>
 
-              {/* Distinct from Abandon on purpose. Abandoning hands the
-                  package to the next courier; reporting says the listing
-                  itself is wrong, so the delivery ends here instead of
-                  sending someone else to the same doorstep. */}
-              {!reporting ? (
-                <button
-                  onClick={() => setReporting(true)}
-                  disabled={acting}
-                  className="mt-3 w-full py-2 text-xs text-slate hover:text-ink underline underline-offset-4 disabled:opacity-50 transition-colors"
-                >
-                  {isPickup ? "Can't collect this package" : "This package isn't as described"}
-                </button>
-              ) : (
-                <div className="mt-3 p-4 rounded-xl border border-red-200 bg-red-50/40">
-                  <div className="text-xs uppercase tracking-widest text-red-600 font-bold">
-                    Report this package
-                  </div>
-                  <p className="text-xs text-slate mt-1 leading-relaxed">
-                    This ends the delivery — it won't go to another courier. The sender isn't
-                    charged, and we review every report.
-                  </p>
-                  <div className="mt-3 space-y-1.5">
-                    {REPORT_REASONS.map((r) => (
-                      <label
-                        key={r.value}
-                        className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-sm transition-colors ${
-                          reportReason === r.value
-                            ? 'border-red-400 bg-white'
-                            : 'border-mist bg-white hover:border-slate/30'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="report_reason"
-                          value={r.value}
-                          checked={reportReason === r.value}
-                          onChange={(e) => setReportReason(e.target.value)}
-                          className="accent-red-500 shrink-0"
-                        />
-                        <span className="text-ink">{r.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                  <textarea
-                    value={reportNote}
-                    onChange={(e) => setReportNote(e.target.value)}
-                    rows={2}
-                    maxLength={1000}
-                    placeholder="Anything else we should know? (optional)"
-                    className="mt-3 w-full px-3 py-2 rounded-lg bg-white border border-mist text-sm focus:border-teal focus:outline-none"
-                  />
-                  <button
-                    onClick={handleReport}
-                    disabled={acting || !reportReason}
-                    className="mt-3 w-full py-2.5 rounded-lg bg-red-600 text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity"
-                  >
-                    {acting ? 'Reporting\u2026' : 'Report and end delivery'}
-                  </button>
-                  <button
-                    onClick={() => { setReporting(false); setReportReason(''); setReportNote('') }}
-                    disabled={acting}
-                    className="mt-2 w-full py-2 text-xs text-slate hover:text-ink transition-colors"
-                  >
-                    Never mind
-                  </button>
-                </div>
-              )}
+              {reportBlock}
             </div>
           )}
           {request.status === 'accepted' && request.courier_arrived_at && (
@@ -667,6 +671,7 @@ export default function CourierDelivery() {
                   Abandon delivery
                 </button>
               </div>
+              {reportBlock}
             </div>
           )}
           {request.status === 'picked_up' && (
