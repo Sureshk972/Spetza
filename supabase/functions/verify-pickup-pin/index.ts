@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
 
   // Pickup-kind: the item photo is the requester's only look at what was
   // collected. The client hides the PIN field until it exists; this is the rule.
-  const blocked = pickupBlockedReason(request.kind, request.pickup_photo_path);
+  const blocked = pickupBlockedReason(request.kind, request.pickup_photo_path, request.id);
   if (blocked) {
     return json({ error: "take a photo of the item before entering the PIN", code: blocked }, 409);
   }
