@@ -15,6 +15,9 @@ const VALID_EVENTS: DeliveryEvent[] = [
   "picked_up",
   "delivered",
   "cancelled",
+  // Courier abandoned: the request is open again. Sender is told, nearby
+  // couriers are re-alerted; there is no courier on the row any more.
+  "reopened",
 ];
 
 const json = (body: unknown, status = 200) =>
@@ -169,7 +172,7 @@ Deno.serve(async (req) => {
 
   // Fan-out: "new order near you" push + SMS to nearby couriers on "created"
   let nearbyCourierIds: string[] = [];
-  if (deliveryEvent === "created" && request.pickup_lat && request.pickup_lng) {
+  if ((deliveryEvent === "created" || deliveryEvent === "reopened") && request.pickup_lat && request.pickup_lng) {
     const { data: nearbyCouriers } = await supabase.rpc("nearby_couriers_for_push", {
       p_pickup_lat: request.pickup_lat,
       p_pickup_lng: request.pickup_lng,
@@ -223,9 +226,11 @@ Deno.serve(async (req) => {
   }
 
   // Fan-out SMS: "new delivery near you" to nearby couriers on "created"
-  if (deliveryEvent === "created" && nearbyCourierIds.length > 0) {
+  if ((deliveryEvent === "created" || deliveryEvent === "reopened") && nearbyCourierIds.length > 0) {
     results.fanoutSms = await sendSmsToCouriers(supabase, nearbyCourierIds, {
       ...smsCtx,
+      // To a nearby courier a reopened request is simply a new one.
+      event: "created",
       role: "courier",
     });
   }

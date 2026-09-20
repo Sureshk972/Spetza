@@ -12,7 +12,8 @@ export type SmsEvent =
   | "arrived"
   | "picked_up"
   | "delivered"
-  | "cancelled";
+  | "cancelled"
+  | "reopened";
 
 export type SmsRole = "sender" | "courier";
 
@@ -55,6 +56,10 @@ const SMS_TEMPLATES: Record<SmsEvent, Record<SmsRole, string>> = {
   cancelled: {
     sender: "❌ {order} — Your delivery has been cancelled. Any payment hold has been released.",
     courier: "❌ {order} — This delivery was cancelled. No further action needed.",
+  },
+  reopened: {
+    sender: "🔁 {order} — Your courier couldn't make the pickup. Your request is back on the list and nearby couriers can see it. Nothing charged.",
+    courier: "",
   },
 };
 

@@ -97,24 +97,24 @@ Deno.serve(async (req) => {
     .delete()
     .eq("delivery_request_id", delivery_request_id);
 
-  // Tell the counterparty. Only the sender-cancel case has a template --
-  // a courier abandoning puts the request back to 'open' for other couriers,
-  // which isn't a "cancelled" event and would read as a lie to the sender.
-  // Fire-and-forget: the money is already released and the row is already
-  // updated, so a failed notification must not fail the request.
-  if (isSender) {
-    try {
-      await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-notification`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ delivery_request_id, event: "cancelled" }),
-      });
-    } catch (e) {
-      console.error("cancel-delivery: send-notification failed", e);
-    }
+  // Tell the counterparty. Sender cancel -> "cancelled" to the courier.
+  // Courier abandon -> "reopened": the sender hears their courier dropped
+  // out and that the request is back on the list, and nearby couriers are
+  // re-alerted as if it were new. (Until 2026-09-19 the sender heard
+  // nothing at all.) Fire-and-forget: the money is already released and
+  // the row is already updated, so a failed notification must not fail
+  // the request.
+  try {
+    await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-notification`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ delivery_request_id, event: isSender ? "cancelled" : "reopened" }),
+    });
+  } catch (e) {
+    console.error("cancel-delivery: send-notification failed", e);
   }
 
   return json({ delivery_request_id, outcome: isSender ? "cancelled" : "reopened" });

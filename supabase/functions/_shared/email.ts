@@ -12,7 +12,8 @@ export type DeliveryEvent =
   | "arrived"
   | "picked_up"
   | "delivered"
-  | "cancelled";
+  | "cancelled"
+  | "reopened";
 
 export type Role = "sender" | "courier";
 
@@ -70,6 +71,10 @@ const SUBJECTS: Record<DeliveryEvent, Record<Role, string>> = {
     sender: "Your delivery was cancelled",
     courier: "The delivery was cancelled",
   },
+  reopened: {
+    sender: "We're finding you another courier",
+    courier: "",
+  },
 };
 
 // Body copy templates. `{name}` is replaced with the counterparty's
@@ -104,6 +109,13 @@ const BODIES: Record<DeliveryEvent, Record<Role, string>> = {
   cancelled: {
     sender: "This delivery has been cancelled. If payment was authorized, it has been released.",
     courier: "This delivery has been cancelled by the sender. No further action is needed.",
+  },
+  reopened: {
+    sender:
+      "Your courier couldn't complete the pickup, so your request is back on the open list " +
+      "and nearby couriers can see it again. Nothing has been charged — the hold on your " +
+      "card was released, and a new one is placed when the next courier accepts.",
+    courier: "",
   },
 };
 
@@ -282,6 +294,10 @@ export const PUSH_TITLES: Record<DeliveryEvent, Record<Role, string>> = {
     sender: "Delivery cancelled",
     courier: "Delivery cancelled",
   },
+  reopened: {
+    sender: "Finding another courier",
+    courier: "",
+  },
 };
 
 export const PUSH_BODIES: Record<DeliveryEvent, Record<Role, string>> = {
@@ -308,5 +324,9 @@ export const PUSH_BODIES: Record<DeliveryEvent, Record<Role, string>> = {
   cancelled: {
     sender: "Payment hold has been released.",
     courier: "No further action needed.",
+  },
+  reopened: {
+    sender: "Your courier couldn't make the pickup. It's back on the list — no charge.",
+    courier: "",
   },
 };
