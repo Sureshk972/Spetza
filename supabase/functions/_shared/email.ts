@@ -135,15 +135,27 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-export function subjectFor(event: DeliveryEvent, role: Role, orderNumber: string): string {
-  const text = SUBJECTS[event][role];
+// Pickup-kind overrides: the requester is waiting for a package, not sending
+// one, so "your delivery" reads wrong. Only the lines that differ live here.
+const SUBJECTS_PICKUP: Partial<Record<DeliveryEvent, Partial<Record<Role, string>>>> = {
+  created: { sender: "Your pickup request is live" },
+};
+const BODIES_PICKUP: Partial<Record<DeliveryEvent, Partial<Record<Role, string>>>> = {
+  created: {
+    sender:
+      "Your pickup request is now live and visible to couriers in your area. We'll email you as soon as someone accepts it.",
+  },
+};
+
+export function subjectFor(event: DeliveryEvent, role: Role, orderNumber: string, kind?: string | null): string {
+  const text = (kind === "pickup" && SUBJECTS_PICKUP[event]?.[role]) || SUBJECTS[event][role];
   if (!text) return "";
   return `${orderNumber} — ${text}`;
 }
 
 export function renderHtml(event: DeliveryEvent, ctx: DeliveryContext): string {
   const role = ctx.recipient.role;
-  const bodyTemplate = BODIES[event][role];
+  const bodyTemplate = (ctx.kind === "pickup" && BODIES_PICKUP[event]?.[role]) || BODIES[event][role];
   const counterpartyName = ctx.counterparty?.firstName ?? "";
   const message = bodyTemplate.replace(
     "{name}",
@@ -230,7 +242,7 @@ export async function sendDeliveryEmail(
   event: DeliveryEvent,
   ctx: DeliveryContext,
 ): Promise<{ ok: boolean; error?: string }> {
-  const subject = subjectFor(event, ctx.recipient.role, ctx.orderNumber);
+  const subject = subjectFor(event, ctx.recipient.role, ctx.orderNumber, ctx.kind);
 
   // No subject text means this role doesn't get an email for this
   // event (e.g. courier on "created"). Skip silently — not an error.

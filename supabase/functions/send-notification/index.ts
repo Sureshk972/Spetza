@@ -136,7 +136,9 @@ Deno.serve(async (req) => {
 
   // Sender push (all events)
   if (senderInfo) {
-    const title = PUSH_TITLES[deliveryEvent].sender;
+    const title = deliveryEvent === "created" && request.kind === "pickup"
+      ? "Your pickup is live"
+      : PUSH_TITLES[deliveryEvent].sender;
     const bodyText = pushBody(PUSH_BODIES[deliveryEvent].sender, courierInfo?.firstName ?? null);
     if (title) {
       results.senderPush = await sendPushToUsers(supabase, [request.sender_id], {

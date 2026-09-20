@@ -74,6 +74,8 @@ const SMS_TEMPLATES: Record<SmsEvent, Record<SmsRole, string>> = {
 // not listed here fall through to SMS_TEMPLATES.
 const SMS_TEMPLATES_PICKUP: Partial<Record<SmsEvent, Partial<Record<SmsRole, string>>>> = {
   created: {
+    sender:
+      "📦 {order} — Your pickup request is live! Couriers near you can see it now. We'll text you when someone accepts.",
     courier:
       "📦 New pickup near you — {price} · {pickup}\n\nOpen Spetza to accept: https://spetza.com/#/courier",
   },
