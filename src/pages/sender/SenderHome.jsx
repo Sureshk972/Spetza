@@ -9,6 +9,7 @@ import RatingBadge from '../../components/RatingBadge.jsx'
 import PackagePhoto from '../../components/PackagePhoto.jsx'
 import TipPrompt from '../../components/TipPrompt.jsx'
 import PriceBreakout from '../../components/PriceBreakout.jsx'
+import KindTag from '../../components/KindTag.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 
 /* ── How It Works ── */
@@ -282,9 +283,12 @@ export default function SenderHome() {
               ].filter(Boolean)
               const inner = (
                 <div className="space-y-3">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
-                      {r.order_number}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
+                        {r.order_number}
+                      </div>
+                      <KindTag kind={r.kind} />
                     </div>
                     <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
                       {timeLabel(r.created_at)}

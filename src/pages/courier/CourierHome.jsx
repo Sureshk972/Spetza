@@ -12,6 +12,7 @@ import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 import { canAcceptDeliveries, courierStep } from '../../lib/courierGate.js'
 import PricingTable from '../../components/PricingTable.jsx'
 import PriceBreakout from '../../components/PriceBreakout.jsx'
+import KindTag from '../../components/KindTag.jsx'
 import { useCourierPositionContext } from '../../context/CourierPositionContext.jsx'
 import { resolveCenter } from '../../lib/courierLocation.js'
 import { courierTakeForRequest, breakoutForRequest } from '../../lib/pricing.js'
@@ -373,11 +374,7 @@ export default function CourierHome() {
                           <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
                             {r.order_number}
                           </div>
-                          {r.kind === 'pickup' && (
-                            <span className="px-1.5 py-0.5 rounded-full bg-teal/10 text-teal text-[10px] font-bold uppercase tracking-wide">
-                              Pickup
-                            </span>
-                          )}
+                          <KindTag kind={r.kind} />
                         </div>
                         <div className="text-xs uppercase tracking-wide text-green whitespace-nowrap">
                           {r.status === 'accepted' ? 'Awaiting pickup' : 'In transit'}
@@ -557,11 +554,7 @@ export default function CourierHome() {
                             Open
                           </span>
                         )}
-                        {r.kind === 'pickup' && (
-                          <span className="px-1.5 py-0.5 rounded-full bg-teal/10 text-teal text-[10px] font-bold uppercase tracking-wide">
-                            Pickup
-                          </span>
-                        )}
+                        <KindTag kind={r.kind} />
                       </div>
                       <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
                         {timeLabel(r.created_at)}
