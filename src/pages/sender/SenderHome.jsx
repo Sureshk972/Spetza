@@ -9,7 +9,7 @@ import RatingBadge from '../../components/RatingBadge.jsx'
 import PackagePhoto from '../../components/PackagePhoto.jsx'
 import TipPrompt from '../../components/TipPrompt.jsx'
 import PriceBreakout from '../../components/PriceBreakout.jsx'
-import KindTag from '../../components/KindTag.jsx'
+import KindTag, { kindTextClass } from '../../components/KindTag.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 
 /* ── How It Works ── */
@@ -285,7 +285,7 @@ export default function SenderHome() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
-                      <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
+                      <div className={`text-xs uppercase tracking-wide font-bold whitespace-nowrap ${kindTextClass(r.kind)}`}>
                         {r.order_number}
                       </div>
                       <KindTag kind={r.kind} />

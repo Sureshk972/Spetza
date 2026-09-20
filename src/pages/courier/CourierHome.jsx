@@ -12,7 +12,7 @@ import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 import { canAcceptDeliveries, courierStep } from '../../lib/courierGate.js'
 import PricingTable from '../../components/PricingTable.jsx'
 import PriceBreakout from '../../components/PriceBreakout.jsx'
-import KindTag from '../../components/KindTag.jsx'
+import KindTag, { kindTextClass } from '../../components/KindTag.jsx'
 import { useCourierPositionContext } from '../../context/CourierPositionContext.jsx'
 import { resolveCenter } from '../../lib/courierLocation.js'
 import { courierTakeForRequest, breakoutForRequest } from '../../lib/pricing.js'
@@ -371,7 +371,7 @@ export default function CourierHome() {
                     <div className="space-y-3">
                       <div className="flex items-baseline justify-between gap-3">
                         <div className="flex items-center gap-2">
-                          <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
+                          <div className={`text-xs uppercase tracking-wide font-bold whitespace-nowrap ${kindTextClass(r.kind)}`}>
                             {r.order_number}
                           </div>
                           <KindTag kind={r.kind} />
@@ -458,8 +458,11 @@ export default function CourierHome() {
                 .map((r) => (
                   <li key={r.id} className="p-5 rounded-xl border border-mist bg-white space-y-3">
                     <div className="flex items-baseline justify-between gap-3">
-                      <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
-                        {r.order_number}
+                      <div className="flex items-center gap-2">
+                        <div className={`text-xs uppercase tracking-wide font-bold whitespace-nowrap ${kindTextClass(r.kind)}`}>
+                          {r.order_number}
+                        </div>
+                        <KindTag kind={r.kind} />
                       </div>
                       <div className="text-xs uppercase tracking-wide text-green whitespace-nowrap">
                         Delivered
@@ -542,7 +545,7 @@ export default function CourierHome() {
                   <li key={r.id} className="p-5 rounded-xl border border-mist bg-white space-y-3">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
+                        <span className={`text-xs uppercase tracking-wide font-bold whitespace-nowrap ${kindTextClass(r.kind)}`}>
                           {r.order_number}
                         </span>
                         {r.id === newestId ? (

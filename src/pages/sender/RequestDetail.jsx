@@ -8,7 +8,7 @@ import RouteMap from '../../components/RouteMap.jsx'
 import RatingPrompt from '../../components/RatingPrompt.jsx'
 import RatingBadge from '../../components/RatingBadge.jsx'
 import PackagePhoto from '../../components/PackagePhoto.jsx'
-import KindTag from '../../components/KindTag.jsx'
+import KindTag, { kindTextClass } from '../../components/KindTag.jsx'
 import DeliveryProofPhoto from '../../components/DeliveryProofPhoto.jsx'
 import TipPrompt from '../../components/TipPrompt.jsx'
 import PriceBreakout from '../../components/PriceBreakout.jsx'
@@ -212,7 +212,7 @@ export default function RequestDetail() {
       <div className="mt-6 flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <div className="text-xs uppercase tracking-widest text-slate">{request.order_number}</div>
+            <div className={`text-xs uppercase tracking-widest font-bold ${kindTextClass(request.kind)}`}>{request.order_number}</div>
             <KindTag kind={request.kind} />
           </div>
           <h1 className="font-display text-3xl text-ink mt-1">{request.kind === 'pickup' ? 'Pickup details' : 'Delivery details'}</h1>
