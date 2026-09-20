@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
       nearbyCourierIds = nearbyCouriers.map((c: { id: string }) => c.id);
       const priceStr = priceCents ? formatPrice(priceCents) : "";
       results.fanoutPush = await sendPushToUsers(supabase, nearbyCourierIds, {
-        title: "New delivery near you",
+        title: request.kind === "pickup" ? "New pickup near you" : "New delivery near you",
         body: priceStr
           ? `${priceStr} · ${request.pickup_address}`
           : request.pickup_address,
