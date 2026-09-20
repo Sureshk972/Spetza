@@ -145,24 +145,30 @@ export default function CourierDelivery() {
       toast.error(error.message)
       return
     }
-    toast.success('Sender has been notified!')
+    toast.success(isPickup ? `${contact?.name || 'They'} got a text.` : 'Sender has been notified!')
     load()
   }
 
   const handlePickedUp = async () => {
     const trimmed = pin.trim()
     if (trimmed.length !== 4) {
-      setPinError('Enter the 4-digit code from the sender')
+      setPinError(isPickup ? `Enter the 4-digit code from ${contact?.name || 'them'}` : 'Enter the 4-digit code from the sender')
       return
     }
     setPinError('')
     setActing(true)
-    const { error } = await supabase.functions.invoke('verify-pickup-pin', {
+    const { data, error } = await supabase.functions.invoke('verify-pickup-pin', {
       body: { delivery_request_id: request.id, pin: trimmed },
     })
+    // On a non-2xx the body only comes back via error.context (a Response).
+    const code = data?.code ?? (error?.context?.clone ? (await error.context.clone().json().catch(() => ({}))).code : undefined)
     setActing(false)
     if (error) {
-      setPinError(isPickup ? `Incorrect code — ask ${contact?.name || 'them'} to check` : 'Incorrect code — ask the sender to check')
+      setPinError(
+        code === 'photo_required'
+          ? 'Take the item photo first.'
+          : isPickup ? `Incorrect code — ask ${contact?.name || 'them'} to check` : 'Incorrect code — ask the sender to check',
+      )
       return
     }
     setPin('')
@@ -179,7 +185,6 @@ export default function CourierDelivery() {
     } catch (err) {
       // Anything unexpected (an old WebView, a decode failure) must surface,
       // not leave the button stuck on "Uploading…".
-      console.error('proof photo failed', err)
       toast.error(err?.message || "Couldn't attach that photo.")
     } finally {
       setUploadingProof(false)
@@ -205,7 +210,6 @@ export default function CourierDelivery() {
       if (error) throw new Error(error.message)
       load()
     } catch (err) {
-      console.error('pickup photo failed', err)
       toast.error(err?.message || "Couldn't attach that photo.")
     } finally {
       setUploadingPickup(false)
