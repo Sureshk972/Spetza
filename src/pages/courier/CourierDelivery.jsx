@@ -60,6 +60,10 @@ export default function CourierDelivery() {
   const [reportReason, setReportReason] = useState('')
   const [reportNote, setReportNote] = useState('')
   const [uploadingProof, setUploadingProof] = useState(false)
+  // Pickup-kind: the named person handing the package over, and the photo
+  // of the item the courier must take before the PIN will be accepted.
+  const [contact, setContact] = useState(null)
+  const [uploadingPickup, setUploadingPickup] = useState(false)
   const [pin, setPin] = useState('')
   const [pinError, setPinError] = useState('')
 
@@ -67,6 +71,8 @@ export default function CourierDelivery() {
   // the row change before our redirect runs and would otherwise reload it,
   // find nothing, and flash "Delivery not found" on the way out.
   const leavingRef = useRef(false)
+
+  const isPickup = request?.kind === 'pickup'
 
   const load = async () => {
     if (leavingRef.current) return
@@ -90,6 +96,17 @@ export default function CourierDelivery() {
         .eq('id', req.sender_id)
         .maybeSingle()
       setSender(prof ?? null)
+
+      if (req.kind === 'pickup') {
+        const { data: c } = await supabase
+          .from('delivery_pickup_contacts')
+          .select('name, phone')
+          .eq('delivery_request_id', id)
+          .maybeSingle()
+        setContact(c ?? null)
+      } else {
+        setContact(null)
+      }
 
       const { data: myRating } = await supabase
         .from('ratings')
@@ -145,7 +162,7 @@ export default function CourierDelivery() {
     })
     setActing(false)
     if (error) {
-      setPinError('Incorrect code — ask the sender to check')
+      setPinError(isPickup ? `Incorrect code — ask ${contact?.name || 'them'} to check` : 'Incorrect code — ask the sender to check')
       return
     }
     setPin('')
@@ -167,6 +184,31 @@ export default function CourierDelivery() {
     } finally {
       setUploadingProof(false)
       // Allow re-picking the same file after a failure.
+      e.target.value = ''
+    }
+  }
+
+  // Pickup-kind: the requester never saw the item. This photo is their only
+  // look at what was collected, and verify-pickup-pin refuses the PIN
+  // until it exists.
+  const onPickupPhoto = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingPickup(true)
+    try {
+      const path = await uploadProofPhoto(request.id, file)
+      const { error } = await supabase
+        .from('delivery_requests')
+        .update({ pickup_photo_path: path })
+        .eq('id', request.id)
+        .eq('courier_id', user.id)
+      if (error) throw new Error(error.message)
+      load()
+    } catch (err) {
+      console.error('pickup photo failed', err)
+      toast.error(err?.message || "Couldn't attach that photo.")
+    } finally {
+      setUploadingPickup(false)
       e.target.value = ''
     }
   }
@@ -236,6 +278,7 @@ export default function CourierDelivery() {
     { value: 'wrong_size', label: 'Bigger than the size given' },
     { value: 'prohibited_item', label: "Something we don't carry" },
     { value: 'not_as_described', label: 'Not what was described' },
+    ...(isPickup ? [{ value: 'nobody_there', label: 'Nobody there / item not ready' }] : []),
   ]
 
   const handleReport = async () => {
@@ -311,6 +354,11 @@ export default function CourierDelivery() {
         <div>
           <div className="text-xs uppercase tracking-widest text-slate">{request.order_number}</div>
           <h1 className="font-display text-3xl text-ink mt-1">Delivery</h1>
+          {isPickup && (
+            <span className="inline-block mt-2 px-2 py-0.5 rounded-full bg-teal/10 text-teal text-[10px] font-bold uppercase tracking-wide">
+              Pickup
+            </span>
+          )}
         </div>
         <span className={`px-2 py-0.5 text-xs rounded-full ${statusStyles[request.status] ?? 'bg-mist text-slate'}`}>
           {statusLabel[request.status] ?? request.status}
@@ -353,13 +401,26 @@ export default function CourierDelivery() {
         <div className="p-4 rounded-xl border border-mist bg-white">
           <div className="text-xs uppercase tracking-widest text-slate">Package</div>
           <div className="mt-2 flex items-start gap-3">
-            <PackagePhoto path={request.package_photo_path} variant="thumbnail" />
+            {request.package_photo_path && <PackagePhoto path={request.package_photo_path} variant="thumbnail" />}
             <div className="text-sm text-slate">{request.package_description}</div>
           </div>
         </div>
 
+        {isPickup && contact && (
+          <div className="p-4 rounded-xl border border-mist bg-white">
+            <div className="text-xs uppercase tracking-widest text-slate">Pick up from</div>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <div className="text-sm text-ink font-medium">{contact.name}</div>
+              <a href={`tel:${contact.phone}`} className="text-sm text-teal hover:underline">Call</a>
+            </div>
+            <p className="text-xs text-slate mt-2 leading-relaxed">
+              {contact.name} has been told to check your screen for {request.order_number} and their name before handing over.
+            </p>
+          </div>
+        )}
+
         <div className="p-4 rounded-xl border border-mist bg-white">
-          <div className="text-xs uppercase tracking-widest text-slate">Sender</div>
+          <div className="text-xs uppercase tracking-widest text-slate">{isPickup ? 'Requester' : 'Sender'}</div>
           {sender ? (
             <div className="mt-2 flex items-center gap-3">
               <div className="text-sm text-ink">{sender.first_name || 'Sender'}</div>
@@ -429,7 +490,11 @@ export default function CourierDelivery() {
             <div className="w-full space-y-3">
               <div className="p-4 rounded-xl border border-teal/30 bg-teal/5">
                 <div className="text-xs uppercase tracking-widest text-teal font-bold mb-2">Head to pickup</div>
-                <p className="text-sm text-slate mb-2">Go to the pickup address below. Tap "I've arrived" when you're there.</p>
+                <p className="text-sm text-slate mb-2">
+                  {isPickup
+                    ? `Go to ${contact?.name || 'the pickup'} at the address below. Tap "I've arrived" when you're there — they get a text.`
+                    : 'Go to the pickup address below. Tap "I\'ve arrived" when you\'re there.'}
+                </p>
                 <div className="mt-2 p-3 rounded-lg bg-white border border-mist">
                   <div className="text-sm text-ink font-medium">{request.pickup_address}</div>
                 </div>
@@ -449,7 +514,7 @@ export default function CourierDelivery() {
                   disabled={acting}
                   className="mt-4 w-full py-3 rounded-lg bg-teal text-white text-sm font-bold hover:bg-teal/90 disabled:opacity-50 transition-colors"
                 >
-                  {acting ? 'Notifying sender…' : "I've arrived"}
+                  {acting ? 'Notifying…' : "I've arrived"}
                 </button>
               </div>
               <div className="mt-3 flex justify-end">
@@ -472,7 +537,7 @@ export default function CourierDelivery() {
                   disabled={acting}
                   className="mt-3 w-full py-2 text-xs text-slate hover:text-ink underline underline-offset-4 disabled:opacity-50 transition-colors"
                 >
-                  This package isn't as described
+                  {isPickup ? "Can't collect this package" : "This package isn't as described"}
                 </button>
               ) : (
                 <div className="mt-3 p-4 rounded-xl border border-red-200 bg-red-50/40">
@@ -535,8 +600,43 @@ export default function CourierDelivery() {
             <div className="w-full space-y-3">
               <div className="p-4 rounded-xl border border-teal/30 bg-teal/5">
                 <div className="text-xs uppercase tracking-widest text-teal font-bold mb-2">Pickup handshake</div>
-                <p className="text-sm text-slate mb-1">The sender has been notified you're here.</p>
-                <p className="text-sm text-slate mb-3">Ask them for the 4-digit code to confirm pickup.</p>
+                {isPickup ? (
+                  <>
+                    <p className="text-sm text-slate mb-3">
+                      Show {contact?.name || 'them'} this screen, photograph the item, then ask for the 4-digit code.
+                    </p>
+                    <div className="mb-3 p-3 rounded-lg bg-white border border-mist">
+                      <div className="text-xs uppercase tracking-widest text-slate mb-1">1 · Photo of the item</div>
+                      {request.pickup_photo_path ? (
+                        <DeliveryProofPhoto path={request.pickup_photo_path} label="What the requester will see" />
+                      ) : (
+                        <p className="text-xs text-slate/80">Required before the code will work.</p>
+                      )}
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <label className="block">
+                          <input type="file" accept="image/*" capture="environment" onChange={onPickupPhoto} disabled={uploadingPickup || acting} className="hidden" />
+                          <span className={`block w-full py-2.5 rounded-lg border text-center text-sm font-medium cursor-pointer transition-colors ${
+                            request.pickup_photo_path ? 'border-green/40 text-green hover:bg-green/5' : 'border-ink/20 text-ink hover:bg-mist'
+                          }`}>
+                            {uploadingPickup ? 'Uploading…' : request.pickup_photo_path ? '📷 Retake' : '📷 Take photo'}
+                          </span>
+                        </label>
+                        <label className="block">
+                          <input type="file" accept="image/*" onChange={onPickupPhoto} disabled={uploadingPickup || acting} className="hidden" />
+                          <span className="block w-full py-2.5 rounded-lg border border-ink/20 text-center text-sm font-medium text-ink cursor-pointer hover:bg-mist transition-colors">
+                            🖼 From library
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                    <div className="text-xs uppercase tracking-widest text-slate mb-1">2 · Their code</div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-slate mb-1">The sender has been notified you're here.</p>
+                    <p className="text-sm text-slate mb-3">Ask them for the 4-digit code to confirm pickup.</p>
+                  </>
+                )}
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
@@ -545,11 +645,12 @@ export default function CourierDelivery() {
                     value={pin}
                     onChange={(e) => { setPin(e.target.value.replace(/\D/g, '')); setPinError('') }}
                     placeholder="0000"
-                    className="w-24 px-3 py-2 rounded-lg bg-white border border-mist text-center text-lg font-bold tracking-[0.3em] focus:border-teal focus:outline-none"
+                    disabled={isPickup && !request.pickup_photo_path}
+                    className="w-24 px-3 py-2 rounded-lg bg-white border border-mist text-center text-lg font-bold tracking-[0.3em] focus:border-teal focus:outline-none disabled:opacity-50"
                   />
                   <button
                     onClick={handlePickedUp}
-                    disabled={acting || pin.trim().length < 4}
+                    disabled={acting || pin.trim().length < 4 || (isPickup && !request.pickup_photo_path)}
                     className="px-4 py-2 rounded-lg bg-teal text-white text-sm font-medium hover:bg-teal/90 disabled:opacity-50 transition-colors"
                   >
                     {acting ? 'Verifying…' : 'Confirm pickup'}
