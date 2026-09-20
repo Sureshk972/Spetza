@@ -12,6 +12,7 @@ import DeliveryProofPhoto from '../../components/DeliveryProofPhoto.jsx'
 import TipPrompt from '../../components/TipPrompt.jsx'
 import { useRealtimeRefresh } from '../../hooks/useRealtimeRefresh.js'
 import { chime } from '../../lib/chime.js'
+import { contactStatusCopy } from '../../lib/requestKind.js'
 
 const dollars = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
 
@@ -52,6 +53,7 @@ export default function RequestDetail() {
   // transit -- that's the window where a courier might turn up with the
   // package instead of a delivery.
   const [returnPin, setReturnPin] = useState(null)
+  const [contact, setContact] = useState(null)
   const [rated, setRated] = useState(false)
   const [loading, setLoading] = useState(true)
   const [cancelling, setCancelling] = useState(false)
@@ -69,6 +71,17 @@ export default function RequestDetail() {
       .eq('sender_id', user.id)
       .maybeSingle()
     setRequest(req ?? null)
+
+    if (req?.kind === 'pickup') {
+      const { data: c } = await supabase
+        .from('delivery_pickup_contacts')
+        .select('name, phone, sms_status')
+        .eq('delivery_request_id', req.id)
+        .maybeSingle()
+      setContact(c ?? null)
+    } else {
+      setContact(null)
+    }
 
     // Fetch codes from the sender-only table. Both live on the same row;
     // which one we surface depends on where the delivery is.
@@ -125,6 +138,13 @@ export default function RequestDetail() {
     channelName: id ? `sender-req:${id}` : null,
     table: 'delivery_requests',
     filter: id ? `id=eq.${id}` : null,
+    refresh: load,
+  })
+
+  useRealtimeRefresh({
+    channelName: id && request?.kind === 'pickup' ? `sender-contact:${id}` : null,
+    table: 'delivery_pickup_contacts',
+    filter: id ? `delivery_request_id=eq.${id}` : null,
     refresh: load,
   })
 
@@ -222,9 +242,16 @@ export default function RequestDetail() {
               <span className="text-ink">{request.pickup_address}</span>
             </div>
             <div className="text-slate">
-              <span className="text-slate/70 mr-2">To</span>
+              <span className="text-slate/70 mr-2">{request.kind === 'pickup' ? 'To me at' : 'To'}</span>
               <span className="text-ink">{request.dropoff_address}</span>
             </div>
+            {contact && (
+              <div className="text-slate pt-1">
+                <span className="text-slate/70 mr-2">Picking up from</span>
+                <span className="text-ink">{contact.name}</span>
+                <span className="text-slate/70 ml-2">{contact.phone}</span>
+              </div>
+            )}
           </div>
           {request.distance_miles != null && (
             <div className="mt-2 text-xs text-slate">
@@ -252,10 +279,17 @@ export default function RequestDetail() {
         <div className="p-4 rounded-xl border border-mist bg-white">
           <div className="text-xs uppercase tracking-widest text-slate">Package</div>
           <div className="mt-2 flex items-start gap-3">
-            <PackagePhoto path={request.package_photo_path} variant="thumbnail" />
+            {request.package_photo_path && <PackagePhoto path={request.package_photo_path} variant="thumbnail" />}
             <div className="text-sm text-slate">{request.package_description}</div>
           </div>
         </div>
+
+        {request.pickup_photo_path && (
+          <div className="p-4 rounded-xl border border-teal/30 bg-teal/5">
+            <div className="text-xs uppercase tracking-widest text-teal font-bold">Picked up</div>
+            <DeliveryProofPhoto path={request.pickup_photo_path} label="What your courier collected" />
+          </div>
+        )}
 
         {request.delivery_photo_path && (
           <div className="p-4 rounded-xl border border-green/30 bg-green/5">
@@ -289,7 +323,21 @@ export default function RequestDetail() {
           )}
         </div>
 
-        {request.status === 'accepted' && pickupPin && (
+        {request.status === 'accepted' && pickupPin && request.kind === 'pickup' && contact && (
+          <div className="p-4 rounded-xl border border-teal/30 bg-teal/5">
+            <div className="text-xs uppercase tracking-widest text-teal font-bold">Pickup code</div>
+            <p className="text-sm text-slate mt-2">{contactStatusCopy(contact.name, contact.sms_status)}</p>
+            {contact.sms_status === 'failed' && (
+              <div className="mt-2 text-4xl font-bold tracking-[0.3em] text-ink text-center py-2">
+                {pickupPin}
+              </div>
+            )}
+            {request.courier_arrived_at && (
+              <p className="text-sm text-green font-medium mt-2">Your courier is at {contact.name}'s now.</p>
+            )}
+          </div>
+        )}
+        {request.status === 'accepted' && pickupPin && request.kind !== 'pickup' && (
           <div className={`p-4 rounded-xl border ${
             request.courier_arrived_at
               ? 'border-green bg-green/5 ring-2 ring-green/30'
