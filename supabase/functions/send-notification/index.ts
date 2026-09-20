@@ -102,6 +102,7 @@ Deno.serve(async (req) => {
       priceCents,
       packageSize: request.package_size,
       pickupPin,
+      kind: request.kind,
       recipient: {
         email: senderInfo.email,
         firstName: senderInfo.firstName,
@@ -121,6 +122,7 @@ Deno.serve(async (req) => {
       dropoffAddress: request.dropoff_address,
       priceCents,
       packageSize: request.package_size,
+      kind: request.kind,
       recipient: {
         email: courierInfo.email,
         firstName: courierInfo.firstName,
@@ -205,6 +207,7 @@ Deno.serve(async (req) => {
     pickupAddress: request.pickup_address,
     priceCents,
     pickupPin,
+    kind: request.kind,
     counterpartyName: null as string | null,
   };
 

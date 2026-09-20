@@ -37,6 +37,9 @@ export interface DeliveryContext {
   priceCents?: number | null;
   packageSize?: string | null;
   pickupPin?: string | null;
+  // "pickup": a named contact holds the item and gets the PIN by SMS, so
+  // the requester is never shown the code.
+  kind?: "send" | "pickup" | null;
   recipient: RecipientContext;
   counterparty?: CounterpartyContext | null;
 }
@@ -159,7 +162,9 @@ export function renderHtml(event: DeliveryEvent, ctx: DeliveryContext): string {
 
   // Show the pickup PIN prominently to the sender on "accepted"
   const pinBlock =
-    event === "accepted" && role === "sender" && ctx.pickupPin
+    event === "accepted" && role === "sender" && ctx.kind === "pickup"
+      ? `<p style="color:#1a1a2e; font-size:16px; line-height:1.6; margin:0 0 24px;">We've texted the pickup code to your contact.</p>`
+      : event === "accepted" && role === "sender" && ctx.pickupPin
       ? `<div style="margin:24px 0; padding:20px; background-color:#0378A6; border-radius:8px; text-align:center;">
            <div style="color:#ffffff; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:2px; margin-bottom:8px;">Pickup Code</div>
            <div style="color:#ffffff; font-size:36px; font-weight:900; letter-spacing:0.3em;">${escapeHtml(ctx.pickupPin)}</div>
