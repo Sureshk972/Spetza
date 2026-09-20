@@ -695,40 +695,42 @@ export default function CourierDelivery() {
                   {proofPath && (
                     <DeliveryProofPhoto path={proofPath} label="What your sender will see" />
                   )}
-                  <label className="mt-3 block">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={onProofPhoto}
-                      disabled={uploadingProof || acting}
-                      className="hidden"
-                    />
-                    <span className={`block w-full py-2.5 rounded-lg border text-center text-sm font-medium cursor-pointer transition-colors ${
-                      proofPath
-                        ? 'border-green/40 text-green hover:bg-green/5'
-                        : 'border-ink/20 text-ink hover:bg-mist'
-                    }`}>
-                      {uploadingProof
-                        ? 'Uploading\u2026'
-                        : proofPath ? 'Retake photo' : 'Take photo'}
-                    </span>
-                  </label>
-                  {/* Same handler, no `capture`: opens the photo library for
-                      couriers who already took the picture, or whose camera
-                      button misbehaves. */}
-                  <label className="block mt-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={onProofPhoto}
-                      disabled={uploadingProof || acting}
-                      className="hidden"
-                    />
-                    <span className="block w-full py-2 text-center text-xs text-teal font-medium cursor-pointer hover:underline">
-                      {proofPath ? 'Choose a different photo from library' : 'Or choose from library'}
-                    </span>
-                  </label>
+                  {/* Two equal buttons: camera, and the photo library for
+                      couriers who already took the picture or whose camera
+                      button misbehaves (seen on Android Chrome). */}
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <label className="block">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={onProofPhoto}
+                        disabled={uploadingProof || acting}
+                        className="hidden"
+                      />
+                      <span className={`block w-full py-2.5 rounded-lg border text-center text-sm font-medium cursor-pointer transition-colors ${
+                        proofPath
+                          ? 'border-green/40 text-green hover:bg-green/5'
+                          : 'border-ink/20 text-ink hover:bg-mist'
+                      }`}>
+                        {uploadingProof
+                          ? 'Uploading\u2026'
+                          : proofPath ? '📷 Retake' : '📷 Take photo'}
+                      </span>
+                    </label>
+                    <label className="block">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={onProofPhoto}
+                        disabled={uploadingProof || acting}
+                        className="hidden"
+                      />
+                      <span className="block w-full py-2.5 rounded-lg border border-ink/20 text-center text-sm font-medium text-ink cursor-pointer hover:bg-mist transition-colors">
+                        🖼 From library
+                      </span>
+                    </label>
+                  </div>
                 </div>
 
                 <button
