@@ -230,6 +230,13 @@ export default function NewRequest() {
         </div>
       )}
 
+      {/* Said here, at the moment of trust, not only on the Trust page. */}
+      <p className="mt-4 text-xs text-slate flex items-center gap-1.5">
+        <span className="text-green">✓</span>
+        Every Spetza courier has passed a criminal background check and ID verification.
+        <Link to="/trust" className="text-teal hover:underline">How we vet</Link>
+      </p>
+
       <form onSubmit={handleSubmit} className="mt-8 space-y-5">
         {isPickup && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

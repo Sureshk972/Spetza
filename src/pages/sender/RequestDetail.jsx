@@ -315,10 +315,14 @@ export default function RequestDetail() {
               <div>
                 <div className="text-sm text-ink font-medium">{courier.first_name || 'Assigned'}</div>
                 <RatingBadge avg={courier.rating_avg} count={courier.rating_count} />
+                <div className="text-xs text-green mt-0.5">✓ Background-checked · ID verified</div>
               </div>
             </div>
           ) : (
-            <div className="mt-2 text-sm text-slate">Waiting for a courier to accept.</div>
+            <div className="mt-2 text-sm text-slate">
+              Waiting for a courier to accept. Every Spetza courier has passed a criminal
+              background check and ID verification.
+            </div>
           )}
         </div>
 
