@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { useState } from 'react'
 import { render, screen, fireEvent, act, within } from '@testing-library/react'
 import '@testing-library/jest-dom'
 
@@ -226,5 +227,28 @@ describe('StructuredAddressInput autocomplete', () => {
     await typeStreet('12')
 
     expect(fetchSuggestions).not.toHaveBeenCalled()
+  })
+})
+
+/** A parent that stores what the field reports and hands it straight back
+ *  as `value`, the way NewRequest does. */
+function Controlled() {
+  const [value, setValue] = useState('')
+  return <StructuredAddressInput value={value} onChange={setValue} />
+}
+
+describe('StructuredAddressInput typing', () => {
+  it('does not grow a comma when the parent echoes the value back', async () => {
+    fetchSuggestions.mockResolvedValue({ suggestions: [] })
+    render(<Controlled />)
+    fireEvent.change(screen.getByPlaceholderText('Street address'), { target: { value: '1' } })
+    expect(screen.getByPlaceholderText('Street address')).toHaveValue('1')
+  })
+
+  it('reports only the parts that are filled in', () => {
+    const onChange = vi.fn()
+    render(<StructuredAddressInput onChange={onChange} />)
+    fireEvent.change(screen.getByPlaceholderText('Street address'), { target: { value: '1453 W Foster' } })
+    expect(onChange).toHaveBeenLastCalledWith('1453 W Foster')
   })
 })

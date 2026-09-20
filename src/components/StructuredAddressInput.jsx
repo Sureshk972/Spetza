@@ -23,7 +23,10 @@ const geoKey = (p) => [p.street, p.city, p.state, p.zip].join('|').toLowerCase()
 function concat(parts) {
   const { street, apt, city, state, zip } = parts
   const line1 = apt ? `${street}, ${apt}` : street
-  return [line1, city, `${state} ${zip}`].filter(Boolean).join(', ')
+  // Only the parts that exist. `${state} ${zip}` with both empty is a lone
+  // space -- truthy -- which put a stray ", " after a half-typed street.
+  const line3 = [state, zip].filter(Boolean).join(' ')
+  return [line1, city, line3].filter(Boolean).join(', ')
 }
 
 /** Best-effort parse of a free-text address into structured parts. */
@@ -99,11 +102,15 @@ export default function StructuredAddressInput({
   const resolvedRef = useRef(null)
   const listboxId = useId()
 
-  // Re-parse if value changes externally (e.g. EditRequest loading data)
+  // Re-parse if value changes externally (e.g. EditRequest loading data).
+  // A parent that stores what we report and hands it straight back is not
+  // an external change -- re-parsing our own output mid-keystroke was how a
+  // typed "1" turned into "1,  ".
+  const lastEmittedRef = useRef(null)
   useEffect(() => {
     if (!initialized && value) {
-      setParts(parse(value))
       setInitialized(true)
+      if (value !== lastEmittedRef.current) setParts(parse(value))
     }
   }, [value, initialized])
 
@@ -115,6 +122,12 @@ export default function StructuredAddressInput({
       abortRef.current?.abort()
     }
   }, [])
+
+  const emit = (next) => {
+    const full = concat(next)
+    lastEmittedRef.current = full
+    onChange?.(full)
+  }
 
   const closeList = useCallback(() => {
     clearTimeout(blurTimerRef.current)
@@ -140,7 +153,7 @@ export default function StructuredAddressInput({
     (field, val) => {
       const next = { ...parts, [field]: val }
       setParts(next)
-      onChange?.(concat(next))
+      emit(next)
       // Callers blank their geo state on every onChange. If this edit didn't
       // touch the parts the coordinates came from — an apt number, typically —
       // re-assert them, or a resolved address quietly becomes unsubmittable.
@@ -218,7 +231,7 @@ export default function StructuredAddressInput({
       zip: details.zip || parts.zip,
     }
     setParts(next)
-    onChange?.(concat(next))
+    emit(next)
 
     if (Number.isFinite(details.lat) && Number.isFinite(details.lng)) {
       resolvedRef.current = {
