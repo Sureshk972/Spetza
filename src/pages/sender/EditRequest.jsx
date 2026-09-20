@@ -8,6 +8,8 @@ import StructuredAddressInput from '../../components/StructuredAddressInput.jsx'
 import { MAX_DISTANCE_MILES, priceForDistance, feeFor, totalFor } from '../../lib/pricing.js'
 import { geocodeAddress, haversineMiles } from '../../lib/geocode.js'
 import { withApt } from '../../lib/address.js'
+import { pickupContactError } from '../../lib/requestKind.js'
+import { normalizePhone } from '../../lib/phone.js'
 
 const money = (cents) => (cents == null ? '—' : `$${(cents / 100).toFixed(2)}`)
 
@@ -26,6 +28,9 @@ export default function EditRequest() {
   const [description, setDescription] = useState('')
   const [size, setSize] = useState('')
   const [photoPath, setPhotoPath] = useState(null)
+  const [contactName, setContactName] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
+  const isPickup = request?.kind === 'pickup'
   const [liabilityAccepted, setLiabilityAccepted] = useState(false)
   const [saving, setSaving] = useState(false)
   const [cancelling, setCancelling] = useState(false)
@@ -51,6 +56,18 @@ export default function EditRequest() {
           setDescription(data.package_description)
           setSize(data.package_size ?? '')
           setPhotoPath(data.package_photo_path ?? null)
+          if (data.kind === 'pickup') {
+            supabase
+              .from('delivery_pickup_contacts')
+              .select('name, phone')
+              .eq('delivery_request_id', id)
+              .maybeSingle()
+              .then(({ data: c }) => {
+                if (cancelled || !c) return
+                setContactName(c.name)
+                setContactPhone(c.phone)
+              })
+          }
           if (data.pickup_lat != null && data.pickup_lng != null) {
             setPickupGeo({
               status: 'ok',
@@ -136,9 +153,16 @@ export default function EditRequest() {
       toast.error('Add a size description.')
       return
     }
-    if (!photoPath) {
+    if (!isPickup && !photoPath) {
       toast.error('A photo of the package is required.')
       return
+    }
+    if (isPickup) {
+      const contactErr = pickupContactError({ name: contactName, phone: contactPhone })
+      if (contactErr) {
+        toast.error(contactErr)
+        return
+      }
     }
     if (!liabilityAccepted) {
       toast.error('Please acknowledge the liability disclaimer.')
@@ -157,7 +181,7 @@ export default function EditRequest() {
         package_description: description,
         distance_miles: Number(distance.toFixed(2)),
         package_size: size.trim() || null,
-        package_photo_path: photoPath,
+        package_photo_path: isPickup ? null : photoPath,
         max_price_cents: priceCents,
       })
       .eq('id', id)
@@ -167,6 +191,16 @@ export default function EditRequest() {
     if (error) {
       toast.error(error.message)
       return
+    }
+    if (isPickup) {
+      const { error: contactErr } = await supabase
+        .from('delivery_pickup_contacts')
+        .update({ name: contactName.trim(), phone: normalizePhone(contactPhone) })
+        .eq('delivery_request_id', id)
+      if (contactErr) {
+        toast.error(contactErr.message)
+        return
+      }
     }
     toast.success('Request updated.')
     navigate('/sender')
@@ -230,6 +264,30 @@ export default function EditRequest() {
       )}
 
       <form onSubmit={handleSave} className="mt-8 space-y-5">
+        {isPickup && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Pick up from — name">
+              <input
+                type="text"
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                maxLength={80}
+                disabled={locked}
+                className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none disabled:opacity-60"
+              />
+            </Field>
+            <Field label="Their mobile">
+              <input
+                type="tel"
+                inputMode="tel"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                disabled={locked}
+                className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none disabled:opacity-60"
+              />
+            </Field>
+          </div>
+        )}
         <Field label="Pickup address">
           <StructuredAddressInput
             value={pickup}
@@ -293,9 +351,11 @@ export default function EditRequest() {
             className="w-full px-4 py-3 rounded-lg bg-mist border border-mist focus:border-teal focus:outline-none disabled:opacity-60"
           />
         </Field>
-        <Field label="Photo of the package">
-          <PackagePhotoInput path={photoPath} onChange={setPhotoPath} disabled={locked} />
-        </Field>
+        {!isPickup && (
+          <Field label="Photo of the package">
+            <PackagePhotoInput path={photoPath} onChange={setPhotoPath} disabled={locked} />
+          </Field>
+        )}
 
         <div className="rounded-lg bg-mist px-4 py-3 space-y-1.5">
           <Row
