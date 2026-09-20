@@ -368,8 +368,15 @@ export default function CourierHome() {
                   >
                     <div className="space-y-3">
                       <div className="flex items-baseline justify-between gap-3">
-                        <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
-                          {r.order_number}
+                        <div className="flex items-center gap-2">
+                          <div className="text-xs uppercase tracking-wide text-slate whitespace-nowrap">
+                            {r.order_number}
+                          </div>
+                          {r.kind === 'pickup' && (
+                            <span className="px-1.5 py-0.5 rounded-full bg-teal/10 text-teal text-[10px] font-bold uppercase tracking-wide">
+                              Pickup
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs uppercase tracking-wide text-green whitespace-nowrap">
                           {r.status === 'accepted' ? 'Awaiting pickup' : 'In transit'}
@@ -549,6 +556,11 @@ export default function CourierHome() {
                         ) : (
                           <span className="px-1.5 py-0.5 rounded-full bg-teal/10 text-teal text-[10px] font-bold uppercase tracking-wide">
                             Open
+                          </span>
+                        )}
+                        {r.kind === 'pickup' && (
+                          <span className="px-1.5 py-0.5 rounded-full bg-teal/10 text-teal text-[10px] font-bold uppercase tracking-wide">
+                            Pickup
                           </span>
                         )}
                       </div>
