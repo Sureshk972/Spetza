@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import { useAuth } from '../../context/AuthContext.jsx'
+import { useAppSetting } from '../../hooks/useAppSetting.js'
 import EarnBackTracker from '../../components/EarnBackTracker.jsx'
 import CourierConnectSection from '../../components/CourierConnectSection.jsx'
 import { resizeImage } from '../../lib/resizeImage.js'
@@ -41,6 +42,9 @@ export default function CourierVerify() {
   const payoutsReady =
     profile?.stripe_connect_charges_enabled && profile?.stripe_connect_payouts_enabled
   const alreadyPaid = !!profile?.bgcheck_paid_at
+  // Operator switch: when Spetza covers the check there is no Checkout
+  // step and no earn-back to track.
+  const { value: courierPays } = useAppSetting('courier_pays_background_check', true)
 
   // Auto-start background check after returning from Stripe Checkout.
   useEffect(() => {
@@ -88,7 +92,7 @@ export default function CourierVerify() {
     setStarting(true)
 
     // If the courier hasn't paid yet, redirect to Stripe Checkout first.
-    if (!alreadyPaid && !searchParams.get('bg_paid')) {
+    if (courierPays && !alreadyPaid && !searchParams.get('bg_paid')) {
       const returnUrl = window.location.origin + '/courier/verify'
       const { data: payData, error: payErr } = await supabase.functions.invoke(
         'create-bgcheck-payment',
@@ -237,14 +241,18 @@ export default function CourierVerify() {
           </div>
         ) : (
           <>
-            <div className="text-slate text-xs mt-0.5">Runs through Checkr · one-time $40 fee.</div>
-            <EarnBackTracker creditedCents={profile?.earnback_credited_cents ?? 0} variant="signup" />
+            <div className="text-slate text-xs mt-0.5">
+              {courierPays ? 'Runs through Checkr · one-time $40 fee.' : 'Runs through Checkr · Spetza covers the fee.'}
+            </div>
+            {courierPays && (
+              <EarnBackTracker creditedCents={profile?.earnback_credited_cents ?? 0} variant="signup" />
+            )}
             <button
               onClick={startCheck}
               disabled={!selfiePath || !payoutsReady || starting}
               className="mt-3 w-full px-4 py-3 rounded-lg bg-green text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
             >
-              {starting ? 'Starting…' : 'Start background check — $40'}
+              {starting ? 'Starting…' : courierPays ? 'Start background check — $40' : 'Start background check — on us'}
             </button>
             {(!selfiePath || !payoutsReady) && (
               <div className="text-xs text-slate mt-2">Finish steps 1 and 2 first.</div>

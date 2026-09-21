@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { courierPaysBackgroundCheck } from "../_shared/appSettings.ts";
 import Stripe from "https://esm.sh/stripe@14?target=denonext";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, { apiVersion: "2024-06-20" });
@@ -38,6 +39,10 @@ Deno.serve(async (req) => {
   if (!profile.stripe_connect_payouts_enabled) return json({ error: "finish payout setup first" }, 409);
   if (profile.background_check_status === "clear") return json({ error: "already cleared" }, 409);
   if (profile.bgcheck_paid_at) return json({ error: "already paid" }, 409);
+  // Spetza is covering the check: there is nothing to charge for.
+  if (!(await courierPaysBackgroundCheck(supabase))) {
+    return json({ error: "no payment needed — Spetza covers your background check" }, 409);
+  }
 
   // A courier who paid and then closed the tab before start-background-check
   // ran has a real payment that nothing has written down yet. Without this,

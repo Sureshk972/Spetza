@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAppSetting } from '../hooks/useAppSetting.js'
 import { Link } from 'react-router-dom'
 import Footer from '../components/Footer.jsx'
 
@@ -121,6 +122,7 @@ function Testimonials() {
 }
 
 export default function Welcome() {
+  const { value: courierPays } = useAppSetting('courier_pays_background_check', true)
   return (
     <div className="min-h-full flex flex-col items-center justify-center px-6 py-16">
       <div className="w-full max-w-md text-center">
@@ -202,7 +204,11 @@ export default function Welcome() {
               Deliver along the route you're already driving
             </div>
             <div className="mt-2 text-xs text-slate leading-relaxed">
-              One-time $40 background check — <span className="text-green font-semibold">earn it all back</span>, $1 per delivery.
+              {courierPays ? (
+                <>One-time $40 background check — <span className="text-green font-semibold">earn it all back</span>, $1 per delivery.</>
+              ) : (
+                <>Background check <span className="text-green font-semibold">on us</span> — no fee to start.</>
+              )}
             </div>
           </div>
         </div>

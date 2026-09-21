@@ -11,12 +11,14 @@
  */
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useAppSetting } from '../hooks/useAppSetting.js'
 
 const FEE = 4000 // cents
 const money = (c) => `$${(c / 100).toFixed(0)}`
 
 export default function EarnBackBar() {
   const { profile } = useAuth()
+  const { value: courierPays } = useAppSetting('courier_pays_background_check', true)
 
   const bg = profile?.background_check_status ?? 'not_started'
   const isCourier = profile?.account_type === 'courier'
@@ -24,6 +26,9 @@ export default function EarnBackBar() {
   const started = bg !== 'not_started' && !rejected
 
   if (!isCourier || rejected) return null
+  // Nothing to earn back when Spetza covered the check (or is about to).
+  if (started && !profile?.bgcheck_paid_at) return null
+  if (!started && !courierPays) return null
 
   // Before bg check — teaser CTA
   if (!started) {

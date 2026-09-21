@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
 import DataTable from '../../components/admin/DataTable.jsx'
+import { useAppSetting } from '../../hooks/useAppSetting.js'
+import { useAuth } from '../../context/AuthContext.jsx'
 
 function fmtDate(iso) {
   if (!iso) return ''
@@ -14,6 +16,31 @@ export default function AdminVerifications() {
   const [couriers, setCouriers] = useState([])
   const [loading, setLoading] = useState(true)
   const [acting, setActing] = useState(null)
+  const { user } = useAuth()
+
+  // Who pays the $40 check. Read by the verify page, the welcome page, the
+  // FAQ and both edge functions, so flipping it here changes all of them.
+  const { value: courierPaysSetting, loaded: settingLoaded } = useAppSetting('courier_pays_background_check', true)
+  const [courierPays, setCourierPays] = useState(true)
+  const [savingSetting, setSavingSetting] = useState(false)
+  useEffect(() => { if (settingLoaded) setCourierPays(courierPaysSetting) }, [settingLoaded, courierPaysSetting])
+
+  const toggleCourierPays = async () => {
+    const next = !courierPays
+    const ok = window.confirm(next
+      ? 'Couriers will pay the $40 background check themselves (earned back $1 per delivery). Continue?'
+      : 'Spetza will cover the $40 background check for every courier who starts one from now on. Continue?')
+    if (!ok) return
+    setSavingSetting(true)
+    const { error } = await supabase
+      .from('app_settings')
+      .update({ value: next, updated_at: new Date().toISOString(), updated_by: user?.id ?? null })
+      .eq('key', 'courier_pays_background_check')
+    setSavingSetting(false)
+    if (error) { toast.error(error.message); return }
+    setCourierPays(next)
+    toast.success(next ? 'Couriers pay the check' : 'Spetza covers the check')
+  }
 
   const refresh = useCallback(async () => {
     if (!hasSupabaseConfig) { setLoading(false); return }
@@ -109,6 +136,28 @@ export default function AdminVerifications() {
     <div>
       <h1 className="font-display text-3xl font-black text-ink">Background Checks</h1>
       <p className="text-sm text-slate mt-1 mb-6">Couriers flagged by Checkr for manual review</p>
+
+      <div className="mb-8 p-4 rounded-xl border border-mist bg-white flex items-start justify-between gap-4">
+        <div>
+          <div className="text-sm font-medium text-ink">Who pays the $40 background check</div>
+          <div className="text-xs text-slate mt-1 leading-relaxed">
+            {courierPays
+              ? 'Couriers pay via Stripe Checkout before the check starts and earn it back at $1 per delivery.'
+              : 'Spetza covers it. No Checkout step, no earn-back. Applies to checks started from now on.'}
+          </div>
+        </div>
+        <button
+          onClick={toggleCourierPays}
+          disabled={savingSetting || !settingLoaded}
+          className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors disabled:opacity-50 ${
+            courierPays
+              ? 'border-mist text-ink hover:border-ink'
+              : 'border-green/40 bg-green/10 text-green hover:bg-green/20'
+          }`}
+        >
+          {savingSetting ? 'Saving…' : courierPays ? 'Courier pays' : 'Spetza covers'}
+        </button>
+      </div>
 
       {loading
         ? <div className="text-slate py-8 text-center">Loading…</div>

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { courierPaysBackgroundCheck } from "../_shared/appSettings.ts";
 import Stripe from "https://esm.sh/stripe@14?target=denonext";
 import { createCandidate, createInvitation, type WorkLocation } from "../_shared/checkr.ts";
 
@@ -13,7 +14,6 @@ const json = (body: unknown, status = 200) =>
     status, headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const COURIER_PAYS = (Deno.env.get("COURIER_PAYS_BACKGROUND_CHECK") ?? "false") === "true";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -28,6 +28,9 @@ Deno.serve(async (req) => {
   const token = auth.replace("Bearer ", "");
   const { data: { user }, error: userErr } = await supabase.auth.getUser(token);
   if (userErr || !user) return json({ error: "unauthenticated" }, 401);
+
+  // Who pays is an operator switch in app_settings, shared with the client.
+  const COURIER_PAYS = await courierPaysBackgroundCheck(supabase);
 
   const { data: profile } = await supabase
     .from("profiles")

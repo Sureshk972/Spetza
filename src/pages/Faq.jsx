@@ -6,6 +6,7 @@
 // would feel misled by later. If a flow changes, this page changes with it.
 
 import { useState } from 'react'
+import { useAppSetting } from '../hooks/useAppSetting.js'
 import { Link } from 'react-router-dom'
 import Footer from '../components/Footer.jsx'
 import PricingTable from '../components/PricingTable.jsx'
@@ -141,6 +142,13 @@ const COURIER_FAQS = [
         you've earned anything, which we know is the least fun part of starting.
       </>
     ),
+    // Swapped in while Spetza is covering the check.
+    covered: (
+      <>
+        <strong className="text-ink">Nothing right now.</strong> Spetza is covering the background
+        check for new couriers. You still complete it through Checkr; we pay the fee.
+      </>
+    ),
   },
   {
     q: 'Do I need a car?',
@@ -254,7 +262,10 @@ export default function Faq() {
   // an unrelated answer expanded.
   const [openIndex, setOpenIndex] = useState(0)
 
-  const faqs = role === 'sender' ? SENDER_FAQS : COURIER_FAQS
+  const { value: courierPays } = useAppSetting('courier_pays_background_check', true)
+  const faqs = (role === 'sender' ? SENDER_FAQS : COURIER_FAQS).map((f) =>
+    !courierPays && f.covered ? { ...f, a: f.covered } : f,
+  )
 
   const switchRole = (next) => {
     setRole(next)
