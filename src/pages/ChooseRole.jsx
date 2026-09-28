@@ -5,6 +5,7 @@ import { supabase, hasSupabaseConfig } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { trackEvent } from '../lib/analytics.js'
 import Footer from '../components/Footer.jsx'
+import { getIntendedRole, clearIntendedRole } from '../lib/intendedRole.js'
 
 /**
  * The one screen where someone says how they'll use Spetza.
@@ -16,7 +17,8 @@ import Footer from '../components/Footer.jsx'
  * how you get to signup at all. The stash also outlived the visit, so browsing
  * the marketing page in June could decide your role in July.
  *
- * The stash now only pre-selects. Committing takes a deliberate tap, because
+ * The hint (src/lib/intendedRole.js, set by the /drive courier page) now only
+ * pre-selects and expires in a day. Committing takes a deliberate tap, because
  * the choice decides the whole shape of the product and nothing in the app
  * changes it afterwards.
  */
@@ -45,7 +47,7 @@ const ROLES = [
 export default function ChooseRole() {
   const { user, profile, refreshProfile } = useAuth()
   const navigate = useNavigate()
-  const [selected, setSelected] = useState(null)
+  const [selected, setSelected] = useState(() => getIntendedRole())
   const [busy, setBusy] = useState(false)
 
   // Already decided: nothing to do here. Rendering a redirect rather than
@@ -80,6 +82,7 @@ export default function ChooseRole() {
       return
     }
 
+    clearIntendedRole()
     trackEvent('role_selected', { role: selected })
     await refreshProfile()
     navigate(selected === 'sender' ? '/sender' : '/courier', { replace: true })
