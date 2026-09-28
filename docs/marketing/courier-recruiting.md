@@ -29,7 +29,7 @@ Paid straight to your bank in about 2 business days (Stripe).
 
 You need: 18+, a phone, a bank account, and a way to move — bike, car, scooter, feet. One-time $40 background check, earned back $1 per delivery.
 
-Sign up in 10 minutes: spetza.com → "Courier"
+Sign up in 10 minutes: spetza.com/drive
 
 Launching in Andersonville / Uptown / Edgewater first. Early couriers get first pick of the jobs.
 
@@ -50,14 +50,14 @@ One-time $40 background check (earned back $1 per delivery). 18+, bank account, 
 
 Starting on the North Side (Andersonville / Uptown / Edgewater). First couriers in get first pick.
 
-Sign up: spetza.com → Courier
+Sign up: spetza.com/drive
 Questions? Ask below or DM me — I built it and I'll answer.
 
 ---
 
 ## 3. Text message — to a driver you just met
 
-Hey, it's Suresh from Spetza. The package-delivery app I mentioned: $8.50–$30 a run, 100% of tips, paid in 2 days, take only the jobs you want. Sign-up takes 10 min: spetza.com → Courier. Text me here if anything's unclear.
+Hey, it's Suresh from Spetza. The package-delivery app I mentioned: $8.50–$30 a run, 100% of tips, paid in 2 days, take only the jobs you want. Sign-up takes 10 min: spetza.com/drive. Text me here if anything's unclear.
 
 ---
 

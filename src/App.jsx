@@ -14,6 +14,7 @@ import ComingSoon from './pages/ComingSoon.jsx'
 import SignIn from './pages/SignIn.jsx'
 import SignUp from './pages/SignUp.jsx'
 import Trust from './pages/Trust.jsx'
+import Drive from './pages/Drive.jsx'
 import Faq from './pages/Faq.jsx'
 import Privacy from './pages/Privacy.jsx'
 import Terms from './pages/Terms.jsx'
@@ -117,6 +118,7 @@ export default function App() {
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
       <Route path="/trust" element={<Trust />} />
+      <Route path="/drive" element={<Drive />} />
       <Route path="/faq" element={<Faq />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
