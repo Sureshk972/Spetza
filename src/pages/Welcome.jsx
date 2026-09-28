@@ -223,11 +223,14 @@ export default function Welcome() {
           We'll ask whether you're sending or delivering once you're set up.
         </p>
 
-        <p className="text-slate text-xs mt-6">
-          Already have an account?{' '}
-          <Link to="/signin" className="text-teal hover:underline font-semibold">Sign in</Link>
-        </p>
-        <p className="text-slate text-xs mt-3">
+        <p className="text-slate text-xs mt-6">Already have an account?</p>
+        <Link
+          to="/signin"
+          className="block w-full mt-2 py-3.5 rounded-xl border-2 border-ink bg-white text-ink font-display font-extrabold text-base hover:bg-ink hover:text-white transition-colors"
+        >
+          Sign in
+        </Link>
+        <p className="text-slate text-xs mt-5">
           <Link to="/trust" className="hover:text-ink underline">How we vet every courier</Link>
           {' · '}
           <Link to="/faq" className="hover:text-ink underline">Questions</Link>
