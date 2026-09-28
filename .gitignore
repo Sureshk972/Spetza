@@ -26,3 +26,5 @@ public/version.json
 
 # Produced by npx deno check/test runs
 deno.lock
+.cutover-secrets
+.cutover.sh

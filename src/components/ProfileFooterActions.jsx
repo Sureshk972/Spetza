@@ -111,7 +111,7 @@ export default function ProfileFooterActions({ currentRole }) {
       <button
         type="button"
         onClick={signOut}
-        className="w-full flex items-center gap-2 px-4 py-3 rounded-lg border border-mist bg-white hover:border-red-300 transition-colors text-sm text-red-600"
+        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 transition-colors text-sm font-semibold text-red-600"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
