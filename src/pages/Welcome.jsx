@@ -123,6 +123,7 @@ function Testimonials() {
 
 export default function Welcome() {
   const { value: courierPays } = useAppSetting('courier_pays_background_check', true)
+  const { value: showReviews } = useAppSetting('show_testimonials', false)
   return (
     <div className="min-h-full flex flex-col items-center justify-center px-6 py-16">
       <div className="w-full max-w-md text-center">
@@ -236,13 +237,18 @@ export default function Welcome() {
           <Link to="/faq" className="hover:text-ink underline">Questions</Link>
         </p>
 
-        {/* Reviews */}
+        {/* Reviews. Off until they're real: the quotes above are placeholders,
+            and publishing invented reviews breaks the FTC's fake-review rule.
+            Flip app_settings 'show_testimonials' to true (no deploy needed)
+            once TESTIMONIALS holds real customers' words. */}
+        {showReviews && (
         <section className="mt-12 text-left">
           <h2 className="font-display text-lg font-extrabold text-ink mb-4 text-center">
             What people are saying
           </h2>
           <Testimonials />
         </section>
+        )}
       </div>
 
       <Footer />
