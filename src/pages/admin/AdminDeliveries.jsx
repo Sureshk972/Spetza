@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
+import { attachProfiles } from '../../lib/attachProfiles.js'
 import DataTable from '../../components/admin/DataTable.jsx'
 
 function fmtDate(iso) {
@@ -35,8 +36,7 @@ export default function AdminDeliveries() {
       .select(`
         id, order_number, status, max_price_cents, platform_fee_cents, accepted_price_cents,
         distance_miles, package_size, created_at, delivered_at,
-        sender:profiles!delivery_requests_sender_id_fkey(first_name, last_name),
-        courier:profiles!delivery_requests_courier_id_fkey(first_name, last_name)
+        sender_id, courier_id
       `)
       .order('created_at', { ascending: false })
       .limit(200)
@@ -44,7 +44,7 @@ export default function AdminDeliveries() {
     if (statusFilter !== 'all') q = q.eq('status', statusFilter)
 
     const { data } = await q
-    setRows(data ?? [])
+    setRows(await attachProfiles(supabase, data ?? []))
     setLoading(false)
   }, [statusFilter])
 

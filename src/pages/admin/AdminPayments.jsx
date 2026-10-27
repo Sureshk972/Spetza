@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
+import { attachProfiles } from '../../lib/attachProfiles.js'
 import StatCard from '../../components/admin/StatCard.jsx'
 import DataTable from '../../components/admin/DataTable.jsx'
 
@@ -44,15 +45,14 @@ export default function AdminPayments() {
       .select(`
         id, order_number, status, max_price_cents, platform_fee_cents, accepted_price_cents,
         stripe_payment_intent_id, created_at, delivered_at,
-        sender:profiles!delivery_requests_sender_id_fkey(first_name, last_name),
-        courier:profiles!delivery_requests_courier_id_fkey(first_name, last_name)
+        sender_id, courier_id
       `)
       .gte('created_at', fromIso)
       .not('stripe_payment_intent_id', 'is', null)
       .order('created_at', { ascending: false })
       .limit(200)
 
-    const items = data ?? []
+    const items = await attachProfiles(supabase, data ?? [])
     const gmv = items.reduce((s, r) => s + (r.max_price_cents || 0), 0)
     const fees = items.reduce((s, r) => s + (r.platform_fee_cents || 0), 0)
     const processingEst = Math.round(gmv * 0.029 + items.length * 30) // ~2.9% + $0.30

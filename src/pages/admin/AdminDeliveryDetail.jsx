@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase.js'
+import { attachProfiles } from '../../lib/attachProfiles.js'
 
 function fmtDate(iso) {
   if (!iso) return '—'
@@ -39,14 +40,11 @@ export default function AdminDeliveryDetail() {
     setLoading(true)
     const { data } = await supabase
       .from('delivery_requests')
-      .select(`
-        *,
-        sender:profiles!delivery_requests_sender_id_fkey(id, first_name, last_name),
-        courier:profiles!delivery_requests_courier_id_fkey(id, first_name, last_name)
-      `)
+      .select('*')
       .eq('id', id)
       .single()
-    setDelivery(data)
+    const [withNames] = data ? await attachProfiles(supabase, [data]) : [null]
+    setDelivery(withNames)
     setLoading(false)
   }, [id])
 
